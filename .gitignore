@@ -6,6 +6,8 @@
 .pub/
 build/
 .cache/
+.flutter-plugins
+.flutter-plugins-dependencies
 
 # Android build files
 android/.gradle/

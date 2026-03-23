@@ -14,13 +14,13 @@ class WorkoutPage extends StatefulWidget {
 }
 
 class _WorkoutPageState extends State<WorkoutPage> {
-  Widget? _currentPage; // Holds the current sub-page
+  Widget? _currentPage;
 
   void _openSubPage(Widget page, String title) {
     setState(() {
       _currentPage = page;
     });
-    widget.titleNotifier.value = title; // Update title
+    widget.titleNotifier.value = title;
   }
 
   @override
@@ -29,7 +29,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
   }
 
   Widget _buildWorkoutMainPage() {
-    widget.titleNotifier.value = "Workout"; // Reset title when on main workout page
+    widget.titleNotifier.value = "Workout";
 
     return Center(
       child: Column(
@@ -60,7 +60,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
       children: [
         IconButton(
           icon: Icon(icon, size: 50),
-          onPressed: () => _openSubPage(page, label), // Load sub-page and update title
+          onPressed: () => _openSubPage(page, label),
         ),
         Text(label, style: const TextStyle(fontSize: 16)),
       ],

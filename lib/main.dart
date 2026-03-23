@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/pages/diet_page.dart';
 import 'package:greyskull_lp/pages/forum_page.dart';
@@ -8,7 +10,6 @@ import 'package:greyskull_lp/pages/stats_page.dart';
 import 'package:greyskull_lp/pages/store_page.dart';
 import 'package:greyskull_lp/pages/workout_page.dart';
 import 'themes/theme.dart';
-import 'dart:async';
 
 void main() {
   runApp(const GreyskullApp());
@@ -42,19 +43,30 @@ class SplashScreen extends StatefulWidget {
 }
 
 class SplashScreenState extends State<SplashScreen> {
+  Timer? _navigationTimer;
+
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 2), () {
+    _navigationTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) {
+        return;
+      }
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const MainPage(), // Redirect to MainPage
+          pageBuilder: (_, __, ___) => const MainPage(),
           transitionsBuilder: (_, anim, __, child) {
             return FadeTransition(opacity: anim, child: child);
           },
         ),
       );
     });
+  }
+
+  @override
+  void dispose() {
+    _navigationTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -76,22 +88,27 @@ class MainPage extends StatefulWidget {
 }
 
 class MainPageState extends State<MainPage> {
-  int _selectedIndex = -1; // Start with -1 to show HomePage initially
+  int _selectedIndex = -1;
   final ValueNotifier<String> _appBarTitle = ValueNotifier("Official Greyskull LP App");
-
-  final List<Widget> _pages = [];
+  late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
-    _pages.add(WorkoutPage(titleNotifier: _appBarTitle)); // Pass notifier to WorkoutPage
-    _pages.addAll([
+    _pages = [
+      WorkoutPage(titleNotifier: _appBarTitle),
       const ForumPage(),
       const DietPage(),
       const StatsPage(),
       const HistoryPage(),
       const StorePage(),
-    ]);
+    ];
+  }
+
+  @override
+  void dispose() {
+    _appBarTitle.dispose();
+    super.dispose();
   }
 
   void _onItemTapped(int index) {
@@ -99,7 +116,7 @@ class MainPageState extends State<MainPage> {
       _selectedIndex = index;
     });
     if (index == 0) {
-      _appBarTitle.value = "Workout"; // Reset title when switching back
+      _appBarTitle.value = "Workout";
     } else {
       _appBarTitle.value = _getPageTitle(index);
     }
@@ -123,7 +140,7 @@ class MainPageState extends State<MainPage> {
                 onPressed: () {
                   setState(() {
                     _selectedIndex = -1;
-                    _appBarTitle.value = "Official Greyskull LP App"; // Reset title
+                    _appBarTitle.value = "Official Greyskull LP App";
                   });
                 },
               ),
