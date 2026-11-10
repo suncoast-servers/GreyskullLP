@@ -164,6 +164,34 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
               ),
             const SizedBox(height: 12),
 
+            // Book Guidelines Alert
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.black12),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Book Principles (3rd Edition pp. 62–65):',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    '• Frequency: 6 days per week, 1 day completely off.\n'
+                    '• Never to failure: Sets performed well shy of failure (~50% of max effort).\n'
+                    '• Progression Rule: Add 1 rep per set OR 1 set per day each week. When adding reps to a set, bump back the number of sets per day by 1–2.\n'
+                    '• Negatives: If unable to do full chin-ups, do negatives (5–6s controlled descent) until ready for singles.',
+                    style: TextStyle(fontSize: 12, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
             // Daily Progress Card
             Card(
               elevation: 2,

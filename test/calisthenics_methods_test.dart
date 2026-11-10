@@ -81,6 +81,174 @@ void main() {
       expect(state.history.length, 2);
     });
 
+    test('In-progress Ladder and Total Work sessions survive method switching',
+        () {
+      final state = TrainingState();
+
+      // Configure in-progress Ladder session
+      state.setActiveDailyMethod(DailyMethod.ladder);
+      state.setLadderExercise('Chin-ups');
+      state.setLadderUsedNegatives(true);
+      state.recordLadderRung(); // 1 rep
+      state.recordLadderRung(); // 2 reps
+      state.finishCurrentLadder();
+      state.recordLadderRung(); // active rung in second ladder (1 rep)
+
+      expect(state.activeCompletedLadders.length, 1);
+      expect(state.activeCompletedLadders.first, [1, 2]);
+      expect(state.activeCurrentLadderRungs, [1]);
+      expect(state.activeLadderTotalReps, 4); // 1 + 2 + 1
+      expect(state.activeLadderPeakRung, 2);
+
+      // Configure in-progress Total Work session
+      state.setActiveDailyMethod(DailyMethod.totalWork);
+      state.setTotalWorkExercise('Push-ups');
+      state.setTotalWorkModel('weekly');
+      state.setTotalWorkTargetReps(420);
+      state.addTotalWorkSet(20);
+      state.addTotalWorkSet(25);
+
+      expect(state.activeTotalWorkSets, [20, 25]);
+      expect(state.activeTotalWorkCompletedReps, 45);
+      expect(state.activeTotalWorkRemainingReps, 375);
+
+      // Switch to Frequency method and back to Ladder
+      state.setActiveDailyMethod(DailyMethod.frequency);
+      expect(state.activeDailyMethod, DailyMethod.frequency);
+
+      state.setActiveDailyMethod(DailyMethod.ladder);
+      // Verify Ladder in-progress state is fully preserved!
+      expect(state.activeLadderExercise, 'Chin-ups');
+      expect(state.activeLadderUsedNegatives, true);
+      expect(state.activeCompletedLadders.length, 1);
+      expect(state.activeCurrentLadderRungs, [1]);
+      expect(state.activeLadderTotalReps, 4);
+      expect(state.activeLadderPeakRung, 2);
+
+      // Switch back to Total Work
+      state.setActiveDailyMethod(DailyMethod.totalWork);
+      // Verify Total Work in-progress state is fully preserved!
+      expect(state.activeTotalWorkExercise, 'Push-ups');
+      expect(state.activeTotalWorkModel, 'weekly');
+      expect(state.activeTotalWorkTargetReps, 420);
+      expect(state.activeTotalWorkSets, [20, 25]);
+      expect(state.activeTotalWorkCompletedReps, 45);
+    });
+
+    test(
+        'updateHistoryEntry preserves and updates methodMetadata for each method',
+        () {
+      final state = TrainingState();
+
+      // Frequency history entry with metadata
+      state.logDailyMethodSession(
+        method: DailyMethod.frequency,
+        pushUps: 30,
+        chinUps: 12,
+        usedNegatives: false,
+        optionalExerciseSummary: 'None',
+        metadata: {
+          'setsCount': 6,
+          'pushUps': 30,
+          'chinUps': 12,
+          'usedNegatives': false,
+        },
+      );
+      var entry = state.history.first;
+      expect(entry.methodMetadata?['setsCount'], 6);
+
+      // Edit Frequency entry metadata
+      state.updateHistoryEntry(entry.copyWith(
+        pushUps: 40,
+        chinUps: 15,
+        methodMetadata: {
+          'setsCount': 8,
+          'pushUps': 40,
+          'chinUps': 15,
+          'usedNegatives': true,
+        },
+      ));
+      entry = state.history.first;
+      expect(entry.pushUps, 40);
+      expect(entry.chinUps, 15);
+      expect(entry.methodMetadata?['setsCount'], 8);
+      expect(entry.methodMetadata?['usedNegatives'], true);
+
+      // Ladder history entry with metadata
+      state.logDailyMethodSession(
+        method: DailyMethod.ladder,
+        pushUps: 0,
+        chinUps: 75,
+        usedNegatives: false,
+        optionalExerciseSummary: 'None',
+        metadata: {
+          'exercise': 'Chin-ups',
+          'totalReps': 75,
+          'peakRung': 5,
+          'laddersCount': 5,
+          'usedNegatives': false,
+        },
+      );
+      var ladderEntry = state.history.first;
+      expect(ladderEntry.method, DailyMethod.ladder);
+      expect(ladderEntry.methodMetadata?['peakRung'], 5);
+      expect(ladderEntry.methodMetadata?['laddersCount'], 5);
+
+      // Edit Ladder entry metadata
+      state.updateHistoryEntry(ladderEntry.copyWith(
+        chinUps: 90,
+        methodMetadata: {
+          'exercise': 'Chin-ups',
+          'totalReps': 90,
+          'peakRung': 6,
+          'laddersCount': 6,
+          'usedNegatives': false,
+        },
+      ));
+      ladderEntry = state.history.first;
+      expect(ladderEntry.chinUps, 90);
+      expect(ladderEntry.methodMetadata?['peakRung'], 6);
+      expect(ladderEntry.methodMetadata?['laddersCount'], 6);
+
+      // Total Work entry with metadata
+      state.logDailyMethodSession(
+        method: DailyMethod.totalWork,
+        pushUps: 70,
+        chinUps: 0,
+        usedNegatives: false,
+        optionalExerciseSummary: 'None',
+        metadata: {
+          'exercise': 'Push-ups',
+          'totalReps': 70,
+          'targetReps': 70,
+          'model': 'daily',
+          'setsCount': 5,
+          'usedNegatives': false,
+        },
+      );
+      var twEntry = state.history.first;
+      expect(twEntry.method, DailyMethod.totalWork);
+      expect(twEntry.methodMetadata?['model'], 'daily');
+      expect(twEntry.methodMetadata?['setsCount'], 5);
+
+      // Edit Total Work entry metadata
+      state.updateHistoryEntry(twEntry.copyWith(
+        pushUps: 420,
+        methodMetadata: {
+          'exercise': 'Push-ups',
+          'totalReps': 420,
+          'targetReps': 420,
+          'model': 'weekly',
+          'setsCount': 14,
+          'usedNegatives': false,
+        },
+      ));
+      twEntry = state.history.first;
+      expect(twEntry.pushUps, 420);
+      expect(twEntry.methodMetadata?['model'], 'weekly');
+      expect(twEntry.methodMetadata?['setsCount'], 14);
+    });
+
     test('updateHistoryEntry and deleteHistoryEntry modify history', () {
       final state = TrainingState();
       state.logDailyMethodSession(
@@ -160,7 +328,7 @@ void main() {
       await tester.tap(find.text('Finish Ladder'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Completed Ladders:'), findsOneWidget);
+      expect(find.textContaining('Completed Ladders'), findsOneWidget);
       expect(find.text('Total Reps'), findsOneWidget);
     });
 
@@ -179,7 +347,7 @@ void main() {
 
       expect(find.text('Total Work Method'), findsOneWidget);
       expect(find.text('Volume Progress'), findsOneWidget);
-      expect(find.text('Session Time'), findsOneWidget);
+      expect(find.text('Target Model:'), findsOneWidget);
 
       // Tap to record set
       final recordButton = find.textContaining('Record Set');
@@ -189,7 +357,7 @@ void main() {
       await tester.tap(recordButton);
       await tester.pumpAndSettle();
 
-      expect(find.text('Sets Completed:'), findsOneWidget);
+      expect(find.text('Sets completed: 1'), findsOneWidget);
     });
 
     testWidgets('HistoryPage renders category chips and empty state or entries',

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 
@@ -10,62 +9,7 @@ class WorkoutPageTotalWork extends StatefulWidget {
 }
 
 class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
-  String _selectedExercise = 'Push-ups';
-  bool _usedNegatives = false;
-  int _targetReps = 50;
-
-  final List<int> _sets = [];
   int _repsThisSet = 15;
-
-  Timer? _timer;
-  int _elapsedSeconds = 0;
-  bool _isTimerRunning = false;
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _startTimer() {
-    _timer?.cancel();
-    setState(() {
-      _isTimerRunning = true;
-    });
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          _elapsedSeconds++;
-        });
-      }
-    });
-  }
-
-  void _pauseTimer() {
-    _timer?.cancel();
-    setState(() {
-      _isTimerRunning = false;
-    });
-  }
-
-  void _resetTimer() {
-    _timer?.cancel();
-    setState(() {
-      _isTimerRunning = false;
-      _elapsedSeconds = 0;
-    });
-  }
-
-  String _formatDuration(int totalSeconds) {
-    final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
-    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
-  }
-
-  int get _totalRepsCompleted => _sets.fold<int>(0, (sum, r) => sum + r);
-
-  int get _remainingReps =>
-      (_targetReps - _totalRepsCompleted).clamp(0, _targetReps);
 
   void _addSet() {
     if (_repsThisSet <= 0) {
@@ -76,19 +20,14 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
       return;
     }
 
-    setState(() {
-      _sets.add(_repsThisSet);
-      if (_remainingReps > 0 && _repsThisSet > _remainingReps) {
-        _repsThisSet = _remainingReps;
-      }
-    });
+    trainingState.addTotalWorkSet(_repsThisSet);
 
-    if (_totalRepsCompleted >= _targetReps && _isTimerRunning) {
-      _pauseTimer();
+    if (trainingState.activeTotalWorkCompletedReps >=
+        trainingState.activeTotalWorkTargetReps) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Target reached! $_totalRepsCompleted / $_targetReps reps completed in ${_sets.length} sets (${_formatDuration(_elapsedSeconds)}).',
+            'Target reached! ${trainingState.activeTotalWorkCompletedReps} / ${trainingState.activeTotalWorkTargetReps} reps completed in ${trainingState.activeTotalWorkSets.length} sets.',
           ),
           duration: const Duration(seconds: 3),
         ),
@@ -96,23 +35,9 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
     }
   }
 
-  void _removeSet(int index) {
-    if (index >= 0 && index < _sets.length) {
-      setState(() {
-        _sets.removeAt(index);
-      });
-    }
-  }
-
-  void _resetSession() {
-    setState(() {
-      _sets.clear();
-      _resetTimer();
-    });
-  }
-
   void _logSession() {
-    if (_sets.isEmpty) {
+    final sets = trainingState.activeTotalWorkSets;
+    if (sets.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Log at least one set before saving to history.')),
@@ -120,27 +45,32 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
       return;
     }
 
-    final totalReps = _totalRepsCompleted;
+    final exercise = trainingState.activeTotalWorkExercise;
+    final usedNegatives = trainingState.activeTotalWorkUsedNegatives;
+    final target = trainingState.activeTotalWorkTargetReps;
+    final model = trainingState.activeTotalWorkModel;
+    final totalReps = trainingState.activeTotalWorkCompletedReps;
     final optional = trainingState.selectedDailyOptionalExercises.isEmpty
         ? 'None selected'
         : trainingState.selectedDailyOptionalExercises.join(', ');
 
-    final setBreakdown = _sets
+    final setBreakdown = sets
         .asMap()
         .entries
         .map((e) => 'Set ${e.key + 1}: ${e.value} reps')
         .join('\n');
 
-    final isPushUp = _selectedExercise == 'Push-ups';
+    final isPushUp = exercise == 'Push-ups';
     final pushUps = isPushUp ? totalReps : 0;
-    final chinUps = isPushUp ? 0 : totalReps;
-    final durationStr = _formatDuration(_elapsedSeconds);
+    final chinUps = (exercise == 'Dead-Hang Chins' || exercise == 'Chin-ups')
+        ? totalReps
+        : 0;
 
     final details =
-        'Exercise: $_selectedExercise${_usedNegatives ? ' (negatives used)' : ''}\n'
-        'Target: $_targetReps reps\n'
-        'Completed: $totalReps reps in ${_sets.length} set${_sets.length == 1 ? '' : 's'}\n'
-        'Time: $durationStr\n'
+        'Exercise: $exercise${usedNegatives ? ' (negatives used)' : ''}\n'
+        'Model: ${model == 'daily' ? 'Daily Work Target' : 'Weekly Work Target'}\n'
+        'Target: $target reps\n'
+        'Completed: $totalReps reps in ${sets.length} set${sets.length == 1 ? '' : 's'}\n'
         'Optional: $optional\n\n'
         'Sets Breakdown:\n$setBreakdown';
 
@@ -148,18 +78,18 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
       method: DailyMethod.totalWork,
       pushUps: pushUps,
       chinUps: chinUps,
-      usedNegatives: _usedNegatives,
+      usedNegatives: usedNegatives,
       optionalExerciseSummary: optional,
-      title: 'Total Work Method Session ($_selectedExercise)',
+      title:
+          'Total Work Method ($exercise - ${model == 'daily' ? 'Daily' : 'Weekly'})',
       customDetails: details,
       metadata: {
-        'exercise': _selectedExercise,
-        'targetReps': _targetReps,
+        'exercise': exercise,
+        'model': model,
+        'targetReps': target,
         'totalReps': totalReps,
-        'setsCount': _sets.length,
-        'durationSeconds': _elapsedSeconds,
-        'durationFormatted': durationStr,
-        'sets': _sets,
+        'setsCount': sets.length,
+        'sets': List<int>.from(sets),
       },
     );
 
@@ -168,8 +98,8 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
       builder: (ctx) => AlertDialog(
         title: const Text('Total Work Session Saved'),
         content: Text(
-          'Saved $totalReps reps of $_selectedExercise in ${_sets.length} sets ($durationStr).\n\n'
-          'Would you like to clear this session?',
+          'Saved $totalReps reps of $exercise in ${sets.length} sets toward $target rep target.\n\n'
+          'Would you like to clear this active session?',
         ),
         actions: [
           TextButton(
@@ -178,7 +108,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
           ),
           ElevatedButton(
             onPressed: () {
-              _resetSession();
+              trainingState.resetActiveTotalWorkSession();
               Navigator.of(ctx).pop();
             },
             child: const Text('Clear Session'),
@@ -195,10 +125,27 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
       builder: (context, _) {
         final isActive =
             trainingState.activeDailyMethod == DailyMethod.totalWork;
-        final completed = _totalRepsCompleted;
+        final selectedExercise = trainingState.activeTotalWorkExercise;
+        final usedNegatives = trainingState.activeTotalWorkUsedNegatives;
+        final model = trainingState.activeTotalWorkModel;
+        final targetReps = trainingState.activeTotalWorkTargetReps;
+        final sets = trainingState.activeTotalWorkSets;
+        final completed = trainingState.activeTotalWorkCompletedReps;
+        final remaining = trainingState.activeTotalWorkRemainingReps;
         final progress =
-            _targetReps > 0 ? (completed / _targetReps).clamp(0.0, 1.0) : 0.0;
+            targetReps > 0 ? (completed / targetReps).clamp(0.0, 1.0) : 0.0;
         final percent = (progress * 100).toInt();
+
+        final bookPresets = model == 'daily'
+            ? [
+                selectedExercise == 'Dead-Hang Chins' ? 10 : 70,
+                selectedExercise == 'Dead-Hang Chins' ? 20 : 100,
+                selectedExercise == 'Dead-Hang Chins' ? 30 : 150,
+              ]
+            : [
+                selectedExercise == 'Dead-Hang Chins' ? 60 : 420,
+                selectedExercise == 'Dead-Hang Chins' ? 120 : 600,
+              ];
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -216,7 +163,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'Complete a designated total volume in as few sets as possible (or against the clock).',
+                        'Assign daily or weekly volume targets per movement. Chip away throughout the schedule, staying shy of failure.',
                         style: TextStyle(color: Colors.grey),
                       ),
                     ],
@@ -240,96 +187,121 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
               ),
             const SizedBox(height: 12),
 
-            // Exercise & Target Configuration
+            // Book Guidelines Alert
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.black12),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Book Principles (3rd Edition pp. 70–74):',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    '• Diagnostic Testing: Conduct 2-min max push-ups, 2-min sit-ups, 5-min burpees, and 1-set dead-hang chins to set targets.\n'
+                    '• Daily Target vs Weekly Target: Start with daily targets (e.g., Ralph Day 1: 70 push-ups, 10 chins), then graduate to weekly totals (Daily × 6 = 420 push-ups, 60 chins).\n'
+                    '• Never to failure: Chip away in manageable sets.',
+                    style: TextStyle(fontSize: 12, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Exercise & Model Configuration
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Select Movement:',
+                    const Text('Official Movement (3rd Edition):',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedExercise,
+                      decoration:
+                          const InputDecoration(border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(
+                            value: 'Push-ups', child: Text('Push-ups')),
+                        DropdownMenuItem(
+                            value: 'Dead-Hang Chins',
+                            child: Text('Dead-Hang Chins')),
+                        DropdownMenuItem(
+                            value: 'Sit-ups', child: Text('Sit-ups')),
+                        DropdownMenuItem(
+                            value: 'Burpees', child: Text('Burpees')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          trainingState.setTotalWorkExercise(val);
+                          if (val == 'Dead-Hang Chins' && targetReps > 50) {
+                            trainingState.setTotalWorkTargetReps(10);
+                          } else if (val != 'Dead-Hang Chins' &&
+                              targetReps < 50) {
+                            trainingState.setTotalWorkTargetReps(70);
+                          }
+                        }
+                      },
+                    ),
+                    if (selectedExercise == 'Dead-Hang Chins') ...[
+                      const SizedBox(height: 6),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text(
+                            'Used negatives instead of full dead-hang chins'),
+                        subtitle: const Text(
+                            'Jump/step to top, lower under control for 5–6s'),
+                        value: usedNegatives,
+                        onChanged: (val) =>
+                            trainingState.setTotalWorkUsedNegatives(val),
+                      ),
+                    ],
+                    const Divider(height: 24),
+                    const Text('Target Model:',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     SegmentedButton<String>(
                       segments: const [
                         ButtonSegment(
-                            value: 'Push-ups', label: Text('Push-ups')),
+                            value: 'daily', label: Text('Daily Target')),
                         ButtonSegment(
-                            value: 'Chin-ups', label: Text('Chin-ups')),
+                            value: 'weekly',
+                            label: Text('Weekly Target (Daily × 6)')),
                       ],
-                      selected: {_selectedExercise},
-                      onSelectionChanged: (set) =>
-                          setState(() => _selectedExercise = set.first),
+                      selected: {model},
+                      onSelectionChanged: (set) {
+                        final newModel = set.first;
+                        trainingState.setTotalWorkModel(newModel);
+                        if (newModel == 'weekly' && targetReps <= 150) {
+                          trainingState.setTotalWorkTargetReps(targetReps * 6);
+                        } else if (newModel == 'daily' && targetReps > 200) {
+                          trainingState
+                              .setTotalWorkTargetReps((targetReps / 6).round());
+                        }
+                      },
                     ),
-                    if (_selectedExercise == 'Chin-ups') ...[
-                      const SizedBox(height: 6),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text(
-                            'Used negatives instead of full chin-ups'),
-                        value: _usedNegatives,
-                        onChanged: (val) =>
-                            setState(() => _usedNegatives = val),
-                      ),
-                    ],
-                    const Divider(height: 24),
-                    const Text('Target Volume (reps):',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
+                    Text('Target Reps ($model): $targetReps reps',
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
-                      children: [25, 50, 75, 100].map((reps) {
-                        final isSelected = _targetReps == reps;
-                        return ChoiceChip(
-                          label: Text('$reps reps'),
-                          selected: isSelected,
-                          onSelected: (_) => setState(() => _targetReps = reps),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Stopwatch / Session Timer
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    const Icon(Icons.timer_outlined, size: 32),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Session Time',
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.grey)),
-                          Text(
-                            _formatDuration(_elapsedSeconds),
-                            style: const TextStyle(
-                                fontSize: 24, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(_isTimerRunning
-                          ? Icons.pause_circle_filled
-                          : Icons.play_circle_fill),
-                      iconSize: 36,
-                      onPressed: _isTimerRunning ? _pauseTimer : _startTimer,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      onPressed: _resetTimer,
+                      children: [
+                        ...bookPresets.map((reps) => ChoiceChip(
+                              label: Text('$reps reps (Book preset)'),
+                              selected: targetReps == reps,
+                              onSelected: (_) =>
+                                  trainingState.setTotalWorkTargetReps(reps),
+                            )),
+                      ],
                     ),
                   ],
                 ),
@@ -355,7 +327,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        Text('$completed / $_targetReps reps ($percent%)'),
+                        Text('$completed / $targetReps reps ($percent%)'),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -368,16 +340,16 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Sets completed: ${_sets.length}',
+                        Text('Sets completed: ${sets.length}',
                             style: const TextStyle(fontSize: 13)),
                         Text(
-                          _remainingReps == 0
+                          remaining == 0
                               ? 'Target achieved!'
-                              : '$_remainingReps reps remaining',
+                              : '$remaining reps remaining',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: _remainingReps == 0
+                            color: remaining == 0
                                 ? Colors.green
                                 : Colors.grey[700],
                           ),
@@ -401,7 +373,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Log Set #${_sets.length + 1}',
+                      'Log Set #${sets.length + 1}',
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),
@@ -410,12 +382,12 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                       children: [
                         IconButton(
                           onPressed: () => setState(() =>
-                              _repsThisSet = (_repsThisSet - 5).clamp(1, 100)),
+                              _repsThisSet = (_repsThisSet - 5).clamp(1, 200)),
                           icon: const Icon(Icons.remove_circle_outline),
                         ),
                         IconButton(
                           onPressed: () => setState(() =>
-                              _repsThisSet = (_repsThisSet - 1).clamp(1, 100)),
+                              _repsThisSet = (_repsThisSet - 1).clamp(1, 200)),
                           icon: const Icon(Icons.remove),
                         ),
                         Expanded(
@@ -429,12 +401,12 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                         ),
                         IconButton(
                           onPressed: () => setState(() =>
-                              _repsThisSet = (_repsThisSet + 1).clamp(1, 100)),
+                              _repsThisSet = (_repsThisSet + 1).clamp(1, 200)),
                           icon: const Icon(Icons.add),
                         ),
                         IconButton(
                           onPressed: () => setState(() =>
-                              _repsThisSet = (_repsThisSet + 5).clamp(1, 100)),
+                              _repsThisSet = (_repsThisSet + 5).clamp(1, 200)),
                           icon: const Icon(Icons.add_circle_outline),
                         ),
                       ],
@@ -457,11 +429,23 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
             const SizedBox(height: 16),
 
             // Completed Sets List
-            if (_sets.isNotEmpty) ...[
-              const Text('Sets Completed:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            if (sets.isNotEmpty) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Sets Completed (${sets.length}):',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold)),
+                  TextButton(
+                    onPressed: () =>
+                        trainingState.resetActiveTotalWorkSession(),
+                    child: const Text('Reset',
+                        style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              ),
               const SizedBox(height: 6),
-              ..._sets.asMap().entries.map((entry) {
+              ...sets.asMap().entries.map((entry) {
                 final idx = entry.key;
                 final reps = entry.value;
 
@@ -476,7 +460,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                     trailing: IconButton(
                       icon:
                           const Icon(Icons.delete_outline, color: Colors.grey),
-                      onPressed: () => _removeSet(idx),
+                      onPressed: () => trainingState.removeTotalWorkSet(idx),
                     ),
                   ),
                 );
@@ -517,7 +501,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
-              onPressed: _sets.isEmpty ? null : _logSession,
+              onPressed: sets.isEmpty ? null : _logSession,
               icon: const Icon(Icons.save),
               label: const Text(
                 'Log Total Work Session to History',

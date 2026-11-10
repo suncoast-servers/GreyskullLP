@@ -9,51 +9,16 @@ class WorkoutPageLadder extends StatefulWidget {
 }
 
 class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
-  String _selectedExercise = 'Push-ups';
-  bool _usedNegatives = false;
-
-  final List<List<int>> _completedLadders = [];
-  final List<int> _currentLadderRungs = [];
-
-  int get _nextRung =>
-      _currentLadderRungs.isEmpty ? 1 : _currentLadderRungs.last + 1;
-
-  int get _totalReps {
-    final fromCompleted = _completedLadders.fold<int>(
-        0, (sum, ladder) => sum + ladder.fold<int>(0, (s, r) => s + r));
-    final fromCurrent = _currentLadderRungs.fold<int>(0, (s, r) => s + r);
-    return fromCompleted + fromCurrent;
-  }
-
-  int get _peakRung {
-    var peak = 0;
-    for (final ladder in _completedLadders) {
-      for (final r in ladder) {
-        if (r > peak) peak = r;
-      }
-    }
-    for (final r in _currentLadderRungs) {
-      if (r > peak) peak = r;
-    }
-    return peak;
-  }
-
   void _completeRung() {
-    setState(() {
-      _currentLadderRungs.add(_nextRung);
-    });
+    trainingState.recordLadderRung();
   }
 
   void _undoRung() {
-    if (_currentLadderRungs.isNotEmpty) {
-      setState(() {
-        _currentLadderRungs.removeLast();
-      });
-    }
+    trainingState.undoLadderRung();
   }
 
   void _finishCurrentLadder() {
-    if (_currentLadderRungs.isEmpty) {
+    if (trainingState.activeCurrentLadderRungs.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text(
@@ -62,32 +27,26 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
       return;
     }
 
-    setState(() {
-      _completedLadders.add(List<int>.from(_currentLadderRungs));
-      _currentLadderRungs.clear();
-    });
+    final finishedRungs =
+        List<int>.from(trainingState.activeCurrentLadderRungs);
+    final ladderNum = trainingState.activeCompletedLadders.length + 1;
+    trainingState.finishCurrentLadder();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Completed Ladder #${_completedLadders.length} (${_completedLadders.last.join("-")}). Take a short rest and start the next ladder!',
+          'Completed Ladder #$ladderNum (${finishedRungs.join("-")}). Take a partner-paced rest and begin next ladder!',
         ),
         duration: const Duration(seconds: 2),
       ),
     );
   }
 
-  void _resetSession() {
-    setState(() {
-      _completedLadders.clear();
-      _currentLadderRungs.clear();
-    });
-  }
-
   void _logSession() {
-    final allLadders = List<List<int>>.from(_completedLadders);
-    if (_currentLadderRungs.isNotEmpty) {
-      allLadders.add(List<int>.from(_currentLadderRungs));
+    final allLadders =
+        List<List<int>>.from(trainingState.activeCompletedLadders);
+    if (trainingState.activeCurrentLadderRungs.isNotEmpty) {
+      allLadders.add(List<int>.from(trainingState.activeCurrentLadderRungs));
     }
 
     if (allLadders.isEmpty) {
@@ -99,8 +58,10 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
       return;
     }
 
-    final totalReps = _totalReps;
-    final peak = _peakRung;
+    final exercise = trainingState.activeLadderExercise;
+    final usedNegatives = trainingState.activeLadderUsedNegatives;
+    final totalReps = trainingState.activeLadderTotalReps;
+    final peak = trainingState.activeLadderPeakRung;
     final optional = trainingState.selectedDailyOptionalExercises.isEmpty
         ? 'None selected'
         : trainingState.selectedDailyOptionalExercises.join(', ');
@@ -112,12 +73,12 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
             'Ladder ${e.key + 1}: ${e.value.join("-")} (${e.value.fold<int>(0, (s, r) => s + r)} reps)')
         .join('\n');
 
-    final isPushUp = _selectedExercise == 'Push-ups';
+    final isPushUp = exercise == 'Push-ups';
     final pushUps = isPushUp ? totalReps : 0;
     final chinUps = isPushUp ? 0 : totalReps;
 
     final details =
-        'Exercise: $_selectedExercise${_usedNegatives ? ' (negatives used)' : ''}\n'
+        'Exercise: $exercise${usedNegatives ? ' (negatives used)' : ''}\n'
         'Total Reps: $totalReps\n'
         'Ladders completed: ${allLadders.length}\n'
         'Peak Rung: $peak\n'
@@ -128,12 +89,12 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
       method: DailyMethod.ladder,
       pushUps: pushUps,
       chinUps: chinUps,
-      usedNegatives: _usedNegatives,
+      usedNegatives: usedNegatives,
       optionalExerciseSummary: optional,
-      title: 'Ladder Method Session ($_selectedExercise)',
+      title: 'Ladder Method Session ($exercise)',
       customDetails: details,
       metadata: {
-        'exercise': _selectedExercise,
+        'exercise': exercise,
         'totalReps': totalReps,
         'peakRung': peak,
         'laddersCount': allLadders.length,
@@ -146,8 +107,8 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
       builder: (ctx) => AlertDialog(
         title: const Text('Ladder Session Saved'),
         content: Text(
-          'Saved $totalReps reps of $_selectedExercise across ${allLadders.length} ladder(s) (Peak rung: $peak).\n\n'
-          'Would you like to clear this session?',
+          'Saved $totalReps reps of $exercise across ${allLadders.length} ladder(s) (Peak rung: $peak).\n\n'
+          'Would you like to clear this active session?',
         ),
         actions: [
           TextButton(
@@ -156,7 +117,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
           ),
           ElevatedButton(
             onPressed: () {
-              _resetSession();
+              trainingState.resetActiveLadderSession();
               Navigator.of(ctx).pop();
             },
             child: const Text('Clear Session'),
@@ -172,7 +133,15 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
       animation: trainingState,
       builder: (context, _) {
         final isActive = trainingState.activeDailyMethod == DailyMethod.ladder;
-        final currentLadderNum = _completedLadders.length + 1;
+        final currentLadderNum =
+            trainingState.activeCompletedLadders.length + 1;
+        final nextRung = trainingState.activeLadderNextRung;
+        final totalReps = trainingState.activeLadderTotalReps;
+        final peakRung = trainingState.activeLadderPeakRung;
+        final completedLadders = trainingState.activeCompletedLadders;
+        final currentRungs = trainingState.activeCurrentLadderRungs;
+        final selectedExercise = trainingState.activeLadderExercise;
+        final usedNegatives = trainingState.activeLadderUsedNegatives;
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -188,7 +157,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                               fontSize: 22, fontWeight: FontWeight.bold)),
                       SizedBox(height: 4),
                       Text(
-                        'Perform ascending rep rungs (1, 2, 3...) per wave with brief rests to accumulate volume.',
+                        'Ascending waves (1, 2, 3...) per ladder. Weapon of choice when frequency through the day is impossible.',
                         style: TextStyle(color: Colors.grey),
                       ),
                     ],
@@ -212,7 +181,34 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
               ),
             const SizedBox(height: 12),
 
-            // Exercise Selection
+            // Book Guidelines Alert
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.black12),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Book Guidance (3rd Edition pp. 65–70):',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    '• Ladders vs Pyramids: Hardest sets are followed immediately by the easiest set (1 rep) for superior recovery.\n'
+                    '• Pacing: Rest partner-style — the time it would take an imaginary partner to complete your set.\n'
+                    '• Gold Standard: Build up toward 5 ladders of 5 reps (75 total reps).',
+                    style: TextStyle(fontSize: 12, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Movement Selection
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -225,26 +221,27 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                     SegmentedButton<String>(
                       segments: const [
                         ButtonSegment(
-                            value: 'Push-ups', label: Text('Push-ups')),
+                            value: 'Chin-ups',
+                            label: Text('Chin-ups (Primary)'),
+                            icon: Icon(Icons.fitness_center)),
                         ButtonSegment(
-                            value: 'Chin-ups', label: Text('Chin-ups')),
+                            value: 'Push-ups', label: Text('Push-ups')),
                       ],
-                      selected: {_selectedExercise},
-                      onSelectionChanged: (set) {
-                        setState(() {
-                          _selectedExercise = set.first;
-                        });
-                      },
+                      selected: {selectedExercise},
+                      onSelectionChanged: (set) =>
+                          trainingState.setLadderExercise(set.first),
                     ),
-                    if (_selectedExercise == 'Chin-ups') ...[
+                    if (selectedExercise == 'Chin-ups') ...[
                       const SizedBox(height: 6),
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text(
                             'Used negatives instead of full chin-ups'),
-                        value: _usedNegatives,
+                        subtitle: const Text(
+                            'Jump/step to top, lower under control for 5–6s'),
+                        value: usedNegatives,
                         onChanged: (val) =>
-                            setState(() => _usedNegatives = val),
+                            trainingState.setLadderUsedNegatives(val),
                       ),
                     ],
                   ],
@@ -263,13 +260,13 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _StatColumn(label: 'Total Reps', value: '$_totalReps'),
+                    _StatColumn(label: 'Total Reps', value: '$totalReps'),
                     _StatColumn(
-                      label: 'Ladders',
+                      label: 'Ladders Done',
                       value:
-                          '${_completedLadders.length + (_currentLadderRungs.isNotEmpty ? 1 : 0)}',
+                          '${completedLadders.length + (currentRungs.isNotEmpty ? 1 : 0)}',
                     ),
-                    _StatColumn(label: 'Peak Rung', value: '$_peakRung'),
+                    _StatColumn(label: 'Peak Rung', value: '$peakRung'),
                   ],
                 ),
               ),
@@ -294,7 +291,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                           style: const TextStyle(
                               fontSize: 17, fontWeight: FontWeight.bold),
                         ),
-                        if (_currentLadderRungs.isNotEmpty)
+                        if (currentRungs.isNotEmpty)
                           TextButton.icon(
                             onPressed: _undoRung,
                             icon: const Icon(Icons.undo, size: 16),
@@ -304,9 +301,9 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _currentLadderRungs.isEmpty
+                      currentRungs.isEmpty
                           ? 'Starting fresh ladder. First rung is 1 rep.'
-                          : 'Rungs completed: ${_currentLadderRungs.join(" → ")} (${_currentLadderRungs.fold<int>(0, (s, r) => s + r)} reps)',
+                          : 'Rungs completed: ${currentRungs.join(" → ")} (${currentRungs.fold<int>(0, (s, r) => s + r)} reps)',
                       style: const TextStyle(fontSize: 15),
                     ),
                     const SizedBox(height: 16),
@@ -320,7 +317,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                             onPressed: _completeRung,
                             icon: const Icon(Icons.check),
                             label: Text(
-                                'Hit Rung $_nextRung ($_nextRung rep${_nextRung == 1 ? '' : 's'})'),
+                                'Hit Rung $nextRung ($nextRung rep${nextRung == 1 ? '' : 's'})'),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -328,7 +325,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
-                          onPressed: _currentLadderRungs.isEmpty
+                          onPressed: currentRungs.isEmpty
                               ? null
                               : _finishCurrentLadder,
                           child: const Text('Finish Ladder'),
@@ -342,11 +339,22 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
             const SizedBox(height: 16),
 
             // Completed Ladders
-            if (_completedLadders.isNotEmpty) ...[
-              const Text('Completed Ladders:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            if (completedLadders.isNotEmpty) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Completed Ladders (${completedLadders.length}):',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold)),
+                  TextButton(
+                    onPressed: () => trainingState.resetActiveLadderSession(),
+                    child: const Text('Reset',
+                        style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              ),
               const SizedBox(height: 6),
-              ..._completedLadders.asMap().entries.map((entry) {
+              ...completedLadders.asMap().entries.map((entry) {
                 final idx = entry.key;
                 final rungs = entry.value;
                 final reps = rungs.fold<int>(0, (s, r) => s + r);
@@ -359,16 +367,11 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                       child: Text('#${idx + 1}'),
                     ),
                     title: Text('Rungs: ${rungs.join(" - ")}'),
-                    subtitle:
-                        Text('Ladder volume: $reps reps (Peak: ${rungs.last})'),
+                    subtitle: Text('Volume: $reps reps (Peak: ${rungs.last})'),
                     trailing: IconButton(
                       icon:
                           const Icon(Icons.delete_outline, color: Colors.grey),
-                      onPressed: () {
-                        setState(() {
-                          _completedLadders.removeAt(idx);
-                        });
-                      },
+                      onPressed: () => trainingState.removeCompletedLadder(idx),
                     ),
                   ),
                 );
@@ -409,10 +412,9 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
-              onPressed:
-                  (_completedLadders.isEmpty && _currentLadderRungs.isEmpty)
-                      ? null
-                      : _logSession,
+              onPressed: (completedLadders.isEmpty && currentRungs.isEmpty)
+                  ? null
+                  : _logSession,
               icon: const Icon(Icons.save),
               label: const Text(
                 'Log Ladder Session to History',

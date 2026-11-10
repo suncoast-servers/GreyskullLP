@@ -203,8 +203,23 @@ class TrainingState extends ChangeNotifier {
   };
 
   final List<HistoryEntry> _history = [];
+
+  // In-progress Frequency Method state
   final List<FrequencySet> _todayFrequencySets = [];
   DateTime _frequencyTrackingDate = _normalizedDay(DateTime.now());
+
+  // In-progress Ladder Method state (persisted across tab/method switching)
+  String _activeLadderExercise = 'Chin-ups';
+  bool _activeLadderUsedNegatives = false;
+  final List<List<int>> _activeCompletedLadders = [];
+  final List<int> _activeCurrentLadderRungs = [];
+
+  // In-progress Total Work Method state (persisted across tab/method switching)
+  String _activeTotalWorkExercise = 'Push-ups';
+  bool _activeTotalWorkUsedNegatives = false;
+  String _activeTotalWorkModel = 'daily'; // 'daily' or 'weekly'
+  int _activeTotalWorkTargetReps = 70; // 70 push-ups from Book Ralph example
+  final List<int> _activeTotalWorkSets = [];
 
   static const List<String> weightOptionalExerciseOptions = [
     'Barbell Row',
@@ -250,14 +265,55 @@ class TrainingState extends ChangeNotifier {
   List<HistoryEntry> get history =>
       List<HistoryEntry>.unmodifiable(_history.reversed);
 
+  // Frequency getters
   List<FrequencySet> get todayFrequencySets =>
       List<FrequencySet>.unmodifiable(_todayFrequencySets);
-
   int get todayFrequencyPushUps =>
       _todayFrequencySets.fold(0, (sum, set) => sum + set.pushUps);
-
   int get todayFrequencyChinUps =>
       _todayFrequencySets.fold(0, (sum, set) => sum + set.chinUps);
+
+  // Ladder getters
+  String get activeLadderExercise => _activeLadderExercise;
+  bool get activeLadderUsedNegatives => _activeLadderUsedNegatives;
+  List<List<int>> get activeCompletedLadders => List.unmodifiable(
+      _activeCompletedLadders.map((l) => List<int>.unmodifiable(l)));
+  List<int> get activeCurrentLadderRungs =>
+      List.unmodifiable(_activeCurrentLadderRungs);
+  int get activeLadderNextRung => _activeCurrentLadderRungs.isEmpty
+      ? 1
+      : _activeCurrentLadderRungs.last + 1;
+  int get activeLadderTotalReps {
+    final fromCompleted = _activeCompletedLadders.fold<int>(
+        0, (sum, l) => sum + l.fold<int>(0, (s, r) => s + r));
+    final fromCurrent = _activeCurrentLadderRungs.fold<int>(0, (s, r) => s + r);
+    return fromCompleted + fromCurrent;
+  }
+
+  int get activeLadderPeakRung {
+    var peak = 0;
+    for (final l in _activeCompletedLadders) {
+      for (final r in l) {
+        if (r > peak) peak = r;
+      }
+    }
+    for (final r in _activeCurrentLadderRungs) {
+      if (r > peak) peak = r;
+    }
+    return peak;
+  }
+
+  // Total Work getters
+  String get activeTotalWorkExercise => _activeTotalWorkExercise;
+  bool get activeTotalWorkUsedNegatives => _activeTotalWorkUsedNegatives;
+  String get activeTotalWorkModel => _activeTotalWorkModel;
+  int get activeTotalWorkTargetReps => _activeTotalWorkTargetReps;
+  List<int> get activeTotalWorkSets => List.unmodifiable(_activeTotalWorkSets);
+  int get activeTotalWorkCompletedReps =>
+      _activeTotalWorkSets.fold(0, (s, r) => s + r);
+  int get activeTotalWorkRemainingReps =>
+      (_activeTotalWorkTargetReps - activeTotalWorkCompletedReps)
+          .clamp(0, _activeTotalWorkTargetReps);
 
   Future<void> loadFromDisk() async {
     final prefs = await SharedPreferences.getInstance();
@@ -300,7 +356,7 @@ class TrainingState extends ChangeNotifier {
 
   Map<String, dynamic> _buildPayload() {
     return <String, dynamic>{
-      'schemaVersion': 1,
+      'schemaVersion': 2,
       'activeDailyMethod': _activeDailyMethod.name,
       'nutritionMode': _nutritionMode.name,
       'backupPreference': _backupPreference.name,
@@ -314,6 +370,17 @@ class TrainingState extends ChangeNotifier {
       'frequencyTrackingDate': _frequencyTrackingDate.toIso8601String(),
       'todayFrequencySets':
           _todayFrequencySets.map((s) => s.toJsonMap()).toList(),
+      // Ladder in-progress state
+      'activeLadderExercise': _activeLadderExercise,
+      'activeLadderUsedNegatives': _activeLadderUsedNegatives,
+      'activeCompletedLadders': _activeCompletedLadders,
+      'activeCurrentLadderRungs': _activeCurrentLadderRungs,
+      // Total Work in-progress state
+      'activeTotalWorkExercise': _activeTotalWorkExercise,
+      'activeTotalWorkUsedNegatives': _activeTotalWorkUsedNegatives,
+      'activeTotalWorkModel': _activeTotalWorkModel,
+      'activeTotalWorkTargetReps': _activeTotalWorkTargetReps,
+      'activeTotalWorkSets': _activeTotalWorkSets,
       'usdaApiKey': _usdaApiKey,
       'forumSignedIn': _forumSignedIn,
       'forumDisplayName': _forumDisplayName,
@@ -367,6 +434,41 @@ class TrainingState extends ChangeNotifier {
                 item.map((key, value) => MapEntry(key.toString(), value)))
             .map(FrequencySet.fromJsonMap),
       );
+
+    // Restore Ladder in-progress state
+    _activeLadderExercise =
+        map['activeLadderExercise'] as String? ?? 'Chin-ups';
+    _activeLadderUsedNegatives =
+        map['activeLadderUsedNegatives'] as bool? ?? false;
+    _activeCompletedLadders
+      ..clear()
+      ..addAll(
+        (map['activeCompletedLadders'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<List<dynamic>>()
+            .map((sub) => sub.whereType<int>().toList()),
+      );
+    _activeCurrentLadderRungs
+      ..clear()
+      ..addAll(
+        (map['activeCurrentLadderRungs'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<int>(),
+      );
+
+    // Restore Total Work in-progress state
+    _activeTotalWorkExercise =
+        map['activeTotalWorkExercise'] as String? ?? 'Push-ups';
+    _activeTotalWorkUsedNegatives =
+        map['activeTotalWorkUsedNegatives'] as bool? ?? false;
+    _activeTotalWorkModel = map['activeTotalWorkModel'] as String? ?? 'daily';
+    _activeTotalWorkTargetReps =
+        (map['activeTotalWorkTargetReps'] as int? ?? 70).clamp(1, 2000);
+    _activeTotalWorkSets
+      ..clear()
+      ..addAll(
+        (map['activeTotalWorkSets'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<int>(),
+      );
+
     _usdaApiKey = map['usdaApiKey'] as String? ?? '';
     _forumSignedIn = map['forumSignedIn'] as bool? ?? false;
     _forumDisplayName = map['forumDisplayName'] as String? ?? '';
@@ -561,6 +663,7 @@ class TrainingState extends ChangeNotifier {
     _notifyAndPersist();
   }
 
+  // --- Frequency Method Mutators ---
   void addFrequencySet({
     required int pushUps,
     required int chinUps,
@@ -589,6 +692,104 @@ class TrainingState extends ChangeNotifier {
     _notifyAndPersist();
   }
 
+  // --- Ladder Method Mutators (In-Progress Session survives navigation) ---
+  void setLadderExercise(String exercise) {
+    if (_activeLadderExercise != exercise) {
+      _activeLadderExercise = exercise;
+      _notifyAndPersist();
+    }
+  }
+
+  void setLadderUsedNegatives(bool value) {
+    if (_activeLadderUsedNegatives != value) {
+      _activeLadderUsedNegatives = value;
+      _notifyAndPersist();
+    }
+  }
+
+  void recordLadderRung() {
+    _activeCurrentLadderRungs.add(activeLadderNextRung);
+    _notifyAndPersist();
+  }
+
+  void undoLadderRung() {
+    if (_activeCurrentLadderRungs.isNotEmpty) {
+      _activeCurrentLadderRungs.removeLast();
+      _notifyAndPersist();
+    }
+  }
+
+  void finishCurrentLadder() {
+    if (_activeCurrentLadderRungs.isNotEmpty) {
+      _activeCompletedLadders.add(List<int>.from(_activeCurrentLadderRungs));
+      _activeCurrentLadderRungs.clear();
+      _notifyAndPersist();
+    }
+  }
+
+  void removeCompletedLadder(int index) {
+    if (index >= 0 && index < _activeCompletedLadders.length) {
+      _activeCompletedLadders.removeAt(index);
+      _notifyAndPersist();
+    }
+  }
+
+  void resetActiveLadderSession() {
+    _activeCompletedLadders.clear();
+    _activeCurrentLadderRungs.clear();
+    _notifyAndPersist();
+  }
+
+  // --- Total Work Method Mutators (In-Progress Session survives navigation) ---
+  void setTotalWorkExercise(String exercise) {
+    if (_activeTotalWorkExercise != exercise) {
+      _activeTotalWorkExercise = exercise;
+      _notifyAndPersist();
+    }
+  }
+
+  void setTotalWorkUsedNegatives(bool value) {
+    if (_activeTotalWorkUsedNegatives != value) {
+      _activeTotalWorkUsedNegatives = value;
+      _notifyAndPersist();
+    }
+  }
+
+  void setTotalWorkModel(String model) {
+    if (_activeTotalWorkModel != model) {
+      _activeTotalWorkModel = model;
+      _notifyAndPersist();
+    }
+  }
+
+  void setTotalWorkTargetReps(int reps) {
+    final clamped = reps.clamp(1, 2000);
+    if (_activeTotalWorkTargetReps != clamped) {
+      _activeTotalWorkTargetReps = clamped;
+      _notifyAndPersist();
+    }
+  }
+
+  void addTotalWorkSet(int reps) {
+    if (reps > 0) {
+      _activeTotalWorkSets.add(reps);
+      _notifyAndPersist();
+    }
+  }
+
+  void removeTotalWorkSet(int index) {
+    if (index >= 0 && index < _activeTotalWorkSets.length) {
+      _activeTotalWorkSets.removeAt(index);
+      _notifyAndPersist();
+    }
+  }
+
+  void resetActiveTotalWorkSession() {
+    _activeTotalWorkSets.clear();
+    _notifyAndPersist();
+  }
+
+  // --- History Mutation ---
   void deleteHistoryEntry(String id) {
     final initialLen = _history.length;
     _history.removeWhere((entry) => entry.id == id);
