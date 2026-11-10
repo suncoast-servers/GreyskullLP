@@ -100,21 +100,32 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Choose your gym aesthetic: rugged dark charcoal, pitch black OLED, or daylight chalk.',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.65),
+                ),
               ),
               const SizedBox(height: 10),
               ...GreyskullSkin.values.map((skin) {
                 final isSelected = trainingState.activeSkin == skin;
+                final onSurface = Theme.of(context).colorScheme.onSurface;
+                final primaryColor = Theme.of(context).primaryColor;
                 return Card(
                   margin: const EdgeInsets.symmetric(vertical: 4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                     side: BorderSide(
                       color: isSelected
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey.shade400,
+                          ? primaryColor
+                          : Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withValues(alpha: 0.35),
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -128,8 +139,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       decoration: BoxDecoration(
                         color: Color(skin.bgHex),
                         borderRadius: BorderRadius.circular(8),
-                        border:
-                            Border.all(color: Colors.grey.shade600, width: 1.5),
+                        border: Border.all(
+                          color: onSurface.withValues(alpha: 0.35),
+                          width: 1.5,
+                        ),
                       ),
                       child: Center(
                         child: Container(
@@ -155,10 +168,8 @@ class _SettingsPageState extends State<SettingsPage> {
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? Theme.of(context)
-                                    .primaryColor
-                                    .withValues(alpha: 0.15)
-                                : Colors.grey.shade300,
+                                ? primaryColor.withValues(alpha: 0.15)
+                                : onSurface.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -167,8 +178,8 @@ class _SettingsPageState extends State<SettingsPage> {
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                               color: isSelected
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey.shade800,
+                                  ? primaryColor
+                                  : onSurface.withValues(alpha: 0.75),
                             ),
                           ),
                         ),
@@ -180,14 +191,19 @@ class _SettingsPageState extends State<SettingsPage> {
                         const SizedBox(height: 2),
                         Text(
                           skin.subtitle,
-                          style: const TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: onSurface.withValues(alpha: 0.9),
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           skin.description,
-                          style: const TextStyle(
-                              fontSize: 11, color: Colors.black54),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: onSurface.withValues(alpha: 0.65),
+                          ),
                         ),
                       ],
                     ),
