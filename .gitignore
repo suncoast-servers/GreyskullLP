@@ -80,3 +80,16 @@ macos/Runner.xcworkspace/
 *.tmp
 *.temp
 .DS_Store
+
+# Credentials, Keystores, and Signing Secrets (NEVER COMMIT)
+*.keystore
+*.jks
+key.properties
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+*.ipa
+GoogleService-Info.plist
+google-services.json
+
