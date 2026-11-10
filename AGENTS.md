@@ -1,4 +1,4 @@
-# AGENTS.md â€” GreyskullLP (Flutter)
+# AGENTS.md — GreyskullLP (Flutter)
 
 Guidance for **Cursor**, **Claude Code**, **Codex**, and human contributors.
 
@@ -10,8 +10,8 @@ Open-source **Flutter** app for the official **Greyskull LP** program (sanctione
 
 | Role | Who |
 |------|-----|
-| **Repo & product owner** | Ryan (@TheDevWhoSaysNi) â€” merges, store accounts, release go/no-go |
-| **Delivery lead (contractor)** | Assigned Flutter dev â€” feature branches, PRs, store-readiness implementation |
+| **Repo & product owner** | Ryan (@TheDevWhoSaysNi) — merges, store accounts, release go/no-go |
+| **Delivery lead (contractor)** | Umer (@umerwaqas92) — feature branches, PRs, store-readiness implementation |
 
 ## Git rules
 
@@ -29,7 +29,7 @@ flutter analyze
 flutter test
 ```
 
-Note target platform in PR (Android emulator, iOS simulator â€” iOS requires macOS).
+Note target platform in PR (Android emulator, iOS simulator — iOS requires macOS).
 
 ## Store / release
 
@@ -39,4 +39,4 @@ Note target platform in PR (Android emulator, iOS simulator â€” iOS require
 ## More detail
 
 - Org workflow: https://github.com/suncoast-servers/.github/blob/main/CONTRIBUTING.md
-- This repo: `docs/COLLABORATOR.md`
+- This repo: `docs/COLLABORATOR.md`, `docs/ROADMAP.md`, `CONTRIBUTING.md`
