@@ -27,7 +27,7 @@ flutter doctor -v
 
 `main` is **protected**: no direct pushes, PR + approval required, CODEOWNERS review.
 
-1. Pick a **GitHub Issue** (see milestone **Store readiness**) or ask Ryan to create one.
+1. Pick a **GitHub Issue** under milestone **[GreyskullLP v1](https://github.com/suncoast-servers/GreyskullLP/milestone/1)** — start from epic **#24** — or ask Ryan to create one.
 2. Sync and branch:
 
    ```bash
@@ -58,7 +58,7 @@ Branch names: `feat/<issue>-short-name` or `fix/<issue>-short-name`.
 | **Upwork** | Contract, schedule, rates, confidential product decisions |
 | **Email** | info@suncoastservers.com — escalations |
 
-Read [docs/ROADMAP.md](ROADMAP.md) for phases and priorities.
+Read [docs/ROADMAP.md](ROADMAP.md) and [docs/PRODUCT_SPEC.md](PRODUCT_SPEC.md) for phases and v1 scope.
 
 ## AI coding tools
 
