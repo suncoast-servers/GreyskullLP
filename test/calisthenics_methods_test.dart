@@ -457,7 +457,7 @@ void main() {
 
       expect(find.text('Edit Ladder Method Entry'), findsOneWidget);
       expect(find.text('Movement'), findsOneWidget);
-      expect(find.text('Peak Rung Achieved'), findsOneWidget);
+      expect(find.text('Peak Rung'), findsOneWidget);
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
 
@@ -475,7 +475,10 @@ void main() {
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Total Work session updated.'), findsOneWidget);
+      expect(find.text('Edit Total Work Method Entry'), findsNothing);
+      expect(find.text('Evening Total Work'), findsOneWidget);
+      expect(find.text('Afternoon Ladder'), findsOneWidget);
+      expect(find.text('Morning Frequency'), findsOneWidget);
     });
   });
 }
