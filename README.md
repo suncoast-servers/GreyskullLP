@@ -1,5 +1,11 @@
 # GreyskullLP
-App development for the official Greyskull LP workout program.
+
+[![Flutter CI](https://github.com/suncoast-servers/GreyskullLP/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/suncoast-servers/GreyskullLP/actions/workflows/flutter-ci.yml)
+[![License: GPL](https://img.shields.io/github/license/suncoast-servers/GreyskullLP)](LICENSE)
+[![Flutter](https://img.shields.io/badge/Flutter-stable-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Open source](https://img.shields.io/badge/open%20source-Greyskull%20LP-111111)](#)
+
+App development for the official Greyskull LP workout program — **free and open source** under [Suncoast Servers](https://github.com/suncoast-servers).
 
 **Organization:** [suncoast-servers](https://github.com/suncoast-servers) · **Project lead / merge authority:** [@TheDevWhoSaysNi](https://github.com/TheDevWhoSaysNi) · **Delivery lead:** [@umerwaqas92](https://github.com/umerwaqas92)
 
@@ -88,6 +94,7 @@ This repo uses **pull requests into `main`**. Direct pushes to `main` are blocke
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Everyone — links org policy + repo workflow |
 | [docs/COLLABORATOR.md](docs/COLLABORATOR.md) | Contractors — clone, branches, Flutter checks |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Priorities and release phases |
+| [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) | v1 product specification |
 | [AGENTS.md](AGENTS.md) | AI coding assistants |
 
 1. Read **COLLABORATOR.md** and org [CONTRIBUTING.md](https://github.com/suncoast-servers/.github/blob/main/CONTRIBUTING.md).
