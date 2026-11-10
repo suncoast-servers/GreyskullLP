@@ -62,12 +62,16 @@ class _WorkoutPageState extends State<WorkoutPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildWorkoutButton(IconData(0xf6e6, fontFamily: 'MaterialSymbols'), 'Weight Program', const WorkoutPageWeight()),
+              _buildWorkoutButton(
+                  IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
+                  'Weight Program',
+                  const WorkoutPageWeight()),
               _buildWorkoutButton(
                 Icons.repeat,
                 'Frequency Method',
                 const WorkoutPageFrequency(),
-                isActive: trainingState.activeDailyMethod == DailyMethod.frequency,
+                isActive:
+                    trainingState.activeDailyMethod == DailyMethod.frequency,
               ),
             ],
           ),
@@ -85,7 +89,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 Icons.balance,
                 'Total Work Method',
                 const WorkoutPageTotalWork(),
-                isActive: trainingState.activeDailyMethod == DailyMethod.totalWork,
+                isActive:
+                    trainingState.activeDailyMethod == DailyMethod.totalWork,
               ),
             ],
           ),
@@ -100,19 +105,24 @@ class _WorkoutPageState extends State<WorkoutPage> {
     Widget page, {
     bool isActive = false,
   }) {
-    return Column(
-      children: [
-        IconButton(
-          icon: Icon(icon, size: 50),
-          onPressed: () => _openSubPage(page, label),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => _openSubPage(page, label),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Icon(icon, size: 50),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(fontSize: 16)),
+            if (isActive)
+              const Text(
+                'Active',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+          ],
         ),
-        Text(label, style: const TextStyle(fontSize: 16)),
-        if (isActive)
-          const Text(
-            'Active',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-          ),
-      ],
+      ),
     );
   }
 }

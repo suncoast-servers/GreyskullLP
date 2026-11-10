@@ -24,10 +24,13 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     _forumUrlController = TextEditingController(text: trainingState.forumUrl);
-    _forumLoginUrlController = TextEditingController(text: trainingState.forumLoginUrl);
-    _forumNameController = TextEditingController(text: trainingState.forumDisplayName);
+    _forumLoginUrlController =
+        TextEditingController(text: trainingState.forumLoginUrl);
+    _forumNameController =
+        TextEditingController(text: trainingState.forumDisplayName);
     _storeUrlController = TextEditingController(text: trainingState.storeUrl);
-    _usdaApiKeyController = TextEditingController(text: trainingState.usdaApiKey);
+    _usdaApiKeyController =
+        TextEditingController(text: trainingState.usdaApiKey);
   }
 
   @override
@@ -60,19 +63,23 @@ class _SettingsPageState extends State<SettingsPage> {
     await SharePlus.instance.share(
       ShareParams(
         text: 'Greyskull LP backup export',
-        files: <XFile>[XFile.fromData(bytes, mimeType: 'application/json', name: fileName)],
+        files: <XFile>[
+          XFile.fromData(bytes, mimeType: 'application/json', name: fileName)
+        ],
       ),
     );
   }
 
   Future<void> _restoreBackup() async {
-    final ok = await trainingState.importBackupJson(_backupImportController.text);
+    final ok =
+        await trainingState.importBackupJson(_backupImportController.text);
     if (!mounted) {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'Backup restored successfully' : 'Backup restore failed'),
+        content:
+            Text(ok ? 'Backup restored successfully' : 'Backup restore failed'),
       ),
     );
   }
@@ -116,34 +123,34 @@ class _SettingsPageState extends State<SettingsPage> {
               _TargetAdjuster(
                 label: 'Push-ups',
                 value: trainingState.dailyPushUpTarget,
-                onDecrease: () =>
-                    trainingState.setDailyPushUpTarget(trainingState.dailyPushUpTarget - 5),
-                onIncrease: () =>
-                    trainingState.setDailyPushUpTarget(trainingState.dailyPushUpTarget + 5),
+                onDecrease: () => trainingState
+                    .setDailyPushUpTarget(trainingState.dailyPushUpTarget - 5),
+                onIncrease: () => trainingState
+                    .setDailyPushUpTarget(trainingState.dailyPushUpTarget + 5),
               ),
               _TargetAdjuster(
                 label: 'Chin-ups / negatives',
                 value: trainingState.dailyChinUpTarget,
-                onDecrease: () =>
-                    trainingState.setDailyChinUpTarget(trainingState.dailyChinUpTarget - 1),
-                onIncrease: () =>
-                    trainingState.setDailyChinUpTarget(trainingState.dailyChinUpTarget + 1),
+                onDecrease: () => trainingState
+                    .setDailyChinUpTarget(trainingState.dailyChinUpTarget - 1),
+                onIncrease: () => trainingState
+                    .setDailyChinUpTarget(trainingState.dailyChinUpTarget + 1),
               ),
               _TargetAdjuster(
                 label: 'Daily protein target (g)',
                 value: trainingState.dailyProteinTarget,
-                onDecrease: () =>
-                    trainingState.setDailyProteinTarget(trainingState.dailyProteinTarget - 5),
-                onIncrease: () =>
-                    trainingState.setDailyProteinTarget(trainingState.dailyProteinTarget + 5),
+                onDecrease: () => trainingState.setDailyProteinTarget(
+                    trainingState.dailyProteinTarget - 5),
+                onIncrease: () => trainingState.setDailyProteinTarget(
+                    trainingState.dailyProteinTarget + 5),
               ),
               _TargetAdjuster(
                 label: 'Daily calorie target',
                 value: trainingState.dailyCalorieTarget,
-                onDecrease: () =>
-                    trainingState.setDailyCalorieTarget(trainingState.dailyCalorieTarget - 50),
-                onIncrease: () =>
-                    trainingState.setDailyCalorieTarget(trainingState.dailyCalorieTarget + 50),
+                onDecrease: () => trainingState.setDailyCalorieTarget(
+                    trainingState.dailyCalorieTarget - 50),
+                onIncrease: () => trainingState.setDailyCalorieTarget(
+                    trainingState.dailyCalorieTarget + 50),
               ),
               const SizedBox(height: 8),
               SegmentedButton<NutritionMode>(
@@ -170,8 +177,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 (exercise) => CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(exercise),
-                  value: trainingState.selectedWeightOptionalExercises.contains(exercise),
-                  onChanged: (_) => trainingState.toggleWeightOptionalExercise(exercise),
+                  value: trainingState.selectedWeightOptionalExercises
+                      .contains(exercise),
+                  onChanged: (_) =>
+                      trainingState.toggleWeightOptionalExercise(exercise),
                 ),
               ),
               const Divider(height: 32),
@@ -184,8 +193,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 (exercise) => CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(exercise),
-                  value: trainingState.selectedDailyOptionalExercises.contains(exercise),
-                  onChanged: (_) => trainingState.toggleDailyOptionalExercise(exercise),
+                  value: trainingState.selectedDailyOptionalExercises
+                      .contains(exercise),
+                  onChanged: (_) =>
+                      trainingState.toggleDailyOptionalExercise(exercise),
                 ),
               ),
               const Divider(height: 32),

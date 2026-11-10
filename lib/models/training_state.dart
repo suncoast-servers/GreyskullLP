@@ -27,57 +27,146 @@ enum HistoryCategory {
   diet,
 }
 
+class FrequencySet {
+  FrequencySet({
+    required this.pushUps,
+    required this.chinUps,
+    required this.usedNegatives,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+
+  final int pushUps;
+  final int chinUps;
+  final bool usedNegatives;
+  final DateTime timestamp;
+
+  Map<String, dynamic> toJsonMap() => {
+        'pushUps': pushUps,
+        'chinUps': chinUps,
+        'usedNegatives': usedNegatives,
+        'timestamp': timestamp.toIso8601String(),
+      };
+
+  factory FrequencySet.fromJsonMap(Map<String, dynamic> map) {
+    return FrequencySet(
+      pushUps: map['pushUps'] as int? ?? 0,
+      chinUps: map['chinUps'] as int? ?? 0,
+      usedNegatives: map['usedNegatives'] as bool? ?? false,
+      timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
+}
+
 class HistoryEntry {
   HistoryEntry({
+    String? id,
     required this.timestamp,
     required this.title,
     required this.details,
     required this.category,
+    this.method,
     this.pushUps,
     this.chinUps,
     this.weightVolume,
     this.proteinGrams,
     this.calories,
-  });
+    this.methodMetadata,
+  }) : id = id ?? '${timestamp.microsecondsSinceEpoch}_${category.name}';
 
+  final String id;
   final DateTime timestamp;
   final String title;
   final String details;
   final HistoryCategory category;
+  final DailyMethod? method;
   final int? pushUps;
   final int? chinUps;
   final double? weightVolume;
   final int? proteinGrams;
   final int? calories;
+  final Map<String, dynamic>? methodMetadata;
+
+  HistoryEntry copyWith({
+    String? title,
+    String? details,
+    DailyMethod? method,
+    int? pushUps,
+    int? chinUps,
+    double? weightVolume,
+    int? proteinGrams,
+    int? calories,
+    Map<String, dynamic>? methodMetadata,
+  }) {
+    return HistoryEntry(
+      id: id,
+      timestamp: timestamp,
+      title: title ?? this.title,
+      details: details ?? this.details,
+      category: category,
+      method: method ?? this.method,
+      pushUps: pushUps ?? this.pushUps,
+      chinUps: chinUps ?? this.chinUps,
+      weightVolume: weightVolume ?? this.weightVolume,
+      proteinGrams: proteinGrams ?? this.proteinGrams,
+      calories: calories ?? this.calories,
+      methodMetadata: methodMetadata ?? this.methodMetadata,
+    );
+  }
 
   Map<String, dynamic> toJsonMap() {
     return {
+      'id': id,
       'timestamp': timestamp.toIso8601String(),
       'title': title,
       'details': details,
       'category': category.name,
+      'method': method?.name,
       'pushUps': pushUps,
       'chinUps': chinUps,
       'weightVolume': weightVolume,
       'proteinGrams': proteinGrams,
       'calories': calories,
+      'methodMetadata': methodMetadata,
     };
   }
 
   factory HistoryEntry.fromJsonMap(Map<String, dynamic> map) {
+    DailyMethod? parsedMethod;
+    final methodStr = map['method'] as String?;
+    if (methodStr != null) {
+      for (final m in DailyMethod.values) {
+        if (m.name == methodStr) {
+          parsedMethod = m;
+          break;
+        }
+      }
+    }
+
+    final ts =
+        DateTime.tryParse(map['timestamp'] as String? ?? '') ?? DateTime.now();
+    final catName = map['category'] as String? ?? '';
+    final category = HistoryCategory.values.firstWhere(
+      (value) => value.name == catName,
+      orElse: () => HistoryCategory.daily,
+    );
+
     return HistoryEntry(
-      timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ?? DateTime.now(),
+      id: map['id'] as String? ??
+          '${ts.microsecondsSinceEpoch}_${category.name}',
+      timestamp: ts,
       title: map['title'] as String? ?? 'Session',
       details: map['details'] as String? ?? '',
-      category: HistoryCategory.values.firstWhere(
-        (value) => value.name == (map['category'] as String? ?? ''),
-        orElse: () => HistoryCategory.daily,
-      ),
+      category: category,
+      method: parsedMethod,
       pushUps: map['pushUps'] as int?,
       chinUps: map['chinUps'] as int?,
       weightVolume: (map['weightVolume'] as num?)?.toDouble(),
       proteinGrams: map['proteinGrams'] as int?,
       calories: map['calories'] as int?,
+      methodMetadata: (map['methodMetadata'] as Map<dynamic, dynamic>?)?.map(
+        (key, value) => MapEntry(key.toString(), value),
+      ),
     );
   }
 }
@@ -114,6 +203,8 @@ class TrainingState extends ChangeNotifier {
   };
 
   final List<HistoryEntry> _history = [];
+  final List<FrequencySet> _todayFrequencySets = [];
+  DateTime _frequencyTrackingDate = _normalizedDay(DateTime.now());
 
   static const List<String> weightOptionalExerciseOptions = [
     'Barbell Row',
@@ -156,7 +247,17 @@ class TrainingState extends ChangeNotifier {
   Set<String> get selectedDailyOptionalExercises =>
       Set<String>.from(_selectedDailyOptionalExercises);
 
-  List<HistoryEntry> get history => List<HistoryEntry>.unmodifiable(_history.reversed);
+  List<HistoryEntry> get history =>
+      List<HistoryEntry>.unmodifiable(_history.reversed);
+
+  List<FrequencySet> get todayFrequencySets =>
+      List<FrequencySet>.unmodifiable(_todayFrequencySets);
+
+  int get todayFrequencyPushUps =>
+      _todayFrequencySets.fold(0, (sum, set) => sum + set.pushUps);
+
+  int get todayFrequencyChinUps =>
+      _todayFrequencySets.fold(0, (sum, set) => sum + set.chinUps);
 
   Future<void> loadFromDisk() async {
     final prefs = await SharedPreferences.getInstance();
@@ -176,7 +277,8 @@ class TrainingState extends ChangeNotifier {
     notifyListeners();
   }
 
-  static DateTime _normalizedDay(DateTime date) => DateTime(date.year, date.month, date.day);
+  static DateTime _normalizedDay(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
 
   void _rollMacroDayIfNeeded() {
     final today = _normalizedDay(DateTime.now());
@@ -184,6 +286,10 @@ class TrainingState extends ChangeNotifier {
       _macroTrackingDate = today;
       _dailyProteinConsumed = 0;
       _dailyCaloriesConsumed = 0;
+    }
+    if (_frequencyTrackingDate != today) {
+      _frequencyTrackingDate = today;
+      _todayFrequencySets.clear();
     }
   }
 
@@ -205,14 +311,19 @@ class TrainingState extends ChangeNotifier {
       'dailyProteinConsumed': _dailyProteinConsumed,
       'dailyCaloriesConsumed': _dailyCaloriesConsumed,
       'macroTrackingDate': _macroTrackingDate.toIso8601String(),
+      'frequencyTrackingDate': _frequencyTrackingDate.toIso8601String(),
+      'todayFrequencySets':
+          _todayFrequencySets.map((s) => s.toJsonMap()).toList(),
       'usdaApiKey': _usdaApiKey,
       'forumSignedIn': _forumSignedIn,
       'forumDisplayName': _forumDisplayName,
       'forumUrl': _forumUrl,
       'forumLoginUrl': _forumLoginUrl,
       'storeUrl': _storeUrl,
-      'selectedWeightOptionalExercises': _selectedWeightOptionalExercises.toList(),
-      'selectedDailyOptionalExercises': _selectedDailyOptionalExercises.toList(),
+      'selectedWeightOptionalExercises':
+          _selectedWeightOptionalExercises.toList(),
+      'selectedDailyOptionalExercises':
+          _selectedDailyOptionalExercises.toList(),
       'history': _history.map((entry) => entry.toJsonMap()).toList(),
     };
   }
@@ -232,12 +343,30 @@ class TrainingState extends ChangeNotifier {
     );
     _dailyPushUpTarget = (map['dailyPushUpTarget'] as int? ?? 50).clamp(1, 500);
     _dailyChinUpTarget = (map['dailyChinUpTarget'] as int? ?? 20).clamp(1, 250);
-    _dailyProteinTarget = (map['dailyProteinTarget'] as int? ?? 180).clamp(1, 400);
-    _dailyCalorieTarget = (map['dailyCalorieTarget'] as int? ?? 2200).clamp(1000, 8000);
-    _dailyProteinConsumed = (map['dailyProteinConsumed'] as int? ?? 0).clamp(0, 5000);
-    _dailyCaloriesConsumed = (map['dailyCaloriesConsumed'] as int? ?? 0).clamp(0, 20000);
+    _dailyProteinTarget =
+        (map['dailyProteinTarget'] as int? ?? 180).clamp(1, 400);
+    _dailyCalorieTarget =
+        (map['dailyCalorieTarget'] as int? ?? 2200).clamp(1000, 8000);
+    _dailyProteinConsumed =
+        (map['dailyProteinConsumed'] as int? ?? 0).clamp(0, 5000);
+    _dailyCaloriesConsumed =
+        (map['dailyCaloriesConsumed'] as int? ?? 0).clamp(0, 20000);
     _macroTrackingDate =
-        DateTime.tryParse(map['macroTrackingDate'] as String? ?? '') ?? _normalizedDay(DateTime.now());
+        DateTime.tryParse(map['macroTrackingDate'] as String? ?? '') ??
+            _normalizedDay(DateTime.now());
+    _frequencyTrackingDate =
+        DateTime.tryParse(map['frequencyTrackingDate'] as String? ?? '') ??
+            _normalizedDay(DateTime.now());
+
+    _todayFrequencySets
+      ..clear()
+      ..addAll(
+        (map['todayFrequencySets'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<Map>()
+            .map((item) =>
+                item.map((key, value) => MapEntry(key.toString(), value)))
+            .map(FrequencySet.fromJsonMap),
+      );
     _usdaApiKey = map['usdaApiKey'] as String? ?? '';
     _forumSignedIn = map['forumSignedIn'] as bool? ?? false;
     _forumDisplayName = map['forumDisplayName'] as String? ?? '';
@@ -247,11 +376,13 @@ class TrainingState extends ChangeNotifier {
 
     _selectedWeightOptionalExercises
       ..clear()
-      ..addAll((map['selectedWeightOptionalExercises'] as List<dynamic>? ?? <dynamic>[])
+      ..addAll((map['selectedWeightOptionalExercises'] as List<dynamic>? ??
+              <dynamic>[])
           .whereType<String>());
     _selectedDailyOptionalExercises
       ..clear()
-      ..addAll((map['selectedDailyOptionalExercises'] as List<dynamic>? ?? <dynamic>[])
+      ..addAll((map['selectedDailyOptionalExercises'] as List<dynamic>? ??
+              <dynamic>[])
           .whereType<String>());
 
     _history
@@ -259,7 +390,8 @@ class TrainingState extends ChangeNotifier {
       ..addAll(
         (map['history'] as List<dynamic>? ?? <dynamic>[])
             .whereType<Map>()
-            .map((item) => item.map((key, value) => MapEntry(key.toString(), value)))
+            .map((item) =>
+                item.map((key, value) => MapEntry(key.toString(), value)))
             .map(HistoryEntry.fromJsonMap),
       );
   }
@@ -429,23 +561,74 @@ class TrainingState extends ChangeNotifier {
     _notifyAndPersist();
   }
 
+  void addFrequencySet({
+    required int pushUps,
+    required int chinUps,
+    required bool usedNegatives,
+  }) {
+    _rollMacroDayIfNeeded();
+    _todayFrequencySets.add(
+      FrequencySet(
+        pushUps: pushUps,
+        chinUps: chinUps,
+        usedNegatives: usedNegatives,
+      ),
+    );
+    _notifyAndPersist();
+  }
+
+  void removeFrequencySet(int index) {
+    if (index >= 0 && index < _todayFrequencySets.length) {
+      _todayFrequencySets.removeAt(index);
+      _notifyAndPersist();
+    }
+  }
+
+  void clearTodayFrequencySets() {
+    _todayFrequencySets.clear();
+    _notifyAndPersist();
+  }
+
+  void deleteHistoryEntry(String id) {
+    final initialLen = _history.length;
+    _history.removeWhere((entry) => entry.id == id);
+    if (_history.length != initialLen) {
+      _notifyAndPersist();
+    }
+  }
+
+  void updateHistoryEntry(HistoryEntry updated) {
+    final index = _history.indexWhere((e) => e.id == updated.id);
+    if (index != -1) {
+      _history[index] = updated;
+      _notifyAndPersist();
+    }
+  }
+
   void logDailyMethodSession({
     required DailyMethod method,
     required int pushUps,
     required int chinUps,
     required bool usedNegatives,
     required String optionalExerciseSummary,
+    String? title,
+    String? customDetails,
+    Map<String, dynamic>? metadata,
   }) {
     final methodName = methodLabel(method);
+    final fallbackDetails =
+        'Push-ups: $pushUps, Chin-ups: $chinUps${usedNegatives ? ' (negatives used)' : ''}\nOptional: $optionalExerciseSummary';
+
     _history.add(
       HistoryEntry(
         timestamp: DateTime.now(),
-        title: '$methodName Session',
+        title: title ?? '$methodName Session',
         category: HistoryCategory.daily,
+        method: method,
         pushUps: pushUps,
         chinUps: chinUps,
-        details:
-            'Push-ups: $pushUps, Chin-ups: $chinUps${usedNegatives ? ' (negatives used)' : ''}\nOptional: $optionalExerciseSummary',
+        details: customDetails ?? fallbackDetails,
+        methodMetadata: metadata,
       ),
     );
     _notifyAndPersist();
@@ -466,7 +649,8 @@ class TrainingState extends ChangeNotifier {
         category: HistoryCategory.diet,
         proteinGrams: proteinGrams,
         calories: calories,
-        details: 'Protein: ${proteinGrams}g, Calories: $calories${note.isEmpty ? '' : '\nNote: $note'}',
+        details:
+            'Protein: ${proteinGrams}g, Calories: $calories${note.isEmpty ? '' : '\nNote: $note'}',
       ),
     );
     _notifyAndPersist();
