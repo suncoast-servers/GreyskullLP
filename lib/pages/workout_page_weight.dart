@@ -35,14 +35,19 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   }
 
   void _logSession() {
-    final coreSummary =
-        _completedCoreLifts.isEmpty ? 'No core lifts marked complete' : _completedCoreLifts.join(', ');
-    final optionalSummary = trainingState.selectedWeightOptionalExercises.isEmpty
-        ? 'None selected'
-        : trainingState.selectedWeightOptionalExercises.join(', ');
-    final benchVolume = _fieldDouble(_benchWeightController) * _fieldDouble(_benchRepsController);
-    final squatVolume = _fieldDouble(_squatWeightController) * _fieldDouble(_squatRepsController);
-    final ohpVolume = _fieldDouble(_ohpWeightController) * _fieldDouble(_ohpRepsController);
+    final coreSummary = _completedCoreLifts.isEmpty
+        ? 'No core lifts marked complete'
+        : _completedCoreLifts.join(', ');
+    final optionalSummary =
+        trainingState.selectedWeightOptionalExercises.isEmpty
+            ? 'None selected'
+            : trainingState.selectedWeightOptionalExercises.join(', ');
+    final benchVolume = _fieldDouble(_benchWeightController) *
+        _fieldDouble(_benchRepsController);
+    final squatVolume = _fieldDouble(_squatWeightController) *
+        _fieldDouble(_squatRepsController);
+    final ohpVolume =
+        _fieldDouble(_ohpWeightController) * _fieldDouble(_ohpRepsController);
     final totalVolume = benchVolume + squatVolume + ohpVolume;
 
     trainingState.logWeightSession(
@@ -79,10 +84,12 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text('Weekly Schedule', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Weekly Schedule',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     SizedBox(height: 6),
                     Text('Mon: Workout A (Squat, Bench Press, Chin-up work)'),
-                    Text('Wed: Workout B (Squat, Overhead Press, Push-up work)'),
+                    Text(
+                        'Wed: Workout B (Squat, Overhead Press, Push-up work)'),
                     Text('Fri: Workout A, then alternate next week (B/A/B)'),
                   ],
                 ),
@@ -214,7 +221,8 @@ class _LiftInputRow extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: weightController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'Weight',
                       border: OutlineInputBorder(),
@@ -225,7 +233,8 @@ class _LiftInputRow extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     controller: repsController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(
                       labelText: 'Reps',
                       border: OutlineInputBorder(),

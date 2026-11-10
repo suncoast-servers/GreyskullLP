@@ -12,7 +12,8 @@ class HomePage extends StatelessWidget {
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
       children: [
-        _buildIcon(context, IconData(0xf6e6, fontFamily: 'MaterialSymbols'), "Workout", 0),
+        _buildIcon(context, IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
+            "Workout", 0),
         _buildIcon(context, Icons.forum, "Forum", 1),
         _buildIcon(context, Icons.restaurant, "Diet", 2),
         _buildIcon(context, Icons.stacked_line_chart, "Stats", 3),
@@ -22,7 +23,8 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildIcon(BuildContext context, IconData icon, String label, int index) {
+  Widget _buildIcon(
+      BuildContext context, IconData icon, String label, int index) {
     return GestureDetector(
       onTap: () => onItemSelected(index),
       child: Column(

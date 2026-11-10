@@ -62,12 +62,16 @@ class _WorkoutPageState extends State<WorkoutPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildWorkoutButton(IconData(0xf6e6, fontFamily: 'MaterialSymbols'), 'Weight Program', const WorkoutPageWeight()),
+              _buildWorkoutButton(
+                  IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
+                  'Weight Program',
+                  const WorkoutPageWeight()),
               _buildWorkoutButton(
                 Icons.repeat,
                 'Frequency Method',
                 const WorkoutPageFrequency(),
-                isActive: trainingState.activeDailyMethod == DailyMethod.frequency,
+                isActive:
+                    trainingState.activeDailyMethod == DailyMethod.frequency,
               ),
             ],
           ),
@@ -85,7 +89,8 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 Icons.balance,
                 'Total Work Method',
                 const WorkoutPageTotalWork(),
-                isActive: trainingState.activeDailyMethod == DailyMethod.totalWork,
+                isActive:
+                    trainingState.activeDailyMethod == DailyMethod.totalWork,
               ),
             ],
           ),

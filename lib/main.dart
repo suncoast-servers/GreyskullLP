@@ -92,7 +92,8 @@ class MainPage extends StatefulWidget {
 
 class MainPageState extends State<MainPage> {
   int _selectedIndex = -1;
-  final ValueNotifier<String> _appBarTitle = ValueNotifier("Official Greyskull LP App");
+  final ValueNotifier<String> _appBarTitle =
+      ValueNotifier("Official Greyskull LP App");
   late final List<Widget> _pages;
 
   @override
@@ -159,20 +160,29 @@ class MainPageState extends State<MainPage> {
           ),
         ],
       ),
-      body: _selectedIndex == -1 ? HomePage(onItemSelected: _onItemTapped) : _pages[_selectedIndex],
+      body: _selectedIndex == -1
+          ? HomePage(onItemSelected: _onItemTapped)
+          : _pages[_selectedIndex],
       bottomNavigationBar: _selectedIndex == -1
           ? null
           : BottomNavigationBar(
               backgroundColor: theme.bottomNavigationBarTheme.backgroundColor,
-              selectedItemColor: theme.bottomNavigationBarTheme.selectedItemColor,
-              unselectedItemColor: theme.bottomNavigationBarTheme.unselectedItemColor,
+              selectedItemColor:
+                  theme.bottomNavigationBarTheme.selectedItemColor,
+              unselectedItemColor:
+                  theme.bottomNavigationBarTheme.unselectedItemColor,
               items: [
                 BottomNavigationBarItem(icon: exerciseIcon, label: 'Workout'),
-                BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
-                BottomNavigationBarItem(icon: Icon(Icons.restaurant), label: 'Diet'),
-                BottomNavigationBarItem(icon: Icon(Icons.stacked_line_chart), label: 'Stats'),
-                BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-                BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Store'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.forum), label: 'Forum'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.restaurant), label: 'Diet'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.stacked_line_chart), label: 'Stats'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.history), label: 'History'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.shopping_cart), label: 'Store'),
               ],
               currentIndex: _selectedIndex >= 0 ? _selectedIndex : 0,
               onTap: _onItemTapped,
@@ -182,13 +192,20 @@ class MainPageState extends State<MainPage> {
 
   String _getPageTitle(int index) {
     switch (index) {
-      case 0: return 'Workout';
-      case 1: return 'Forum';
-      case 2: return 'Diet';
-      case 3: return 'Stats';
-      case 4: return 'History';
-      case 5: return 'Store';
-      default: return 'Greyskull LP Workout';
+      case 0:
+        return 'Workout';
+      case 1:
+        return 'Forum';
+      case 2:
+        return 'Diet';
+      case 3:
+        return 'Stats';
+      case 4:
+        return 'History';
+      case 5:
+        return 'Store';
+      default:
+        return 'Greyskull LP Workout';
     }
   }
 }

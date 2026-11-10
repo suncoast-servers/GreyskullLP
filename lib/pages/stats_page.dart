@@ -30,11 +30,18 @@ class _StatsPageState extends State<StatsPage> {
     return AnimatedBuilder(
       animation: trainingState,
       builder: (context, _) {
-        final rangedEntries = trainingState.history.where((entry) => _isInRange(entry.timestamp)).toList();
-        final weightEntries =
-            rangedEntries.where((entry) => entry.category == HistoryCategory.weight).toList();
-        final dailyEntries = rangedEntries.where((entry) => entry.category == HistoryCategory.daily).toList();
-        final dietEntries = rangedEntries.where((entry) => entry.category == HistoryCategory.diet).toList();
+        final rangedEntries = trainingState.history
+            .where((entry) => _isInRange(entry.timestamp))
+            .toList();
+        final weightEntries = rangedEntries
+            .where((entry) => entry.category == HistoryCategory.weight)
+            .toList();
+        final dailyEntries = rangedEntries
+            .where((entry) => entry.category == HistoryCategory.daily)
+            .toList();
+        final dietEntries = rangedEntries
+            .where((entry) => entry.category == HistoryCategory.diet)
+            .toList();
 
         final totalVolume = weightEntries.fold<double>(
           0,
@@ -69,12 +76,15 @@ class _StatsPageState extends State<StatsPage> {
                 ButtonSegment(value: _Range.all, label: Text('All')),
               ],
               selected: {_range},
-              onSelectionChanged: (selection) => setState(() => _range = selection.first),
+              onSelectionChanged: (selection) =>
+                  setState(() => _range = selection.first),
             ),
             const SizedBox(height: 12),
-            _StatCard(title: 'Weight Volume', value: totalVolume.toStringAsFixed(1)),
+            _StatCard(
+                title: 'Weight Volume', value: totalVolume.toStringAsFixed(1)),
             _StatCard(title: 'Push-ups Logged', value: '$totalPushUps'),
-            _StatCard(title: 'Chin-ups / Negatives Logged', value: '$totalChinUps'),
+            _StatCard(
+                title: 'Chin-ups / Negatives Logged', value: '$totalChinUps'),
             _StatCard(title: 'Protein Logged (g)', value: '$totalProtein'),
             const SizedBox(height: 12),
             const Text(

@@ -23,7 +23,8 @@ class _ForumPageState extends State<ForumPage> {
     if (_controller != null) {
       return;
     }
-    _controller = WebViewController()..setJavaScriptMode(JavaScriptMode.unrestricted);
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted);
     _controller!.loadRequest(Uri.parse(trainingState.forumUrl));
   }
 

@@ -21,7 +21,8 @@ class _StorePageState extends State<StorePage> {
 
   void _initControllerIfNeeded() {
     final url = trainingState.storeUrl;
-    _controller ??= WebViewController()..setJavaScriptMode(JavaScriptMode.unrestricted);
+    _controller ??= WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted);
     _controller!.loadRequest(Uri.parse(url));
   }
 

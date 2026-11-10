@@ -66,7 +66,8 @@ class HistoryEntry {
 
   factory HistoryEntry.fromJsonMap(Map<String, dynamic> map) {
     return HistoryEntry(
-      timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ?? DateTime.now(),
+      timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ??
+          DateTime.now(),
       title: map['title'] as String? ?? 'Session',
       details: map['details'] as String? ?? '',
       category: HistoryCategory.values.firstWhere(
@@ -156,7 +157,8 @@ class TrainingState extends ChangeNotifier {
   Set<String> get selectedDailyOptionalExercises =>
       Set<String>.from(_selectedDailyOptionalExercises);
 
-  List<HistoryEntry> get history => List<HistoryEntry>.unmodifiable(_history.reversed);
+  List<HistoryEntry> get history =>
+      List<HistoryEntry>.unmodifiable(_history.reversed);
 
   Future<void> loadFromDisk() async {
     final prefs = await SharedPreferences.getInstance();
@@ -176,7 +178,8 @@ class TrainingState extends ChangeNotifier {
     notifyListeners();
   }
 
-  static DateTime _normalizedDay(DateTime date) => DateTime(date.year, date.month, date.day);
+  static DateTime _normalizedDay(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
 
   void _rollMacroDayIfNeeded() {
     final today = _normalizedDay(DateTime.now());
@@ -211,8 +214,10 @@ class TrainingState extends ChangeNotifier {
       'forumUrl': _forumUrl,
       'forumLoginUrl': _forumLoginUrl,
       'storeUrl': _storeUrl,
-      'selectedWeightOptionalExercises': _selectedWeightOptionalExercises.toList(),
-      'selectedDailyOptionalExercises': _selectedDailyOptionalExercises.toList(),
+      'selectedWeightOptionalExercises':
+          _selectedWeightOptionalExercises.toList(),
+      'selectedDailyOptionalExercises':
+          _selectedDailyOptionalExercises.toList(),
       'history': _history.map((entry) => entry.toJsonMap()).toList(),
     };
   }
@@ -232,12 +237,17 @@ class TrainingState extends ChangeNotifier {
     );
     _dailyPushUpTarget = (map['dailyPushUpTarget'] as int? ?? 50).clamp(1, 500);
     _dailyChinUpTarget = (map['dailyChinUpTarget'] as int? ?? 20).clamp(1, 250);
-    _dailyProteinTarget = (map['dailyProteinTarget'] as int? ?? 180).clamp(1, 400);
-    _dailyCalorieTarget = (map['dailyCalorieTarget'] as int? ?? 2200).clamp(1000, 8000);
-    _dailyProteinConsumed = (map['dailyProteinConsumed'] as int? ?? 0).clamp(0, 5000);
-    _dailyCaloriesConsumed = (map['dailyCaloriesConsumed'] as int? ?? 0).clamp(0, 20000);
+    _dailyProteinTarget =
+        (map['dailyProteinTarget'] as int? ?? 180).clamp(1, 400);
+    _dailyCalorieTarget =
+        (map['dailyCalorieTarget'] as int? ?? 2200).clamp(1000, 8000);
+    _dailyProteinConsumed =
+        (map['dailyProteinConsumed'] as int? ?? 0).clamp(0, 5000);
+    _dailyCaloriesConsumed =
+        (map['dailyCaloriesConsumed'] as int? ?? 0).clamp(0, 20000);
     _macroTrackingDate =
-        DateTime.tryParse(map['macroTrackingDate'] as String? ?? '') ?? _normalizedDay(DateTime.now());
+        DateTime.tryParse(map['macroTrackingDate'] as String? ?? '') ??
+            _normalizedDay(DateTime.now());
     _usdaApiKey = map['usdaApiKey'] as String? ?? '';
     _forumSignedIn = map['forumSignedIn'] as bool? ?? false;
     _forumDisplayName = map['forumDisplayName'] as String? ?? '';
@@ -247,11 +257,13 @@ class TrainingState extends ChangeNotifier {
 
     _selectedWeightOptionalExercises
       ..clear()
-      ..addAll((map['selectedWeightOptionalExercises'] as List<dynamic>? ?? <dynamic>[])
+      ..addAll((map['selectedWeightOptionalExercises'] as List<dynamic>? ??
+              <dynamic>[])
           .whereType<String>());
     _selectedDailyOptionalExercises
       ..clear()
-      ..addAll((map['selectedDailyOptionalExercises'] as List<dynamic>? ?? <dynamic>[])
+      ..addAll((map['selectedDailyOptionalExercises'] as List<dynamic>? ??
+              <dynamic>[])
           .whereType<String>());
 
     _history
@@ -259,7 +271,8 @@ class TrainingState extends ChangeNotifier {
       ..addAll(
         (map['history'] as List<dynamic>? ?? <dynamic>[])
             .whereType<Map>()
-            .map((item) => item.map((key, value) => MapEntry(key.toString(), value)))
+            .map((item) =>
+                item.map((key, value) => MapEntry(key.toString(), value)))
             .map(HistoryEntry.fromJsonMap),
       );
   }
@@ -466,7 +479,8 @@ class TrainingState extends ChangeNotifier {
         category: HistoryCategory.diet,
         proteinGrams: proteinGrams,
         calories: calories,
-        details: 'Protein: ${proteinGrams}g, Calories: $calories${note.isEmpty ? '' : '\nNote: $note'}',
+        details:
+            'Protein: ${proteinGrams}g, Calories: $calories${note.isEmpty ? '' : '\nNote: $note'}',
       ),
     );
     _notifyAndPersist();
