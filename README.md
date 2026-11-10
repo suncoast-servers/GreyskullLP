@@ -1,7 +1,7 @@
 # GreyskullLP
 App development for the official Greyskull LP workout program.
 
-**Organization:** [suncoast-servers](https://github.com/suncoast-servers) Â· **Project lead / merge authority:** [@TheDevWhoSaysNi](https://github.com/TheDevWhoSaysNi)
+**Organization:** [suncoast-servers](https://github.com/suncoast-servers) · **Project lead / merge authority:** [@TheDevWhoSaysNi](https://github.com/TheDevWhoSaysNi) · **Delivery lead:** [@umerwaqas92](https://github.com/umerwaqas92)
 
 ## Description
 GreyskullLP is a fitness app designed to help users track their workout routines and progress. The app offers customizable exercises and allows users to monitor their improvements over time. This project has been sanctioned by Johnny Pain, the author of the official workout plan, and I am working on this with his permission.
@@ -81,13 +81,18 @@ Use this checklist before adding new features so the scaffold stays healthy.
 
 ## Contributing (contractors & collaborators)
 
-This repo uses **pull requests into `main`**. Direct pushes to `main` are blocked.
+This repo uses **pull requests into `main`**. Direct pushes to `main` are blocked (ruleset + CODEOWNERS).
 
-1. Read [docs/COLLABORATOR.md](docs/COLLABORATOR.md) and org [CONTRIBUTING.md](https://github.com/suncoast-servers/.github/blob/main/CONTRIBUTING.md).
+| Doc | Audience |
+|-----|----------|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Everyone — links org policy + repo workflow |
+| [docs/COLLABORATOR.md](docs/COLLABORATOR.md) | Contractors — clone, branches, Flutter checks |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Priorities and release phases |
+| [AGENTS.md](AGENTS.md) | AI coding assistants |
+
+1. Read **COLLABORATOR.md** and org [CONTRIBUTING.md](https://github.com/suncoast-servers/.github/blob/main/CONTRIBUTING.md).
 2. Branch: `feat/<issue>-short-description` or `fix/...`.
 3. Open a PR; wait for review from **@TheDevWhoSaysNi** before merge.
-
-Using AI coding tools? See [AGENTS.md](AGENTS.md).
 
 ## License
 This project is licensed under the GNU GPL License.
