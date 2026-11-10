@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/diet_page.dart';
 import 'package:greyskull_lp/pages/forum_page.dart';
 import 'package:greyskull_lp/pages/history_page.dart';
@@ -11,7 +12,9 @@ import 'package:greyskull_lp/pages/store_page.dart';
 import 'package:greyskull_lp/pages/workout_page.dart';
 import 'themes/theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await trainingState.loadFromDisk();
   runApp(const GreyskullApp());
 }
 

@@ -13,7 +13,7 @@ GreyskullLP is a fitness app designed to help users track their workout routines
 ## Technologies Used
 - **Front End**: Dart (Flutter)
 - **Back End**: Dart (Flutter)
-- **Database**: SQL TBD
+- **Local Storage**: SharedPreferences (JSON, on-device)
 
 ## Installation Instructions
 1. Clone the repository:
@@ -29,6 +29,19 @@ GreyskullLP is a fitness app designed to help users track their workout routines
 
 ## Usage Instructions
 - Once the app is running, follow the on-screen prompts to input exercises and track your progress.
+
+## Data Storage Transparency
+- User data is stored locally on-device in SharedPreferences as JSON.
+- Data currently stored: workout settings, daily targets, forum/store URLs, sign-in flag, diet totals, and activity history.
+- No cloud sync is enabled yet.
+- Planned migration path: SQLite (`sqflite`/`drift`) once multi-table querying, backups, and analytics become larger in scope.
+- Backup support: export/share backup JSON and restore from backup JSON in Settings.
+
+## Integration Notes
+- Forum page is prepped for WordPress flow with configurable forum URL/login URL from settings.
+- Store page currently supports direct embedded storefront loading and can point to [GREYSKULLNATION STORE](https://store.greyskullnation.com/).
+- Diet search uses free sources: Open Food Facts first, with optional USDA fallback key.
+- TODO: sync food/workout results to forum posts for accountability updates.
 
 ## Quick Emulator Verification
 Use this checklist before adding new features so the scaffold stays healthy.

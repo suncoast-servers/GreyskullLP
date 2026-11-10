@@ -1,13 +1,378 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
-class SettingsPage extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:greyskull_lp/models/training_state.dart';
+import 'package:share_plus/share_plus.dart';
+
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  late final TextEditingController _forumUrlController;
+  late final TextEditingController _forumLoginUrlController;
+  late final TextEditingController _forumNameController;
+  late final TextEditingController _storeUrlController;
+  late final TextEditingController _usdaApiKeyController;
+  final TextEditingController _backupImportController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _forumUrlController = TextEditingController(text: trainingState.forumUrl);
+    _forumLoginUrlController = TextEditingController(text: trainingState.forumLoginUrl);
+    _forumNameController = TextEditingController(text: trainingState.forumDisplayName);
+    _storeUrlController = TextEditingController(text: trainingState.storeUrl);
+    _usdaApiKeyController = TextEditingController(text: trainingState.usdaApiKey);
+  }
+
+  @override
+  void dispose() {
+    _forumUrlController.dispose();
+    _forumLoginUrlController.dispose();
+    _forumNameController.dispose();
+    _storeUrlController.dispose();
+    _usdaApiKeyController.dispose();
+    _backupImportController.dispose();
+    super.dispose();
+  }
+
+  void _saveUrlSettings() {
+    trainingState.setForumUrl(_forumUrlController.text);
+    trainingState.setForumLoginUrl(_forumLoginUrlController.text);
+    trainingState.setStoreUrl(_storeUrlController.text);
+    trainingState.setUsdaApiKey(_usdaApiKeyController.text);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Settings saved')),
+    );
+  }
+
+  Future<void> _shareBackup() async {
+    final payload = trainingState.exportBackupJson();
+    final bytes = Uint8List.fromList(utf8.encode(payload));
+    final now = DateTime.now();
+    final fileName =
+        'greyskull-backup-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.json';
+    await SharePlus.instance.share(
+      ShareParams(
+        text: 'Greyskull LP backup export',
+        files: <XFile>[XFile.fromData(bytes, mimeType: 'application/json', name: fileName)],
+      ),
+    );
+  }
+
+  Future<void> _restoreBackup() async {
+    final ok = await trainingState.importBackupJson(_backupImportController.text);
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? 'Backup restored successfully' : 'Backup restore failed'),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: const Center(child: Text('Settings Page')),
+      body: AnimatedBuilder(
+        animation: trainingState,
+        builder: (context, _) {
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text(
+                'Preferred Daily Method',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<DailyMethod>(
+                segments: DailyMethod.values
+                    .map(
+                      (method) => ButtonSegment<DailyMethod>(
+                        value: method,
+                        label: Text(TrainingState.methodLabel(method)),
+                      ),
+                    )
+                    .toList(),
+                selected: <DailyMethod>{trainingState.activeDailyMethod},
+                onSelectionChanged: (selection) {
+                  final method = selection.first;
+                  trainingState.setActiveDailyMethod(method);
+                },
+              ),
+              const Divider(height: 32),
+              const Text(
+                'Daily Repetition Targets',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              _TargetAdjuster(
+                label: 'Push-ups',
+                value: trainingState.dailyPushUpTarget,
+                onDecrease: () =>
+                    trainingState.setDailyPushUpTarget(trainingState.dailyPushUpTarget - 5),
+                onIncrease: () =>
+                    trainingState.setDailyPushUpTarget(trainingState.dailyPushUpTarget + 5),
+              ),
+              _TargetAdjuster(
+                label: 'Chin-ups / negatives',
+                value: trainingState.dailyChinUpTarget,
+                onDecrease: () =>
+                    trainingState.setDailyChinUpTarget(trainingState.dailyChinUpTarget - 1),
+                onIncrease: () =>
+                    trainingState.setDailyChinUpTarget(trainingState.dailyChinUpTarget + 1),
+              ),
+              _TargetAdjuster(
+                label: 'Daily protein target (g)',
+                value: trainingState.dailyProteinTarget,
+                onDecrease: () =>
+                    trainingState.setDailyProteinTarget(trainingState.dailyProteinTarget - 5),
+                onIncrease: () =>
+                    trainingState.setDailyProteinTarget(trainingState.dailyProteinTarget + 5),
+              ),
+              _TargetAdjuster(
+                label: 'Daily calorie target',
+                value: trainingState.dailyCalorieTarget,
+                onDecrease: () =>
+                    trainingState.setDailyCalorieTarget(trainingState.dailyCalorieTarget - 50),
+                onIncrease: () =>
+                    trainingState.setDailyCalorieTarget(trainingState.dailyCalorieTarget + 50),
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<NutritionMode>(
+                segments: NutritionMode.values
+                    .map(
+                      (mode) => ButtonSegment<NutritionMode>(
+                        value: mode,
+                        label: Text(TrainingState.nutritionModeLabel(mode)),
+                      ),
+                    )
+                    .toList(),
+                selected: <NutritionMode>{trainingState.nutritionMode},
+                onSelectionChanged: (selection) {
+                  trainingState.setNutritionMode(selection.first);
+                },
+              ),
+              const Divider(height: 32),
+              const Text(
+                'Weight Program Optional Exercises',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              ...TrainingState.weightOptionalExerciseOptions.map(
+                (exercise) => CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(exercise),
+                  value: trainingState.selectedWeightOptionalExercises.contains(exercise),
+                  onChanged: (_) => trainingState.toggleWeightOptionalExercise(exercise),
+                ),
+              ),
+              const Divider(height: 32),
+              const Text(
+                'Daily Method Optional Exercises',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              ...TrainingState.dailyOptionalExerciseOptions.map(
+                (exercise) => CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(exercise),
+                  value: trainingState.selectedDailyOptionalExercises.contains(exercise),
+                  onChanged: (_) => trainingState.toggleDailyOptionalExercise(exercise),
+                ),
+              ),
+              const Divider(height: 32),
+              const Text(
+                'Forum Integration (WordPress)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _forumNameController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Forum display name',
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        trainingState.setForumSignedIn(
+                          signedIn: true,
+                          displayName: _forumNameController.text,
+                        );
+                      },
+                      child: const Text('Mark Signed In'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        trainingState.setForumSignedIn(signedIn: false);
+                      },
+                      child: const Text('Sign Out'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                trainingState.forumSignedIn
+                    ? 'Forum status: signed in as ${trainingState.forumDisplayName.isEmpty ? 'user' : trainingState.forumDisplayName}'
+                    : 'Forum status: not signed in',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _forumUrlController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Forum URL',
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _forumLoginUrlController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Forum login URL',
+                ),
+              ),
+              const Divider(height: 32),
+              const Text(
+                'Store Integration',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _storeUrlController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Store URL',
+                ),
+              ),
+              const Divider(height: 32),
+              const Text(
+                'Free Calorie Data API',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Open Food Facts is used by default. Add a free USDA API key to enable fallback.',
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _usdaApiKeyController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'USDA API key (optional)',
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: _saveUrlSettings,
+                icon: const Icon(Icons.save),
+                label: const Text('Save Settings'),
+              ),
+              const Divider(height: 32),
+              const Text(
+                'Backups',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<BackupPreference>(
+                segments: BackupPreference.values
+                    .map(
+                      (mode) => ButtonSegment<BackupPreference>(
+                        value: mode,
+                        label: Text(TrainingState.backupPreferenceLabel(mode)),
+                      ),
+                    )
+                    .toList(),
+                selected: <BackupPreference>{trainingState.backupPreference},
+                onSelectionChanged: (selection) {
+                  trainingState.setBackupPreference(selection.first);
+                },
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _shareBackup,
+                icon: const Icon(Icons.ios_share),
+                label: const Text('Export and Share Backup JSON'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _backupImportController,
+                minLines: 3,
+                maxLines: 5,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Paste backup JSON to restore',
+                ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _restoreBackup,
+                icon: const Icon(Icons.restore),
+                label: const Text('Restore from Pasted Backup'),
+              ),
+              const Divider(height: 32),
+              const Text(
+                'Data Storage Transparency',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'This app currently stores workouts, history, and settings locally on-device using SharedPreferences JSON. '
+                'Cloud sync is not enabled yet; export/share backup is available.',
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _TargetAdjuster extends StatelessWidget {
+  const _TargetAdjuster({
+    required this.label,
+    required this.value,
+    required this.onDecrease,
+    required this.onIncrease,
+  });
+
+  final String label;
+  final int value;
+  final VoidCallback onDecrease;
+  final VoidCallback onIncrease;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text('$label: $value'),
+            ),
+            IconButton(onPressed: onDecrease, icon: const Icon(Icons.remove)),
+            IconButton(onPressed: onIncrease, icon: const Icon(Icons.add)),
+          ],
+        ),
+      ),
     );
   }
 }
