@@ -34,7 +34,8 @@ class FoodSearchService {
   }
 
   Future<List<FoodSearchResult>> _searchOpenFoodFacts(String query) async {
-    final uri = Uri.https('world.openfoodfacts.org', '/cgi/search.pl', <String, String>{
+    final uri =
+        Uri.https('world.openfoodfacts.org', '/cgi/search.pl', <String, String>{
       'search_terms': query,
       'search_simple': '1',
       'action': 'process',
@@ -65,7 +66,8 @@ class FoodSearchService {
       if (nutrimentsRaw is! Map) {
         continue;
       }
-      final nutriments = nutrimentsRaw.map((key, value) => MapEntry(key.toString(), value));
+      final nutriments =
+          nutrimentsRaw.map((key, value) => MapEntry(key.toString(), value));
 
       final calories = _asInt(
         nutriments['energy-kcal_100g'] ?? nutriments['energy-kcal_serving'],
@@ -93,8 +95,10 @@ class FoodSearchService {
     return output;
   }
 
-  Future<List<FoodSearchResult>> _searchUsda(String query, String apiKey) async {
-    final uri = Uri.https('api.nal.usda.gov', '/fdc/v1/foods/search', <String, String>{
+  Future<List<FoodSearchResult>> _searchUsda(
+      String query, String apiKey) async {
+    final uri =
+        Uri.https('api.nal.usda.gov', '/fdc/v1/foods/search', <String, String>{
       'api_key': apiKey,
       'query': query,
       'pageSize': '10',
@@ -125,7 +129,8 @@ class FoodSearchService {
         if (nutrientRaw is! Map) {
           continue;
         }
-        final nutrient = nutrientRaw.map((key, value) => MapEntry(key.toString(), value));
+        final nutrient =
+            nutrientRaw.map((key, value) => MapEntry(key.toString(), value));
         final nutrientNumber = nutrient['nutrientNumber']?.toString() ?? '';
         if (nutrientNumber == '1008') {
           calories = _asInt(nutrient['value']);

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:share_plus/share_plus.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -24,10 +25,13 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     _forumUrlController = TextEditingController(text: trainingState.forumUrl);
-    _forumLoginUrlController = TextEditingController(text: trainingState.forumLoginUrl);
-    _forumNameController = TextEditingController(text: trainingState.forumDisplayName);
+    _forumLoginUrlController =
+        TextEditingController(text: trainingState.forumLoginUrl);
+    _forumNameController =
+        TextEditingController(text: trainingState.forumDisplayName);
     _storeUrlController = TextEditingController(text: trainingState.storeUrl);
-    _usdaApiKeyController = TextEditingController(text: trainingState.usdaApiKey);
+    _usdaApiKeyController =
+        TextEditingController(text: trainingState.usdaApiKey);
   }
 
   @override
@@ -60,19 +64,23 @@ class _SettingsPageState extends State<SettingsPage> {
     await SharePlus.instance.share(
       ShareParams(
         text: 'Greyskull LP backup export',
-        files: <XFile>[XFile.fromData(bytes, mimeType: 'application/json', name: fileName)],
+        files: <XFile>[
+          XFile.fromData(bytes, mimeType: 'application/json', name: fileName)
+        ],
       ),
     );
   }
 
   Future<void> _restoreBackup() async {
-    final ok = await trainingState.importBackupJson(_backupImportController.text);
+    final ok =
+        await trainingState.importBackupJson(_backupImportController.text);
     if (!mounted) {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'Backup restored successfully' : 'Backup restore failed'),
+        content:
+            Text(ok ? 'Backup restored successfully' : 'Backup restore failed'),
       ),
     );
   }
@@ -87,6 +95,109 @@ class _SettingsPageState extends State<SettingsPage> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              const Text(
+                'Theme & Skins (Greyskull Motif)',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Choose your gym aesthetic: rugged dark charcoal, pitch black OLED, or daylight chalk.',
+                style: TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+              const SizedBox(height: 10),
+              ...GreyskullSkin.values.map((skin) {
+                final isSelected = trainingState.activeSkin == skin;
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(
+                      color: isSelected
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey.shade400,
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    onTap: () => trainingState.setActiveSkin(skin),
+                    leading: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Color(skin.bgHex),
+                        borderRadius: BorderRadius.circular(8),
+                        border:
+                            Border.all(color: Colors.grey.shade600, width: 1.5),
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: Color(skin.accentHex),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ),
+                    title: Row(
+                      children: [
+                        Text(
+                          skin.displayName,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Theme.of(context)
+                                    .primaryColor
+                                    .withValues(alpha: 0.15)
+                                : Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            skin.badge,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.grey.shade800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 2),
+                        Text(
+                          skin.subtitle,
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          skin.description,
+                          style: const TextStyle(
+                              fontSize: 11, color: Colors.black54),
+                        ),
+                      ],
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        : null,
+                  ),
+                );
+              }),
+              const Divider(height: 32),
               const Text(
                 'Preferred Daily Method',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -116,34 +227,34 @@ class _SettingsPageState extends State<SettingsPage> {
               _TargetAdjuster(
                 label: 'Push-ups',
                 value: trainingState.dailyPushUpTarget,
-                onDecrease: () =>
-                    trainingState.setDailyPushUpTarget(trainingState.dailyPushUpTarget - 5),
-                onIncrease: () =>
-                    trainingState.setDailyPushUpTarget(trainingState.dailyPushUpTarget + 5),
+                onDecrease: () => trainingState
+                    .setDailyPushUpTarget(trainingState.dailyPushUpTarget - 5),
+                onIncrease: () => trainingState
+                    .setDailyPushUpTarget(trainingState.dailyPushUpTarget + 5),
               ),
               _TargetAdjuster(
                 label: 'Chin-ups / negatives',
                 value: trainingState.dailyChinUpTarget,
-                onDecrease: () =>
-                    trainingState.setDailyChinUpTarget(trainingState.dailyChinUpTarget - 1),
-                onIncrease: () =>
-                    trainingState.setDailyChinUpTarget(trainingState.dailyChinUpTarget + 1),
+                onDecrease: () => trainingState
+                    .setDailyChinUpTarget(trainingState.dailyChinUpTarget - 1),
+                onIncrease: () => trainingState
+                    .setDailyChinUpTarget(trainingState.dailyChinUpTarget + 1),
               ),
               _TargetAdjuster(
                 label: 'Daily protein target (g)',
                 value: trainingState.dailyProteinTarget,
-                onDecrease: () =>
-                    trainingState.setDailyProteinTarget(trainingState.dailyProteinTarget - 5),
-                onIncrease: () =>
-                    trainingState.setDailyProteinTarget(trainingState.dailyProteinTarget + 5),
+                onDecrease: () => trainingState.setDailyProteinTarget(
+                    trainingState.dailyProteinTarget - 5),
+                onIncrease: () => trainingState.setDailyProteinTarget(
+                    trainingState.dailyProteinTarget + 5),
               ),
               _TargetAdjuster(
                 label: 'Daily calorie target',
                 value: trainingState.dailyCalorieTarget,
-                onDecrease: () =>
-                    trainingState.setDailyCalorieTarget(trainingState.dailyCalorieTarget - 50),
-                onIncrease: () =>
-                    trainingState.setDailyCalorieTarget(trainingState.dailyCalorieTarget + 50),
+                onDecrease: () => trainingState.setDailyCalorieTarget(
+                    trainingState.dailyCalorieTarget - 50),
+                onIncrease: () => trainingState.setDailyCalorieTarget(
+                    trainingState.dailyCalorieTarget + 50),
               ),
               const SizedBox(height: 8),
               SegmentedButton<NutritionMode>(
@@ -170,8 +281,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 (exercise) => CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(exercise),
-                  value: trainingState.selectedWeightOptionalExercises.contains(exercise),
-                  onChanged: (_) => trainingState.toggleWeightOptionalExercise(exercise),
+                  value: trainingState.selectedWeightOptionalExercises
+                      .contains(exercise),
+                  onChanged: (_) =>
+                      trainingState.toggleWeightOptionalExercise(exercise),
                 ),
               ),
               const Divider(height: 32),
@@ -184,8 +297,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 (exercise) => CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(exercise),
-                  value: trainingState.selectedDailyOptionalExercises.contains(exercise),
-                  onChanged: (_) => trainingState.toggleDailyOptionalExercise(exercise),
+                  value: trainingState.selectedDailyOptionalExercises
+                      .contains(exercise),
+                  onChanged: (_) =>
+                      trainingState.toggleDailyOptionalExercise(exercise),
                 ),
               ),
               const Divider(height: 32),

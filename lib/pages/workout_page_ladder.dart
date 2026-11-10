@@ -38,12 +38,14 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text('Ladder Method', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text('Ladder Method',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
             const Text('Daily base: push-ups + chin-ups/negatives'),
             const SizedBox(height: 12),
             ElevatedButton(
-              onPressed: () => trainingState.setActiveDailyMethod(DailyMethod.ladder),
+              onPressed: () =>
+                  trainingState.setActiveDailyMethod(DailyMethod.ladder),
               child: Text(
                 trainingState.activeDailyMethod == DailyMethod.ladder
                     ? 'Currently Active Method'
@@ -55,15 +57,19 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
               label: 'Push-ups done',
               target: trainingState.dailyPushUpTarget,
               value: _pushUpsDone,
-              onDecrease: () => setState(() => _pushUpsDone = (_pushUpsDone - 5).clamp(0, 500)),
-              onIncrease: () => setState(() => _pushUpsDone = (_pushUpsDone + 5).clamp(0, 500)),
+              onDecrease: () => setState(
+                  () => _pushUpsDone = (_pushUpsDone - 5).clamp(0, 500)),
+              onIncrease: () => setState(
+                  () => _pushUpsDone = (_pushUpsDone + 5).clamp(0, 500)),
             ),
             _CounterCard(
               label: 'Chin-ups / negatives done',
               target: trainingState.dailyChinUpTarget,
               value: _chinUpsDone,
-              onDecrease: () => setState(() => _chinUpsDone = (_chinUpsDone - 1).clamp(0, 250)),
-              onIncrease: () => setState(() => _chinUpsDone = (_chinUpsDone + 1).clamp(0, 250)),
+              onDecrease: () => setState(
+                  () => _chinUpsDone = (_chinUpsDone - 1).clamp(0, 250)),
+              onIncrease: () => setState(
+                  () => _chinUpsDone = (_chinUpsDone + 1).clamp(0, 250)),
             ),
             SwitchListTile(
               title: const Text('Used negatives instead of full chin-ups'),

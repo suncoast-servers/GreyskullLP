@@ -84,13 +84,16 @@ class _DietPageState extends State<DietPage> {
       builder: (context, _) {
         final calorieProgress = trainingState.dailyCalorieTarget == 0
             ? 0.0
-            : (trainingState.dailyCaloriesConsumed / trainingState.dailyCalorieTarget)
+            : (trainingState.dailyCaloriesConsumed /
+                    trainingState.dailyCalorieTarget)
                 .clamp(0.0, 1.0);
         final proteinProgress = trainingState.dailyProteinTarget == 0
             ? 0.0
-            : (trainingState.dailyProteinConsumed / trainingState.dailyProteinTarget)
+            : (trainingState.dailyProteinConsumed /
+                    trainingState.dailyProteinTarget)
                 .clamp(0.0, 1.0);
-        final calorieDelta = trainingState.dailyCaloriesConsumed - trainingState.dailyCalorieTarget;
+        final calorieDelta = trainingState.dailyCaloriesConsumed -
+            trainingState.dailyCalorieTarget;
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum DailyMethod {
@@ -66,7 +67,8 @@ class HistoryEntry {
 
   factory HistoryEntry.fromJsonMap(Map<String, dynamic> map) {
     return HistoryEntry(
-      timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ?? DateTime.now(),
+      timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ??
+          DateTime.now(),
       title: map['title'] as String? ?? 'Session',
       details: map['details'] as String? ?? '',
       category: HistoryCategory.values.firstWhere(
@@ -85,6 +87,7 @@ class HistoryEntry {
 class TrainingState extends ChangeNotifier {
   static const String _prefsKey = 'greyskull_training_state_v1';
 
+  GreyskullSkin _activeSkin = GreyskullSkin.ironAndBone;
   DailyMethod _activeDailyMethod = DailyMethod.frequency;
   NutritionMode _nutritionMode = NutritionMode.cutting;
   BackupPreference _backupPreference = BackupPreference.manualExport;
@@ -133,6 +136,7 @@ class TrainingState extends ChangeNotifier {
     'Conditioning Finisher (placeholder)',
   ];
 
+  GreyskullSkin get activeSkin => _activeSkin;
   DailyMethod get activeDailyMethod => _activeDailyMethod;
   NutritionMode get nutritionMode => _nutritionMode;
   BackupPreference get backupPreference => _backupPreference;
@@ -156,7 +160,8 @@ class TrainingState extends ChangeNotifier {
   Set<String> get selectedDailyOptionalExercises =>
       Set<String>.from(_selectedDailyOptionalExercises);
 
-  List<HistoryEntry> get history => List<HistoryEntry>.unmodifiable(_history.reversed);
+  List<HistoryEntry> get history =>
+      List<HistoryEntry>.unmodifiable(_history.reversed);
 
   Future<void> loadFromDisk() async {
     final prefs = await SharedPreferences.getInstance();
@@ -176,7 +181,8 @@ class TrainingState extends ChangeNotifier {
     notifyListeners();
   }
 
-  static DateTime _normalizedDay(DateTime date) => DateTime(date.year, date.month, date.day);
+  static DateTime _normalizedDay(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
 
   void _rollMacroDayIfNeeded() {
     final today = _normalizedDay(DateTime.now());
@@ -195,6 +201,7 @@ class TrainingState extends ChangeNotifier {
   Map<String, dynamic> _buildPayload() {
     return <String, dynamic>{
       'schemaVersion': 1,
+      'activeSkin': _activeSkin.name,
       'activeDailyMethod': _activeDailyMethod.name,
       'nutritionMode': _nutritionMode.name,
       'backupPreference': _backupPreference.name,
@@ -211,13 +218,19 @@ class TrainingState extends ChangeNotifier {
       'forumUrl': _forumUrl,
       'forumLoginUrl': _forumLoginUrl,
       'storeUrl': _storeUrl,
-      'selectedWeightOptionalExercises': _selectedWeightOptionalExercises.toList(),
-      'selectedDailyOptionalExercises': _selectedDailyOptionalExercises.toList(),
+      'selectedWeightOptionalExercises':
+          _selectedWeightOptionalExercises.toList(),
+      'selectedDailyOptionalExercises':
+          _selectedDailyOptionalExercises.toList(),
       'history': _history.map((entry) => entry.toJsonMap()).toList(),
     };
   }
 
   void _applyMap(Map<String, dynamic> map) {
+    _activeSkin = GreyskullSkin.values.firstWhere(
+      (value) => value.name == (map['activeSkin'] as String? ?? ''),
+      orElse: () => GreyskullSkin.ironAndBone,
+    );
     _activeDailyMethod = DailyMethod.values.firstWhere(
       (value) => value.name == (map['activeDailyMethod'] as String? ?? ''),
       orElse: () => DailyMethod.frequency,
@@ -232,12 +245,17 @@ class TrainingState extends ChangeNotifier {
     );
     _dailyPushUpTarget = (map['dailyPushUpTarget'] as int? ?? 50).clamp(1, 500);
     _dailyChinUpTarget = (map['dailyChinUpTarget'] as int? ?? 20).clamp(1, 250);
-    _dailyProteinTarget = (map['dailyProteinTarget'] as int? ?? 180).clamp(1, 400);
-    _dailyCalorieTarget = (map['dailyCalorieTarget'] as int? ?? 2200).clamp(1000, 8000);
-    _dailyProteinConsumed = (map['dailyProteinConsumed'] as int? ?? 0).clamp(0, 5000);
-    _dailyCaloriesConsumed = (map['dailyCaloriesConsumed'] as int? ?? 0).clamp(0, 20000);
+    _dailyProteinTarget =
+        (map['dailyProteinTarget'] as int? ?? 180).clamp(1, 400);
+    _dailyCalorieTarget =
+        (map['dailyCalorieTarget'] as int? ?? 2200).clamp(1000, 8000);
+    _dailyProteinConsumed =
+        (map['dailyProteinConsumed'] as int? ?? 0).clamp(0, 5000);
+    _dailyCaloriesConsumed =
+        (map['dailyCaloriesConsumed'] as int? ?? 0).clamp(0, 20000);
     _macroTrackingDate =
-        DateTime.tryParse(map['macroTrackingDate'] as String? ?? '') ?? _normalizedDay(DateTime.now());
+        DateTime.tryParse(map['macroTrackingDate'] as String? ?? '') ??
+            _normalizedDay(DateTime.now());
     _usdaApiKey = map['usdaApiKey'] as String? ?? '';
     _forumSignedIn = map['forumSignedIn'] as bool? ?? false;
     _forumDisplayName = map['forumDisplayName'] as String? ?? '';
@@ -247,11 +265,13 @@ class TrainingState extends ChangeNotifier {
 
     _selectedWeightOptionalExercises
       ..clear()
-      ..addAll((map['selectedWeightOptionalExercises'] as List<dynamic>? ?? <dynamic>[])
+      ..addAll((map['selectedWeightOptionalExercises'] as List<dynamic>? ??
+              <dynamic>[])
           .whereType<String>());
     _selectedDailyOptionalExercises
       ..clear()
-      ..addAll((map['selectedDailyOptionalExercises'] as List<dynamic>? ?? <dynamic>[])
+      ..addAll((map['selectedDailyOptionalExercises'] as List<dynamic>? ??
+              <dynamic>[])
           .whereType<String>());
 
     _history
@@ -259,7 +279,8 @@ class TrainingState extends ChangeNotifier {
       ..addAll(
         (map['history'] as List<dynamic>? ?? <dynamic>[])
             .whereType<Map>()
-            .map((item) => item.map((key, value) => MapEntry(key.toString(), value)))
+            .map((item) =>
+                item.map((key, value) => MapEntry(key.toString(), value)))
             .map(HistoryEntry.fromJsonMap),
       );
   }
@@ -284,6 +305,14 @@ class TrainingState extends ChangeNotifier {
     } catch (_) {
       return false;
     }
+  }
+
+  void setActiveSkin(GreyskullSkin skin) {
+    if (_activeSkin == skin) {
+      return;
+    }
+    _activeSkin = skin;
+    _notifyAndPersist();
   }
 
   void setActiveDailyMethod(DailyMethod method) {
@@ -466,7 +495,8 @@ class TrainingState extends ChangeNotifier {
         category: HistoryCategory.diet,
         proteinGrams: proteinGrams,
         calories: calories,
-        details: 'Protein: ${proteinGrams}g, Calories: $calories${note.isEmpty ? '' : '\nNote: $note'}',
+        details:
+            'Protein: ${proteinGrams}g, Calories: $calories${note.isEmpty ? '' : '\nNote: $note'}',
       ),
     );
     _notifyAndPersist();
