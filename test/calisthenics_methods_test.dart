@@ -373,5 +373,109 @@ void main() {
       expect(find.text('Resistance'), findsOneWidget);
       expect(find.text('Diet'), findsOneWidget);
     });
+
+    testWidgets(
+        'HistoryPage opens method-specific edit dialogs for Frequency, Ladder, and Total Work',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      // Seed entries for all 3 calisthenics methods
+      trainingState.logDailyMethodSession(
+        method: DailyMethod.frequency,
+        pushUps: 30,
+        chinUps: 10,
+        usedNegatives: false,
+        optionalExerciseSummary: 'None',
+        title: 'Morning Frequency',
+        metadata: {'setsCount': 5, 'usedNegatives': false},
+      );
+      trainingState.logDailyMethodSession(
+        method: DailyMethod.ladder,
+        pushUps: 0,
+        chinUps: 75,
+        usedNegatives: false,
+        optionalExerciseSummary: 'None',
+        title: 'Afternoon Ladder',
+        metadata: {
+          'exercise': 'Chin-ups',
+          'totalReps': 75,
+          'peakRung': 5,
+          'laddersCount': 5,
+        },
+      );
+      trainingState.logDailyMethodSession(
+        method: DailyMethod.totalWork,
+        pushUps: 70,
+        chinUps: 0,
+        usedNegatives: false,
+        optionalExerciseSummary: 'None',
+        title: 'Evening Total Work',
+        metadata: {
+          'exercise': 'Push-ups',
+          'totalReps': 70,
+          'targetReps': 70,
+          'model': 'daily',
+          'setsCount': 5,
+        },
+      );
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: HistoryPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Verify Frequency Edit Dialog
+      expect(find.text('Morning Frequency'), findsOneWidget);
+      final freqMoreButtons = find.byIcon(Icons.more_vert);
+      // The newest entry is at top (Total Work, Ladder, Frequency)
+      // Tap on the Frequency entry (last more_vert icon)
+      await tester.tap(freqMoreButtons.last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Entry'), findsOneWidget);
+      await tester.tap(find.text('Edit Entry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Frequency Method Entry'), findsOneWidget);
+      expect(find.text('Used Chin-up Negatives'), findsOneWidget);
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      // 2. Verify Ladder Edit Dialog (middle entry)
+      expect(find.text('Afternoon Ladder'), findsOneWidget);
+      final ladderMoreButtons = find.byIcon(Icons.more_vert);
+      await tester.tap(ladderMoreButtons.at(1));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Edit Entry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Ladder Method Entry'), findsOneWidget);
+      expect(find.text('Movement'), findsOneWidget);
+      expect(find.text('Peak Rung Achieved'), findsOneWidget);
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      // 3. Verify Total Work Edit Dialog (first entry)
+      expect(find.text('Evening Total Work'), findsOneWidget);
+      final twMoreButtons = find.byIcon(Icons.more_vert);
+      await tester.tap(twMoreButtons.first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Edit Entry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Total Work Method Entry'), findsOneWidget);
+      expect(find.text('Target Model'), findsOneWidget);
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Total Work session updated.'), findsOneWidget);
+    });
   });
 }
