@@ -1,6 +1,8 @@
 # GreyskullLP
 App development for the official Greyskull LP workout program.
 
+**Organization:** [suncoast-servers](https://github.com/suncoast-servers) Â· **Project lead / merge authority:** [@TheDevWhoSaysNi](https://github.com/TheDevWhoSaysNi)
+
 ## Description
 GreyskullLP is a fitness app designed to help users track their workout routines and progress. The app offers customizable exercises and allows users to monitor their improvements over time. This project has been sanctioned by Johnny Pain, the author of the official workout plan, and I am working on this with his permission.
 
@@ -18,14 +20,17 @@ GreyskullLP is a fitness app designed to help users track their workout routines
 ## Installation Instructions
 1. Clone the repository:
    ```bash
-   git clone https://github.com/thedevwhosaysni/GreyskullLP.git
+   git clone https://github.com/suncoast-servers/GreyskullLP.git
    cd GreyskullLP
+   ```
 2. Set up the Flutter environment:
    ```bash
    flutter pub get
+   ```
 3. Run the application:
    ```bash
    flutter run
+   ```
 
 ## Usage Instructions
 - Once the app is running, follow the on-screen prompts to input exercises and track your progress.
@@ -61,14 +66,15 @@ Use this checklist before adding new features so the scaffold stays healthy.
 - Set your Team and Bundle Identifier in the Runner target.
 - Verify deployment target and run once directly from Xcode if Flutter CLI fails.
 
-## Contributing
-Contributions are welcome! If you would like to contribute to the project, please follow these steps:
-- Fork the repository.
-- Create a new branch (git checkout -b feature/YourFeature).
-- Make your changes.
-- Commit your changes (git commit -m "Add some feature").
-- Push to the branch (git push origin feature/YourFeature).
-- Open a pull request.
+## Contributing (contractors & collaborators)
+
+This repo uses **pull requests into `main`**. Direct pushes to `main` are blocked.
+
+1. Read [docs/COLLABORATOR.md](docs/COLLABORATOR.md) and org [CONTRIBUTING.md](https://github.com/suncoast-servers/.github/blob/main/CONTRIBUTING.md).
+2. Branch: `feat/<issue>-short-description` or `fix/...`.
+3. Open a PR; wait for review from **@TheDevWhoSaysNi** before merge.
+
+Using AI coding tools? See [AGENTS.md](AGENTS.md).
 
 ## License
 This project is licensed under the GNU GPL License.
