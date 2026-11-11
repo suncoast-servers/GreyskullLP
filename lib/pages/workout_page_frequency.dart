@@ -116,8 +116,6 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
     return AnimatedBuilder(
       animation: trainingState,
       builder: (context, _) {
-        final isActive =
-            trainingState.activeDailyMethod == DailyMethod.frequency;
         final totalPushUps = trainingState.todayFrequencyPushUps;
         final totalChinUps = trainingState.todayFrequencyChinUps;
         final pushUpTarget = trainingState.dailyPushUpTarget;
@@ -127,70 +125,21 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Row(
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Frequency Method',
-                        style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Sub-maximal sets spaced throughout the day ("greasing the groove"). Avoid failure on all sets.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
+                Text(
+                  'Frequency Method',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                if (isActive)
-                  const Chip(
-                    label: Text('Active',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    backgroundColor: Colors.black12,
-                  ),
+                SizedBox(height: 4),
+                Text(
+                  'Sub-maximal sets spaced throughout the day. Stay shy of failure.',
+                  style: TextStyle(color: Colors.grey),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            if (!isActive)
-              OutlinedButton.icon(
-                onPressed: () =>
-                    trainingState.setActiveDailyMethod(DailyMethod.frequency),
-                icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Set as Active Method'),
-              ),
-            const SizedBox(height: 12),
-
-            // Book Guidelines Alert
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black12),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Book Principles (3rd Edition pp. 62–65):',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '• Frequency: 6 days per week, 1 day completely off.\n'
-                    '• Never to failure: Sets performed well shy of failure (~50% of max effort).\n'
-                    '• Progression Rule: Add 1 rep per set OR 1 set per day each week. When adding reps to a set, bump back the number of sets per day by 1–2.\n'
-                    '• Negatives: If unable to do full chin-ups, do negatives (5–6s controlled descent) until ready for singles.',
-                    style: TextStyle(fontSize: 12, height: 1.4),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
             // Daily Progress Card
             Card(

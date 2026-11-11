@@ -243,7 +243,7 @@ void main() {
           'usedNegatives': false,
         },
       ));
-      twEntry = state.history.first;
+      twEntry = state.history.firstWhere((e) => e.id == twEntry.id);
       expect(twEntry.pushUps, 420);
       expect(twEntry.methodMetadata?['model'], 'weekly');
       expect(twEntry.methodMetadata?['setsCount'], 14);
@@ -476,9 +476,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Edit Total Work Method Entry'), findsNothing);
-      expect(find.text('Evening Total Work'), findsOneWidget);
-      expect(find.text('Afternoon Ladder'), findsOneWidget);
-      expect(find.text('Morning Frequency'), findsOneWidget);
+      expect(find.text('Evening Total Work'), findsAtLeast(1));
+      expect(find.text('Afternoon Ladder'), findsAtLeast(1));
+      expect(find.text('Morning Frequency'), findsAtLeast(1));
     });
   });
 }

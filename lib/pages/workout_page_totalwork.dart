@@ -123,8 +123,6 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
     return AnimatedBuilder(
       animation: trainingState,
       builder: (context, _) {
-        final isActive =
-            trainingState.activeDailyMethod == DailyMethod.totalWork;
         final selectedExercise = trainingState.activeTotalWorkExercise;
         final usedNegatives = trainingState.activeTotalWorkUsedNegatives;
         final model = trainingState.activeTotalWorkModel;
@@ -136,7 +134,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
             targetReps > 0 ? (completed / targetReps).clamp(0.0, 1.0) : 0.0;
         final percent = (progress * 100).toInt();
 
-        final bookPresets = model == 'daily'
+        final targetPresets = model == 'daily'
             ? [
                 selectedExercise == 'Dead-Hang Chins' ? 10 : 70,
                 selectedExercise == 'Dead-Hang Chins' ? 20 : 100,
@@ -150,69 +148,21 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Row(
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Total Work Method',
-                        style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Assign daily or weekly volume targets per movement. Chip away throughout the schedule, staying shy of failure.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
+                Text(
+                  'Total Work Method',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                if (isActive)
-                  const Chip(
-                    label: Text('Active',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    backgroundColor: Colors.black12,
-                  ),
+                SizedBox(height: 4),
+                Text(
+                  'Hit daily or weekly volume targets per movement. Chip away in manageable sets.',
+                  style: TextStyle(color: Colors.grey),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            if (!isActive)
-              OutlinedButton.icon(
-                onPressed: () =>
-                    trainingState.setActiveDailyMethod(DailyMethod.totalWork),
-                icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Set as Active Method'),
-              ),
-            const SizedBox(height: 12),
-
-            // Book Guidelines Alert
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black12),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Book Principles (3rd Edition pp. 70–74):',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '• Diagnostic Testing: Conduct 2-min max push-ups, 2-min sit-ups, 5-min burpees, and 1-set dead-hang chins to set targets.\n'
-                    '• Daily Target vs Weekly Target: Start with daily targets (e.g., Ralph Day 1: 70 push-ups, 10 chins), then graduate to weekly totals (Daily × 6 = 420 push-ups, 60 chins).\n'
-                    '• Never to failure: Chip away in manageable sets.',
-                    style: TextStyle(fontSize: 12, height: 1.4),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
             // Exercise & Model Configuration
             Card(
@@ -221,7 +171,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Official Movement (3rd Edition):',
+                    const Text('Movement:',
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
@@ -295,8 +245,8 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                     Wrap(
                       spacing: 8,
                       children: [
-                        ...bookPresets.map((reps) => ChoiceChip(
-                              label: Text('$reps reps (Book preset)'),
+                        ...targetPresets.map((reps) => ChoiceChip(
+                              label: Text('$reps reps (preset)'),
                               selected: targetReps == reps,
                               onSelected: (_) =>
                                   trainingState.setTotalWorkTargetReps(reps),

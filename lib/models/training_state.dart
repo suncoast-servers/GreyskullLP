@@ -73,7 +73,8 @@ class HistoryEntry {
     this.proteinGrams,
     this.calories,
     this.methodMetadata,
-  }) : id = id ?? '${timestamp.microsecondsSinceEpoch}_${category.name}';
+  }) : id = id ??
+            '${timestamp.microsecondsSinceEpoch}_${category.name}_${method?.name ?? 'none'}';
 
   final String id;
   final DateTime timestamp;
@@ -220,7 +221,7 @@ class TrainingState extends ChangeNotifier {
   String _activeTotalWorkExercise = 'Push-ups';
   bool _activeTotalWorkUsedNegatives = false;
   String _activeTotalWorkModel = 'daily'; // 'daily' or 'weekly'
-  int _activeTotalWorkTargetReps = 70; // 70 push-ups from Book Ralph example
+  int _activeTotalWorkTargetReps = 70;
   final List<int> _activeTotalWorkSets = [];
 
   static const List<String> weightOptionalExerciseOptions = [

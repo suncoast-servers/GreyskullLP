@@ -132,7 +132,6 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
     return AnimatedBuilder(
       animation: trainingState,
       builder: (context, _) {
-        final isActive = trainingState.activeDailyMethod == DailyMethod.ladder;
         final currentLadderNum =
             trainingState.activeCompletedLadders.length + 1;
         final nextRung = trainingState.activeLadderNextRung;
@@ -146,67 +145,21 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Row(
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Ladder Method',
-                          style: TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 4),
-                      Text(
-                        'Ascending waves (1, 2, 3...) per ladder. Weapon of choice when frequency through the day is impossible.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
+                Text(
+                  'Ladder Method',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                if (isActive)
-                  const Chip(
-                    label: Text('Active',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    backgroundColor: Colors.black12,
-                  ),
+                SizedBox(height: 4),
+                Text(
+                  'Ascend rungs (1, 2, 3…) per ladder. Rest in a partner-paced rhythm.',
+                  style: TextStyle(color: Colors.grey),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            if (!isActive)
-              OutlinedButton.icon(
-                onPressed: () =>
-                    trainingState.setActiveDailyMethod(DailyMethod.ladder),
-                icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Set as Active Method'),
-              ),
-            const SizedBox(height: 12),
-
-            // Book Guidelines Alert
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black12),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Book Guidance (3rd Edition pp. 65–70):',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '• Ladders vs Pyramids: Hardest sets are followed immediately by the easiest set (1 rep) for superior recovery.\n'
-                    '• Pacing: Rest partner-style — the time it would take an imaginary partner to complete your set.\n'
-                    '• Gold Standard: Build up toward 5 ladders of 5 reps (75 total reps).',
-                    style: TextStyle(fontSize: 12, height: 1.4),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
             // Movement Selection
             Card(
@@ -287,7 +240,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Active: Ladder #$currentLadderNum',
+                          'Current ladder #$currentLadderNum',
                           style: const TextStyle(
                               fontSize: 17, fontWeight: FontWeight.bold),
                         ),
