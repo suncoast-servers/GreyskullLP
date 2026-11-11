@@ -27,7 +27,7 @@ All active delivery issues are tagged in GitHub milestone **[GreyskullLP v1](htt
 
 1. **Stabilize & ship path** — CI green, release builds documented, store checklists (#12–#13).
 2. **Book fidelity** — Templates, methods, statistics (#14–#17).
-3. **Look & feel** — Theme proposals (#18); Ryan can polish later.
+3. **Look & feel** — Theme proposals (#18) — **merged (v0.1 skins approved)**; see follow-ups below.
 4. **Integrations** — Forum/store research, accountability, social (#19–#22).
 5. **Data architecture** — ADR and migration plan (#23).
 
@@ -46,3 +46,11 @@ Contractor may parallelize research spikes (store platform, forum stack) early w
 1. Issues define acceptance criteria.
 2. Branch `feat/<issue>-short-name` → PR → Ryan merges.
 3. Scope changes: comment on issue or Upwork; update PRODUCT_SPEC if material.
+
+## Post–v0.1 design follow-ups (owner notes)
+
+**PR #32 / issue #18 (merged):** Ryan approved the three Greyskull skins (Iron & Bone, Skeletor Havoc, Chalk & Steel) as a solid **v0.1** foundation — cohesive and shippable; visual system is intentionally basic.
+
+**TODO — new GitHub issue (design upgrade epic):** After v0.1, run a dedicated **elevated UI / design system** pass (“design pair extraordinaire”): explore multiple visual directions (typography, spacing, components, iconography, motion), prototype options on device, and lock a v1 design language beyond color-token skins.
+
+**TODO — new GitHub issue (navigation affordance):** Replace the global AppBar control that uses a **back arrow** to return to the home hub so it is not confused with workout subpage “Back to workout menu.” Target: a clear **main menu** icon (e.g. **bento / 2×3 grid**). Implementation deferred until after current PR queue review.
