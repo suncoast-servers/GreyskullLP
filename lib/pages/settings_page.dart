@@ -215,6 +215,124 @@ class _SettingsPageState extends State<SettingsPage> {
               }),
               const Divider(height: 32),
               const Text(
+                'Program Level & Progression',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Johnny Pain progressive UX: start simple with the base barbell program and frequency method, then graduate to accessories and higher density methods.',
+                style: TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+              const SizedBox(height: 8),
+              ...ProgramLevel.values.map((lvl) {
+                final isSelected = trainingState.programLevel == lvl;
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(
+                      color: isSelected
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey.shade300,
+                      width: isSelected ? 2 : 1,
+                    ),
+                  ),
+                  child: RadioListTile<ProgramLevel>(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    value: lvl,
+                    // ignore: deprecated_member_use
+                    groupValue: trainingState.programLevel,
+                    // ignore: deprecated_member_use
+                    onChanged: (val) {
+                      if (val != null) {
+                        trainingState.setProgramLevel(val);
+                      }
+                    },
+                    title: Row(
+                      children: [
+                        Text(
+                          lvl.shortLabel,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Theme.of(context)
+                                    .primaryColor
+                                    .withValues(alpha: 0.15)
+                                : Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            lvl.badge,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.black54,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 2),
+                        Text(
+                          lvl.subtitle,
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          lvl.description,
+                          style: const TextStyle(
+                              fontSize: 11, color: Colors.black87),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.shield_outlined,
+                      size: 16, color: Colors.green),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      'Zero data loss: changing your level changes UI complexity without deleting or modifying any prior workout history or PRs.',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.green,
+                          fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () {
+                  trainingState.resetOnboarding();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'Starter onboarding reset. Switch to Workout tab to view starter onboarding.'),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.restart_alt, size: 16),
+                label: const Text('Reset Starter Onboarding Prompt'),
+              ),
+              const Divider(height: 32),
+              const Text(
                 'Preferred Daily Method',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),

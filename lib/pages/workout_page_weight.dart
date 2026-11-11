@@ -219,6 +219,29 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (trainingState.programLevel == ProgramLevel.foundation) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Level 1 (Foundation): Keep it simple. Johnny Pain advises mastering core lifts first before adding plug-in accessories.',
+                        style: TextStyle(fontSize: 12, color: Colors.black87),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             // Template selection card
             Card(
               elevation: 2,

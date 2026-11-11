@@ -71,6 +71,52 @@ class BarbellTemplateDetails {
   });
 }
 
+enum ProgramLevel {
+  foundation(
+    levelNumber: 1,
+    displayName: 'Foundation (Starter Path)',
+    shortLabel: 'Level 1: Foundation',
+    badge: 'Starter',
+    subtitle: 'Base Barbell Progression + Frequency Method',
+    description:
+        'Johnny Pain’s recommended starter path: master the core barbell lifts (Press, Squat, Bench, Deadlift) and accumulate clean daily push-ups & chin-ups with zero accessory distraction.',
+  ),
+  villain(
+    levelNumber: 2,
+    displayName: 'Villain (Arms & Neck Plug-ins)',
+    shortLabel: 'Level 2: Villain',
+    badge: 'Intermediate',
+    subtitle: 'Base Program + Plug-in Accessories + Ladder Method',
+    description:
+        'Adds Johnny Pain’s iconic arms & neck plug-ins (curls, neck harness, weighted chins) and unlocks the Ladder Method for ascending calisthenics work.',
+  ),
+  gladiator(
+    levelNumber: 3,
+    displayName: 'Gladiator (Advanced Hypertrophy & Splits)',
+    shortLabel: 'Level 3: Gladiator',
+    badge: 'Advanced',
+    subtitle: 'All Barbell Splits + Total Work Method + Full Customization',
+    description:
+        'Unlocks high-volume hypertrophy splits (Gladiator, Two-Day, Four-Day LCI), density Total Work calisthenics, and unrestricted custom accessory programming.',
+  );
+
+  final int levelNumber;
+  final String displayName;
+  final String shortLabel;
+  final String badge;
+  final String subtitle;
+  final String description;
+
+  const ProgramLevel({
+    required this.levelNumber,
+    required this.displayName,
+    required this.shortLabel,
+    required this.badge,
+    required this.subtitle,
+    required this.description,
+  });
+}
+
 enum NutritionMode {
   cutting,
   bulking,
@@ -249,6 +295,8 @@ class HistoryEntry {
 
 class TrainingState extends ChangeNotifier {
   static const String _prefsKey = 'greyskull_training_state_v1';
+  ProgramLevel _programLevel = ProgramLevel.foundation;
+  bool _hasCompletedOnboarding = false;
   BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
   int _activeBarbellRotationIndex = 0;
   final Map<String, List<String>> _customAccessoriesByWorkout = {};
@@ -600,6 +648,13 @@ class TrainingState extends ChangeNotifier {
   ];
 
   GreyskullSkin get activeSkin => _activeSkin;
+  ProgramLevel get programLevel => _programLevel;
+  bool get hasCompletedOnboarding => _hasCompletedOnboarding;
+  bool get isLadderMethodUnlocked => _programLevel.levelNumber >= 2;
+  bool get isTotalWorkMethodUnlocked => _programLevel.levelNumber >= 3;
+  bool get isAccessoriesUnlocked => _programLevel.levelNumber >= 2;
+  bool get isAdvancedSplitsUnlocked => _programLevel.levelNumber >= 3;
+
   BarbellTemplate get activeBarbellTemplate => _activeBarbellTemplate;
   int get activeBarbellRotationIndex => _activeBarbellRotationIndex;
 
@@ -755,6 +810,8 @@ class TrainingState extends ChangeNotifier {
   Map<String, dynamic> _buildPayload() {
     return <String, dynamic>{
       'schemaVersion': 2,
+      'programLevel': _programLevel.name,
+      'hasCompletedOnboarding': _hasCompletedOnboarding,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
       'customAccessoriesByWorkout': _customAccessoriesByWorkout.map(
@@ -800,6 +857,12 @@ class TrainingState extends ChangeNotifier {
   }
 
   void _applyMap(Map<String, dynamic> map) {
+    _programLevel = ProgramLevel.values.firstWhere(
+      (value) => value.name == (map['programLevel'] as String? ?? ''),
+      orElse: () => ProgramLevel.foundation,
+    );
+    _hasCompletedOnboarding = map['hasCompletedOnboarding'] as bool? ?? false;
+
     _activeBarbellTemplate = BarbellTemplate.values.firstWhere(
       (value) => value.name == (map['activeBarbellTemplate'] as String? ?? ''),
       orElse: () => BarbellTemplate.ogBase,
@@ -952,6 +1015,28 @@ class TrainingState extends ChangeNotifier {
       return;
     }
     _activeSkin = skin;
+    _notifyAndPersist();
+  }
+
+  void setProgramLevel(ProgramLevel level) {
+    if (_programLevel == level) {
+      return;
+    }
+    _programLevel = level;
+    _notifyAndPersist();
+  }
+
+  void completeOnboarding({ProgramLevel? selectedLevel}) {
+    _hasCompletedOnboarding = true;
+    if (selectedLevel != null) {
+      _programLevel = selectedLevel;
+    }
+    _notifyAndPersist();
+  }
+
+  void resetOnboarding() {
+    _hasCompletedOnboarding = false;
+    _programLevel = ProgramLevel.foundation;
     _notifyAndPersist();
   }
 
