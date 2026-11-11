@@ -19,6 +19,7 @@ enum BarbellTemplate {
   gladiator,
   twoDaySplit,
   fourDaySplit,
+  custom,
 }
 
 class TemplateLift {
@@ -37,6 +38,41 @@ class TemplateLift {
     this.isAmrap = true,
     this.isUpperBody = false,
   });
+
+  TemplateLift copyWith({
+    String? name,
+    String? prescription,
+    int? sets,
+    int? defaultReps,
+    bool? isAmrap,
+    bool? isUpperBody,
+  }) =>
+      TemplateLift(
+        name: name ?? this.name,
+        prescription: prescription ?? this.prescription,
+        sets: sets ?? this.sets,
+        defaultReps: defaultReps ?? this.defaultReps,
+        isAmrap: isAmrap ?? this.isAmrap,
+        isUpperBody: isUpperBody ?? this.isUpperBody,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'prescription': prescription,
+        'sets': sets,
+        'defaultReps': defaultReps,
+        'isAmrap': isAmrap,
+        'isUpperBody': isUpperBody,
+      };
+
+  factory TemplateLift.fromJson(Map<String, dynamic> json) => TemplateLift(
+        name: json['name'] as String? ?? 'Lift',
+        prescription: json['prescription'] as String? ?? '3 x 5+',
+        sets: json['sets'] as int? ?? 3,
+        defaultReps: json['defaultReps'] as int? ?? 5,
+        isAmrap: json['isAmrap'] as bool? ?? true,
+        isUpperBody: json['isUpperBody'] as bool? ?? false,
+      );
 }
 
 class TemplateWorkoutDay {
@@ -53,6 +89,45 @@ class TemplateWorkoutDay {
     required this.coreLifts,
     this.defaultAccessories = const [],
   });
+
+  TemplateWorkoutDay copyWith({
+    String? code,
+    String? title,
+    String? subtitle,
+    List<TemplateLift>? coreLifts,
+    List<String>? defaultAccessories,
+  }) =>
+      TemplateWorkoutDay(
+        code: code ?? this.code,
+        title: title ?? this.title,
+        subtitle: subtitle ?? this.subtitle,
+        coreLifts: coreLifts ?? this.coreLifts,
+        defaultAccessories: defaultAccessories ?? this.defaultAccessories,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'code': code,
+        'title': title,
+        'subtitle': subtitle,
+        'coreLifts': coreLifts.map((l) => l.toJson()).toList(),
+        'defaultAccessories': defaultAccessories,
+      };
+
+  factory TemplateWorkoutDay.fromJson(Map<String, dynamic> json) =>
+      TemplateWorkoutDay(
+        code: json['code'] as String? ?? 'A',
+        title: json['title'] as String? ?? 'Workout A',
+        subtitle: json['subtitle'] as String? ?? '',
+        coreLifts: (json['coreLifts'] as List<dynamic>?)
+                ?.map((e) =>
+                    TemplateLift.fromJson(Map<String, dynamic>.from(e as Map)))
+                .toList() ??
+            const [],
+        defaultAccessories: (json['defaultAccessories'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            const [],
+      );
 }
 
 class BarbellTemplateDetails {
@@ -304,6 +379,9 @@ class TrainingState extends ChangeNotifier {
   BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
   int _activeBarbellRotationIndex = 0;
   final Map<String, List<String>> _customAccessoriesByWorkout = {};
+  String _customTemplateName = 'Custom Program (Build from Zero)';
+  String _customTemplateSubtitle = 'User-designed linear progression template';
+  final List<TemplateWorkoutDay> _customTemplateWorkouts = [];
 
   GreyskullSkin _activeSkin = GreyskullSkin.ironAndBone;
   DailyMethod _activeDailyMethod = DailyMethod.frequency;
@@ -376,11 +454,79 @@ class TrainingState extends ChangeNotifier {
     'Dumbbell Pullovers (2 sets)',
   ];
 
+  static const List<BarbellTemplate> officialBookTemplates = [
+    BarbellTemplate.ogBase,
+    BarbellTemplate.villain,
+    BarbellTemplate.gladiator,
+    BarbellTemplate.twoDaySplit,
+    BarbellTemplate.fourDaySplit,
+  ];
+
+  static const BarbellTemplateDetails defaultCustomTemplateDetails =
+      BarbellTemplateDetails(
+    template: BarbellTemplate.custom,
+    name: 'Custom Program (Build from Zero)',
+    subtitle: 'User-designed linear progression template',
+    bookReference: 'User Customized (GSLP Principles)',
+    scheduleDescription: 'Customizable rotation and workout days',
+    workouts: [
+      TemplateWorkoutDay(
+        code: 'A',
+        title: 'Workout A',
+        subtitle: 'Custom Day 1',
+        coreLifts: [
+          TemplateLift(
+            name: 'Bench Press',
+            prescription: '2 x 5, 1 x 5+',
+            sets: 3,
+            defaultReps: 5,
+            isAmrap: true,
+            isUpperBody: true,
+          ),
+          TemplateLift(
+            name: 'Squat',
+            prescription: '2 x 5, 1 x 5+',
+            sets: 3,
+            defaultReps: 5,
+            isAmrap: true,
+            isUpperBody: false,
+          ),
+        ],
+        defaultAccessories: [],
+      ),
+      TemplateWorkoutDay(
+        code: 'B',
+        title: 'Workout B',
+        subtitle: 'Custom Day 2',
+        coreLifts: [
+          TemplateLift(
+            name: 'Overhead Press',
+            prescription: '2 x 5, 1 x 5+',
+            sets: 3,
+            defaultReps: 5,
+            isAmrap: true,
+            isUpperBody: true,
+          ),
+          TemplateLift(
+            name: 'Deadlift',
+            prescription: '1 x 5+',
+            sets: 1,
+            defaultReps: 5,
+            isAmrap: true,
+            isUpperBody: false,
+          ),
+        ],
+        defaultAccessories: [],
+      ),
+    ],
+  );
+
   static const List<String> weightOptionalExerciseOptions =
       officialBookAccessories;
 
   static const Map<BarbellTemplate, BarbellTemplateDetails>
       templateDefinitions = {
+    BarbellTemplate.custom: defaultCustomTemplateDetails,
     BarbellTemplate.ogBase: BarbellTemplateDetails(
       template: BarbellTemplate.ogBase,
       name: '"OG" Base Program',
@@ -673,8 +819,45 @@ class TrainingState extends ChangeNotifier {
   BarbellTemplate get activeBarbellTemplate => _activeBarbellTemplate;
   int get activeBarbellRotationIndex => _activeBarbellRotationIndex;
 
+  String get customTemplateName => _customTemplateName;
+  String get customTemplateSubtitle => _customTemplateSubtitle;
+
+  List<TemplateWorkoutDay> get customTemplateWorkouts {
+    if (_customTemplateWorkouts.isEmpty) {
+      return List<TemplateWorkoutDay>.unmodifiable(
+          defaultCustomTemplateDetails.workouts);
+    }
+    return List<TemplateWorkoutDay>.unmodifiable(_customTemplateWorkouts);
+  }
+
+  bool get isCustomTemplateActive =>
+      _activeBarbellTemplate == BarbellTemplate.custom;
+
+  bool get isCustomTemplateModified =>
+      _customTemplateWorkouts.isNotEmpty ||
+      _customTemplateName != defaultCustomTemplateDetails.name ||
+      _customTemplateSubtitle != defaultCustomTemplateDetails.subtitle;
+
   BarbellTemplateDetails get activeBarbellTemplateDetails =>
-      templateDefinitions[_activeBarbellTemplate]!;
+      getTemplateDetails(_activeBarbellTemplate);
+
+  BarbellTemplateDetails getTemplateDetails(BarbellTemplate template) {
+    if (template == BarbellTemplate.custom) {
+      final workouts = _customTemplateWorkouts.isNotEmpty
+          ? _customTemplateWorkouts
+          : defaultCustomTemplateDetails.workouts;
+      return BarbellTemplateDetails(
+        template: BarbellTemplate.custom,
+        name: _customTemplateName,
+        subtitle: _customTemplateSubtitle,
+        bookReference: 'User Customized (GSLP Principles)',
+        scheduleDescription:
+            '${workouts.length} workout day${workouts.length == 1 ? '' : 's'} in rotation',
+        workouts: workouts,
+      );
+    }
+    return templateDefinitions[template]!;
+  }
 
   TemplateWorkoutDay get currentTemplateWorkout {
     final workouts = activeBarbellTemplateDetails.workouts;
@@ -691,7 +874,7 @@ class TrainingState extends ChangeNotifier {
     if (_customAccessoriesByWorkout.containsKey(key)) {
       return List<String>.unmodifiable(_customAccessoriesByWorkout[key]!);
     }
-    final workouts = templateDefinitions[template]?.workouts ?? [];
+    final workouts = getTemplateDetails(template).workouts;
     final match = workouts.where((w) => w.code == workoutCode);
     if (match.isNotEmpty) {
       return List<String>.unmodifiable(match.first.defaultAccessories);
@@ -836,6 +1019,10 @@ class TrainingState extends ChangeNotifier {
       'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
+      'customTemplateName': _customTemplateName,
+      'customTemplateSubtitle': _customTemplateSubtitle,
+      'customTemplateWorkouts':
+          _customTemplateWorkouts.map((w) => w.toJson()).toList(),
       'customAccessoriesByWorkout': _customAccessoriesByWorkout.map(
         (key, list) => MapEntry(key, List<dynamic>.from(list)),
       ),
@@ -892,6 +1079,20 @@ class TrainingState extends ChangeNotifier {
         map['socialSharePromptEnabled'] as bool? ?? true;
     _socialShareHashtag =
         map['socialShareHashtag'] as String? ?? '#GreyskullLP #JohnnyPain';
+
+    _customTemplateName = map['customTemplateName'] as String? ??
+        defaultCustomTemplateDetails.name;
+    _customTemplateSubtitle = map['customTemplateSubtitle'] as String? ??
+        defaultCustomTemplateDetails.subtitle;
+    _customTemplateWorkouts.clear();
+    if (map['customTemplateWorkouts'] is List) {
+      for (final item in map['customTemplateWorkouts'] as List) {
+        if (item is Map) {
+          _customTemplateWorkouts.add(
+              TemplateWorkoutDay.fromJson(Map<String, dynamic>.from(item)));
+        }
+      }
+    }
 
     _activeBarbellTemplate = BarbellTemplate.values.firstWhere(
       (value) => value.name == (map['activeBarbellTemplate'] as String? ?? ''),
@@ -1178,6 +1379,162 @@ class TrainingState extends ChangeNotifier {
     if (_customAccessoriesByWorkout.containsKey(key)) {
       _customAccessoriesByWorkout.remove(key);
       _notifyAndPersist();
+    }
+  }
+
+  void setCustomTemplateName(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isNotEmpty && trimmed != _customTemplateName) {
+      _customTemplateName = trimmed;
+      _notifyAndPersist();
+    }
+  }
+
+  void setCustomTemplateSubtitle(String subtitle) {
+    final trimmed = subtitle.trim();
+    if (trimmed != _customTemplateSubtitle) {
+      _customTemplateSubtitle = trimmed;
+      _notifyAndPersist();
+    }
+  }
+
+  void duplicateTemplateFromPreset(BarbellTemplate sourceTemplate) {
+    final source = templateDefinitions[sourceTemplate];
+    if (source == null) return;
+
+    _customTemplateWorkouts.clear();
+    for (final day in source.workouts) {
+      _customTemplateWorkouts.add(
+        TemplateWorkoutDay(
+          code: day.code,
+          title: day.title,
+          subtitle: day.subtitle,
+          coreLifts: day.coreLifts
+              .map((lift) => TemplateLift(
+                    name: lift.name,
+                    prescription: lift.prescription,
+                    sets: lift.sets,
+                    defaultReps: lift.defaultReps,
+                    isAmrap: lift.isAmrap,
+                    isUpperBody: lift.isUpperBody,
+                  ))
+              .toList(),
+          defaultAccessories: List<String>.from(day.defaultAccessories),
+        ),
+      );
+    }
+    _customTemplateName = 'Custom (${source.name})';
+    _customTemplateSubtitle = 'Duplicated from ${source.name}';
+    _activeBarbellRotationIndex = 0;
+    _notifyAndPersist();
+  }
+
+  void resetCustomTemplateToDefault() {
+    _customTemplateWorkouts.clear();
+    _customTemplateName = defaultCustomTemplateDetails.name;
+    _customTemplateSubtitle = defaultCustomTemplateDetails.subtitle;
+    _activeBarbellRotationIndex = 0;
+    _notifyAndPersist();
+  }
+
+  void addCustomWorkoutDay({
+    required String code,
+    required String title,
+    String subtitle = '',
+    List<TemplateLift>? coreLifts,
+    List<String>? defaultAccessories,
+  }) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    final nextNum = _customTemplateWorkouts.length + 1;
+    _customTemplateWorkouts.add(
+      TemplateWorkoutDay(
+        code: code.trim().isEmpty ? 'Day $nextNum' : code.trim(),
+        title: title.trim().isEmpty ? 'Workout Day $nextNum' : title.trim(),
+        subtitle: subtitle.trim(),
+        coreLifts: coreLifts ?? const [],
+        defaultAccessories: defaultAccessories ?? const [],
+      ),
+    );
+    _notifyAndPersist();
+  }
+
+  void removeCustomWorkoutDay(int index) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    if (index >= 0 && index < _customTemplateWorkouts.length) {
+      _customTemplateWorkouts.removeAt(index);
+      if (_customTemplateWorkouts.isEmpty) {
+        _customTemplateWorkouts
+            .add(defaultCustomTemplateDetails.workouts.first);
+      }
+      final maxIndex = _customTemplateWorkouts.length - 1;
+      if (_activeBarbellRotationIndex > maxIndex) {
+        _activeBarbellRotationIndex = 0;
+      }
+      _notifyAndPersist();
+    }
+  }
+
+  void updateCustomWorkoutDay(int index, TemplateWorkoutDay updatedDay) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    if (index >= 0 && index < _customTemplateWorkouts.length) {
+      _customTemplateWorkouts[index] = updatedDay;
+      _notifyAndPersist();
+    }
+  }
+
+  void addCoreLiftToCustomWorkout(int dayIndex, TemplateLift lift) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    if (dayIndex >= 0 && dayIndex < _customTemplateWorkouts.length) {
+      final day = _customTemplateWorkouts[dayIndex];
+      final newLifts = List<TemplateLift>.from(day.coreLifts)..add(lift);
+      _customTemplateWorkouts[dayIndex] = day.copyWith(coreLifts: newLifts);
+      _notifyAndPersist();
+    }
+  }
+
+  void removeCoreLiftFromCustomWorkout(int dayIndex, int liftIndex) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    if (dayIndex >= 0 && dayIndex < _customTemplateWorkouts.length) {
+      final day = _customTemplateWorkouts[dayIndex];
+      if (liftIndex >= 0 && liftIndex < day.coreLifts.length) {
+        final newLifts = List<TemplateLift>.from(day.coreLifts)
+          ..removeAt(liftIndex);
+        _customTemplateWorkouts[dayIndex] = day.copyWith(coreLifts: newLifts);
+        _notifyAndPersist();
+      }
+    }
+  }
+
+  void reorderCoreLiftsInCustomWorkout(
+      int dayIndex, int oldIndex, int newIndex) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    if (dayIndex >= 0 && dayIndex < _customTemplateWorkouts.length) {
+      final day = _customTemplateWorkouts[dayIndex];
+      final newLifts = List<TemplateLift>.from(day.coreLifts);
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+      if (oldIndex >= 0 &&
+          oldIndex < newLifts.length &&
+          newIndex >= 0 &&
+          newIndex <= newLifts.length) {
+        final item = newLifts.removeAt(oldIndex);
+        newLifts.insert(newIndex, item);
+        _customTemplateWorkouts[dayIndex] = day.copyWith(coreLifts: newLifts);
+        _notifyAndPersist();
+      }
     }
   }
 
