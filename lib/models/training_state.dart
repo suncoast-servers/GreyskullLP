@@ -297,6 +297,8 @@ class TrainingState extends ChangeNotifier {
   static const String _prefsKey = 'greyskull_training_state_v1';
   ProgramLevel _programLevel = ProgramLevel.foundation;
   bool _hasCompletedOnboarding = false;
+  bool _socialSharePromptEnabled = true;
+  String _socialShareHashtag = '#GreyskullLP #JohnnyPain';
   BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
   int _activeBarbellRotationIndex = 0;
   final Map<String, List<String>> _customAccessoriesByWorkout = {};
@@ -655,6 +657,9 @@ class TrainingState extends ChangeNotifier {
   bool get isAccessoriesUnlocked => _programLevel.levelNumber >= 2;
   bool get isAdvancedSplitsUnlocked => _programLevel.levelNumber >= 3;
 
+  bool get socialSharePromptEnabled => _socialSharePromptEnabled;
+  String get socialShareHashtag => _socialShareHashtag;
+
   BarbellTemplate get activeBarbellTemplate => _activeBarbellTemplate;
   int get activeBarbellRotationIndex => _activeBarbellRotationIndex;
 
@@ -812,6 +817,8 @@ class TrainingState extends ChangeNotifier {
       'schemaVersion': 2,
       'programLevel': _programLevel.name,
       'hasCompletedOnboarding': _hasCompletedOnboarding,
+      'socialSharePromptEnabled': _socialSharePromptEnabled,
+      'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
       'customAccessoriesByWorkout': _customAccessoriesByWorkout.map(
@@ -862,6 +869,11 @@ class TrainingState extends ChangeNotifier {
       orElse: () => ProgramLevel.foundation,
     );
     _hasCompletedOnboarding = map['hasCompletedOnboarding'] as bool? ?? false;
+
+    _socialSharePromptEnabled =
+        map['socialSharePromptEnabled'] as bool? ?? true;
+    _socialShareHashtag =
+        map['socialShareHashtag'] as String? ?? '#GreyskullLP #JohnnyPain';
 
     _activeBarbellTemplate = BarbellTemplate.values.firstWhere(
       (value) => value.name == (map['activeBarbellTemplate'] as String? ?? ''),
@@ -1037,6 +1049,24 @@ class TrainingState extends ChangeNotifier {
   void resetOnboarding() {
     _hasCompletedOnboarding = false;
     _programLevel = ProgramLevel.foundation;
+    _notifyAndPersist();
+  }
+
+  void setSocialSharePromptEnabled(bool enabled) {
+    if (_socialSharePromptEnabled == enabled) {
+      return;
+    }
+    _socialSharePromptEnabled = enabled;
+    _notifyAndPersist();
+  }
+
+  void setSocialShareHashtag(String value) {
+    final trimmed = value.trim();
+    if (_socialShareHashtag == trimmed) {
+      return;
+    }
+    _socialShareHashtag =
+        trimmed.isEmpty ? '#GreyskullLP #JohnnyPain' : trimmed;
     _notifyAndPersist();
   }
 

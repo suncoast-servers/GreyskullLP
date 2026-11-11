@@ -1,3 +1,4 @@
+import '../services/social_share_service.dart';
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 
@@ -667,26 +668,44 @@ class _HistoryPageState extends State<HistoryPage> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             isThreeLine: true,
-                            trailing: PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert),
-                              onSelected: (val) {
-                                if (val == 'view') {
-                                  _showDetailsDialog(context, entry);
-                                } else if (val == 'edit') {
-                                  _showEditDialog(context, entry);
-                                } else if (val == 'delete') {
-                                  _showDeleteDialog(context, entry);
-                                }
-                              },
-                              itemBuilder: (ctx) => [
-                                const PopupMenuItem(
-                                    value: 'view', child: Text('View Details')),
-                                const PopupMenuItem(
-                                    value: 'edit', child: Text('Edit Entry')),
-                                const PopupMenuItem(
-                                  value: 'delete',
-                                  child: Text('Delete',
-                                      style: TextStyle(color: Colors.red)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.share, size: 20),
+                                  tooltip: 'Share Session',
+                                  onPressed: () =>
+                                      SocialShareService.showShareModal(
+                                    context: context,
+                                    entry: entry,
+                                    defaultHashtag:
+                                        trainingState.socialShareHashtag,
+                                  ),
+                                ),
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert),
+                                  onSelected: (val) {
+                                    if (val == 'view') {
+                                      _showDetailsDialog(context, entry);
+                                    } else if (val == 'edit') {
+                                      _showEditDialog(context, entry);
+                                    } else if (val == 'delete') {
+                                      _showDeleteDialog(context, entry);
+                                    }
+                                  },
+                                  itemBuilder: (ctx) => [
+                                    const PopupMenuItem(
+                                        value: 'view',
+                                        child: Text('View Details')),
+                                    const PopupMenuItem(
+                                        value: 'edit',
+                                        child: Text('Edit Entry')),
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Text('Delete',
+                                          style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),

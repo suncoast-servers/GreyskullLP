@@ -1,3 +1,4 @@
+import '../services/social_share_service.dart';
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 
@@ -762,6 +763,30 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () {
+                final recent = trainingState.history
+                    .where((e) => e.category == HistoryCategory.weight)
+                    .toList();
+                if (recent.isNotEmpty) {
+                  SocialShareService.showShareModal(
+                    context: context,
+                    entry: recent.first,
+                    defaultHashtag: trainingState.socialShareHashtag,
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('No logged weight workouts to share yet.'),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.share),
+              label: const Text('Share Recent Weight Workout'),
+            ),
+
             const SizedBox(height: 24),
           ],
         );

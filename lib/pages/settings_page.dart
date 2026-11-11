@@ -14,6 +14,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  late final TextEditingController _socialHashtagController;
   late final TextEditingController _forumUrlController;
   late final TextEditingController _forumLoginUrlController;
   late final TextEditingController _forumNameController;
@@ -24,6 +25,8 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
+    _socialHashtagController =
+        TextEditingController(text: trainingState.socialShareHashtag);
     _forumUrlController = TextEditingController(text: trainingState.forumUrl);
     _forumLoginUrlController =
         TextEditingController(text: trainingState.forumLoginUrl);
@@ -36,6 +39,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void dispose() {
+    _socialHashtagController.dispose();
     _forumUrlController.dispose();
     _forumLoginUrlController.dispose();
     _forumNameController.dispose();
@@ -46,6 +50,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _saveUrlSettings() {
+    trainingState.setSocialShareHashtag(_socialHashtagController.text);
     trainingState.setForumUrl(_forumUrlController.text);
     trainingState.setForumLoginUrl(_forumLoginUrlController.text);
     trainingState.setStoreUrl(_storeUrlController.text);
@@ -570,6 +575,31 @@ class _SettingsPageState extends State<SettingsPage> {
                 label: const Text('Save Settings'),
               ),
               const Divider(height: 32),
+              const Divider(height: 32),
+              const Text(
+                'Social Workout Sharing',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Prompt to share after workout'),
+                subtitle: const Text(
+                  'Offers a share sheet preview after logging a workout. User always confirms before sharing.',
+                ),
+                value: trainingState.socialSharePromptEnabled,
+                onChanged: (val) =>
+                    trainingState.setSocialSharePromptEnabled(val),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _socialHashtagController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Default share hashtags & attribution',
+                  hintText: '#GreyskullLP #JohnnyPain',
+                ),
+              ),
               const Text(
                 'Backups',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
