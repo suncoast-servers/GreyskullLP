@@ -16,7 +16,7 @@ class ForumPage extends StatelessWidget {
       }
       return;
     }
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final ok = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not open the forum.')),
