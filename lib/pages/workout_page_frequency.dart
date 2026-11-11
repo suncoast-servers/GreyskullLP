@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
+import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
 
 class WorkoutPageFrequency extends StatefulWidget {
   const WorkoutPageFrequency({super.key});
@@ -14,6 +15,7 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
   int _pushUpsThisSet = 10;
   int _chinUpsThisSet = 3;
   bool _usedNegatives = false;
+  final Set<String> _completedAccessories = {};
 
   void _addSet() {
     if (_pushUpsThisSet == 0 && _chinUpsThisSet == 0) {
@@ -54,9 +56,17 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
     final totalPushUps = trainingState.todayFrequencyPushUps;
     final totalChinUps = trainingState.todayFrequencyChinUps;
     final anyNegatives = sets.any((s) => s.usedNegatives);
-    final optional = trainingState.selectedDailyOptionalExercises.isEmpty
-        ? 'None selected'
-        : trainingState.selectedDailyOptionalExercises.join(', ');
+
+    final configuredAccessories =
+        trainingState.getCalisthenicsAccessories(DailyMethod.frequency);
+    final accessorySummaries = <String>[];
+    for (final acc in configuredAccessories) {
+      final done = _completedAccessories.contains(acc);
+      accessorySummaries.add('$acc [${done ? "Completed" : "Skipped"}]');
+    }
+    final optional = accessorySummaries.isEmpty
+        ? 'None configured'
+        : accessorySummaries.join(', ');
 
     final setBreakdown = sets
         .asMap()
@@ -69,7 +79,7 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
         'Total Push-ups: $totalPushUps / ${trainingState.dailyPushUpTarget}\n'
         'Total Chin-ups: $totalChinUps / ${trainingState.dailyChinUpTarget}${anyNegatives ? ' (negatives used)' : ''}\n'
         'Sets completed: ${sets.length}\n'
-        'Optional: $optional\n\n'
+        'Optional Accessories: $optional\n\n'
         'Breakdown:\n$setBreakdown';
 
     final draft = trainingState.logDailyMethodSession(
@@ -85,6 +95,7 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
         'pushUpTarget': trainingState.dailyPushUpTarget,
         'chinUpTarget': trainingState.dailyChinUpTarget,
         'sets': sets.map((s) => s.toJsonMap()).toList(),
+        'accessories': accessorySummaries,
       },
     );
 
@@ -104,6 +115,9 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
           ElevatedButton(
             onPressed: () {
               trainingState.clearTodayFrequencySets();
+              setState(() {
+                _completedAccessories.clear();
+              });
               Navigator.of(ctx).pop();
             },
             child: const Text('Reset Today\'s Tally'),
@@ -313,29 +327,17 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
               const SizedBox(height: 16),
             ],
 
-            // Optional Add-ons Section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Optional Accessories (from Settings):',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children:
-                          trainingState.selectedDailyOptionalExercises.isEmpty
-                              ? [const Chip(label: Text('None selected yet'))]
-                              : trainingState.selectedDailyOptionalExercises
-                                  .map((e) => Chip(label: Text(e)))
-                                  .toList(),
-                    ),
-                  ],
-                ),
-              ),
+            // Optional Accessories Section
+            CalisthenicsAccessoriesSection(
+              method: DailyMethod.frequency,
+              completedAccessories: _completedAccessories,
+              onCompletedChanged: (updated) {
+                setState(() {
+                  _completedAccessories
+                    ..clear()
+                    ..addAll(updated);
+                });
+              },
             ),
             const SizedBox(height: 20),
 

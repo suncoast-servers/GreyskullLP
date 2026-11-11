@@ -304,6 +304,7 @@ class TrainingState extends ChangeNotifier {
   BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
   int _activeBarbellRotationIndex = 0;
   final Map<String, List<String>> _customAccessoriesByWorkout = {};
+  final Map<String, List<String>> _customCalisthenicsAccessoriesByMethod = {};
 
   GreyskullSkin _activeSkin = GreyskullSkin.ironAndBone;
   DailyMethod _activeDailyMethod = DailyMethod.frequency;
@@ -659,6 +660,39 @@ class TrainingState extends ChangeNotifier {
     'Conditioning Finisher (placeholder)',
   ];
 
+  static const Map<DailyMethod, List<String>>
+      defaultCalisthenicsAccessoriesByMethod = {
+    DailyMethod.frequency: [
+      'Dips',
+      'Hanging Knee Raises',
+      'Bodyweight Squats',
+    ],
+    DailyMethod.ladder: [
+      'Dips',
+      'Inverted Rows',
+      'Push-up Variations',
+    ],
+    DailyMethod.totalWork: [
+      'Dips',
+      'Planks',
+      'Walking Lunges',
+    ],
+  };
+
+  static const List<String> officialCalisthenicsAccessories = [
+    'Dips',
+    'Hanging Knee Raises',
+    'Inverted Rows',
+    'Bodyweight Squats',
+    'Planks',
+    'Walking Lunges',
+    'Sit-ups',
+    'Burpees',
+    'Diamond Push-ups',
+    'Band Pull-Aparts',
+    'Hollow Body Hold',
+  ];
+
   GreyskullSkin get activeSkin => _activeSkin;
   ProgramLevel get programLevel => _programLevel;
   bool get hasCompletedOnboarding => _hasCompletedOnboarding;
@@ -705,6 +739,23 @@ class TrainingState extends ChangeNotifier {
   bool isCurrentWorkoutCustomized() {
     final key = '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
     return _customAccessoriesByWorkout.containsKey(key);
+  }
+
+  List<String> getCalisthenicsAccessories(DailyMethod method) {
+    final key = method.name;
+    if (_customCalisthenicsAccessoriesByMethod.containsKey(key)) {
+      return List<String>.unmodifiable(
+          _customCalisthenicsAccessoriesByMethod[key]!);
+    }
+    final defaults = defaultCalisthenicsAccessoriesByMethod[method];
+    if (defaults != null) {
+      return List<String>.unmodifiable(defaults);
+    }
+    return const ['Dips'];
+  }
+
+  bool isCalisthenicsMethodCustomized(DailyMethod method) {
+    return _customCalisthenicsAccessoriesByMethod.containsKey(method.name);
   }
 
   DailyMethod get activeDailyMethod => _activeDailyMethod;
@@ -839,6 +890,10 @@ class TrainingState extends ChangeNotifier {
       'customAccessoriesByWorkout': _customAccessoriesByWorkout.map(
         (key, list) => MapEntry(key, List<dynamic>.from(list)),
       ),
+      'customCalisthenicsAccessoriesByMethod':
+          _customCalisthenicsAccessoriesByMethod.map(
+        (key, list) => MapEntry(key, List<dynamic>.from(list)),
+      ),
       'activeSkin': _activeSkin.name,
       'activeDailyMethod': _activeDailyMethod.name,
       'nutritionMode': _nutritionMode.name,
@@ -907,6 +962,17 @@ class TrainingState extends ChangeNotifier {
       for (final entry in rawMap.entries) {
         if (entry.value is List) {
           _customAccessoriesByWorkout[entry.key.toString()] =
+              (entry.value as List).whereType<String>().toList();
+        }
+      }
+    }
+
+    _customCalisthenicsAccessoriesByMethod.clear();
+    if (map['customCalisthenicsAccessoriesByMethod'] is Map) {
+      final rawMap = map['customCalisthenicsAccessoriesByMethod'] as Map;
+      for (final entry in rawMap.entries) {
+        if (entry.value is List) {
+          _customCalisthenicsAccessoriesByMethod[entry.key.toString()] =
               (entry.value as List).whereType<String>().toList();
         }
       }
@@ -1177,6 +1243,44 @@ class TrainingState extends ChangeNotifier {
     final key = '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
     if (_customAccessoriesByWorkout.containsKey(key)) {
       _customAccessoriesByWorkout.remove(key);
+      _notifyAndPersist();
+    }
+  }
+
+  void addCalisthenicsAccessory(DailyMethod method, String accessory) {
+    final trimmed = accessory.trim();
+    if (trimmed.isEmpty) return;
+    final currentList = List<String>.from(getCalisthenicsAccessories(method));
+    if (!currentList.contains(trimmed)) {
+      currentList.add(trimmed);
+      _customCalisthenicsAccessoriesByMethod[method.name] = currentList;
+      _notifyAndPersist();
+    }
+  }
+
+  void removeCalisthenicsAccessory(DailyMethod method, int index) {
+    final currentList = List<String>.from(getCalisthenicsAccessories(method));
+    if (index >= 0 && index < currentList.length) {
+      currentList.removeAt(index);
+      _customCalisthenicsAccessoriesByMethod[method.name] = currentList;
+      _notifyAndPersist();
+    }
+  }
+
+  void reorderCalisthenicsAccessories(
+      DailyMethod method, int oldIndex, int newIndex) {
+    final currentList = List<String>.from(getCalisthenicsAccessories(method));
+    if (oldIndex < 0 || oldIndex >= currentList.length) return;
+    if (newIndex < 0 || newIndex >= currentList.length) return;
+    final item = currentList.removeAt(oldIndex);
+    currentList.insert(newIndex, item);
+    _customCalisthenicsAccessoriesByMethod[method.name] = currentList;
+    _notifyAndPersist();
+  }
+
+  void resetCalisthenicsAccessoriesToDefault(DailyMethod method) {
+    if (_customCalisthenicsAccessoriesByMethod.containsKey(method.name)) {
+      _customCalisthenicsAccessoriesByMethod.remove(method.name);
       _notifyAndPersist();
     }
   }
