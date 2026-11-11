@@ -538,6 +538,24 @@ class _SettingsPageState extends State<SettingsPage> {
                   labelText: 'Forum login URL',
                 ),
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () {
+                  trainingState.resetForumUrlsToDefault();
+                  setState(() {
+                    _forumUrlController.text = TrainingState.defaultForumUrl;
+                    _forumLoginUrlController.text =
+                        TrainingState.defaultForumLoginUrl;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Forum URLs reset to default'),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.restart_alt, size: 16),
+                label: const Text('Reset Forum URLs to Default'),
+              ),
               const Divider(height: 32),
               const Text(
                 'Store Integration',

@@ -316,10 +316,14 @@ class TrainingState extends ChangeNotifier {
   DateTime _macroTrackingDate = _normalizedDay(DateTime.now());
   String _usdaApiKey = '';
 
+  static const String defaultForumUrl = 'https://forum.greyskullnation.com/';
+  static const String defaultForumLoginUrl =
+      'https://www.greyskullnation.com/wp-login.php';
+
   bool _forumSignedIn = false;
   String _forumDisplayName = '';
-  String _forumUrl = 'https://www.greyskullnation.com/forum';
-  String _forumLoginUrl = 'https://www.greyskullnation.com/wp-login.php';
+  String _forumUrl = defaultForumUrl;
+  String _forumLoginUrl = defaultForumLoginUrl;
   String _storeUrl = 'https://store.greyskullnation.com/';
 
   final Set<String> _selectedWeightOptionalExercises = {
@@ -974,7 +978,13 @@ class TrainingState extends ChangeNotifier {
     _usdaApiKey = map['usdaApiKey'] as String? ?? '';
     _forumSignedIn = map['forumSignedIn'] as bool? ?? false;
     _forumDisplayName = map['forumDisplayName'] as String? ?? '';
-    _forumUrl = map['forumUrl'] as String? ?? _forumUrl;
+    final savedForumUrl = map['forumUrl'] as String? ?? _forumUrl;
+    if (savedForumUrl == 'https://greyskullnation.com/forum' ||
+        savedForumUrl == 'https://www.greyskullnation.com/forum') {
+      _forumUrl = defaultForumUrl;
+    } else {
+      _forumUrl = savedForumUrl;
+    }
     _forumLoginUrl = map['forumLoginUrl'] as String? ?? _forumLoginUrl;
     _storeUrl = map['storeUrl'] as String? ?? _storeUrl;
 
@@ -1256,6 +1266,12 @@ class TrainingState extends ChangeNotifier {
       return;
     }
     _forumLoginUrl = trimmed;
+    _notifyAndPersist();
+  }
+
+  void resetForumUrlsToDefault() {
+    _forumUrl = defaultForumUrl;
+    _forumLoginUrl = defaultForumLoginUrl;
     _notifyAndPersist();
   }
 
