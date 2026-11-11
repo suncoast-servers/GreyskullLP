@@ -1259,12 +1259,19 @@ class TrainingState extends ChangeNotifier {
     _notifyAndPersist();
   }
 
+  static const String defaultStoreUrl = 'https://store.greyskullnation.com/';
+
   void setStoreUrl(String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty || trimmed == _storeUrl) {
       return;
     }
     _storeUrl = trimmed;
+    _notifyAndPersist();
+  }
+
+  void resetStoreUrlToDefault() {
+    _storeUrl = defaultStoreUrl;
     _notifyAndPersist();
   }
 

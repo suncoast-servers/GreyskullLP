@@ -551,6 +551,20 @@ class _SettingsPageState extends State<SettingsPage> {
                   labelText: 'Store URL',
                 ),
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () {
+                  trainingState.resetStoreUrlToDefault();
+                  setState(() {
+                    _storeUrlController.text = TrainingState.defaultStoreUrl;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Store URL reset to default')),
+                  );
+                },
+                icon: const Icon(Icons.restart_alt, size: 16),
+                label: const Text('Reset Store URL to Default'),
+              ),
               const Divider(height: 32),
               const Text(
                 'Free Calorie Data API',
