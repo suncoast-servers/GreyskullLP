@@ -197,7 +197,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                         style: TextStyle(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      initialValue: selectedExercise,
+                      value: selectedExercise,
                       decoration:
                           const InputDecoration(border: OutlineInputBorder()),
                       items: const [

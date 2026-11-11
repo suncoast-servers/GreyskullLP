@@ -449,7 +449,7 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 8),
               DropdownButtonFormField<BarbellTemplate>(
                 key: ValueKey(trainingState.activeBarbellTemplate),
-                initialValue: trainingState.activeBarbellTemplate,
+                value: trainingState.activeBarbellTemplate,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
