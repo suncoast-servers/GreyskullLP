@@ -119,6 +119,20 @@ class FrequencySet {
   }
 }
 
+class MethodTransitionMilestone {
+  final String title;
+  final String description;
+  final DateTime timestamp;
+  final String methodCategory;
+
+  const MethodTransitionMilestone({
+    required this.title,
+    required this.description,
+    required this.timestamp,
+    required this.methodCategory,
+  });
+}
+
 class HistoryEntry {
   HistoryEntry({
     String? id,
@@ -1370,6 +1384,208 @@ class TrainingState extends ChangeNotifier {
     _dailyProteinConsumed = 0;
     _dailyCaloriesConsumed = 0;
     _notifyAndPersist();
+  }
+
+  int calculateCurrentStreakDays() {
+    if (_history.isEmpty) return 0;
+    final workoutDates = _history
+        .where((e) =>
+            e.category == HistoryCategory.weight ||
+            e.category == HistoryCategory.daily)
+        .map((e) =>
+            DateTime(e.timestamp.year, e.timestamp.month, e.timestamp.day))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    if (workoutDates.isEmpty) return 0;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    if (workoutDates.first != today && workoutDates.first != yesterday) {
+      return 0;
+    }
+
+    int streak = 1;
+    DateTime checkDate = workoutDates.first;
+
+    for (int i = 1; i < workoutDates.length; i++) {
+      final expectedPrev = checkDate.subtract(const Duration(days: 1));
+      if (workoutDates[i] == expectedPrev) {
+        streak++;
+        checkDate = expectedPrev;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  List<MethodTransitionMilestone> getMethodTransitions() {
+    final milestones = <MethodTransitionMilestone>[];
+    final chronological = List<HistoryEntry>.from(_history)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    bool hasWeight = false;
+    bool hasFrequency = false;
+    bool hasLadder = false;
+    bool hasTotalWork = false;
+    double cumulativeVolume = 0;
+    int cumulativePushUps = 0;
+    bool hit5kVolume = false;
+    bool hit25kVolume = false;
+    bool hit100PushUps = false;
+    bool hit500PushUps = false;
+
+    for (final entry in chronological) {
+      if (entry.category == HistoryCategory.weight) {
+        if (!hasWeight) {
+          hasWeight = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: 'Started Barbell Program',
+              description:
+                  'Logged first Greyskull LP heavy resistance session.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Resistance',
+            ),
+          );
+        }
+        cumulativeVolume += (entry.weightVolume ?? 0);
+        if (!hit5kVolume && cumulativeVolume >= 5000) {
+          hit5kVolume = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: '5,000 lbs Volume Milestone',
+              description: 'Surpassed 5,000 lbs of total resistance work.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Resistance',
+            ),
+          );
+        }
+        if (!hit25kVolume && cumulativeVolume >= 25000) {
+          hit25kVolume = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: '25,000 lbs Volume Milestone',
+              description: 'Surpassed 25,000 lbs of total resistance work.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Resistance',
+            ),
+          );
+        }
+      } else if (entry.category == HistoryCategory.daily) {
+        final title = entry.title.toLowerCase();
+        if (title.contains('frequency') && !hasFrequency) {
+          hasFrequency = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: 'Adopted Frequency Method',
+              description:
+                  'Began daily sub-maximal bodyweight volume practice.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Frequency',
+            ),
+          );
+        } else if (title.contains('ladder') && !hasLadder) {
+          hasLadder = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: 'Graduated to Ladder Method',
+              description:
+                  'Progressed calisthenics work to ascending ladder rungs.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Ladder',
+            ),
+          );
+        } else if (title.contains('total work') && !hasTotalWork) {
+          hasTotalWork = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: 'Advanced to Total Work Method',
+              description:
+                  'Took on time-constrained density calisthenics sessions.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Total Work',
+            ),
+          );
+        }
+
+        cumulativePushUps += (entry.pushUps ?? 0);
+        if (!hit100PushUps && cumulativePushUps >= 100) {
+          hit100PushUps = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: '100 Push-ups Club',
+              description: 'Accumulated over 100 bodyweight push-ups.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Calisthenics',
+            ),
+          );
+        }
+        if (!hit500PushUps && cumulativePushUps >= 500) {
+          hit500PushUps = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: '500 Push-ups Elite',
+              description: 'Accumulated over 500 bodyweight push-ups.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Calisthenics',
+            ),
+          );
+        }
+      }
+    }
+
+    return milestones.reversed.toList();
+  }
+
+  Map<DateTime, double> getDailyVolumeByDay({int days = 7}) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final result = <DateTime, double>{};
+
+    for (int i = days - 1; i >= 0; i--) {
+      final date = today.subtract(Duration(days: i));
+      result[date] = 0.0;
+    }
+
+    for (final entry in _history) {
+      if (entry.category == HistoryCategory.weight &&
+          entry.weightVolume != null) {
+        final day = DateTime(
+            entry.timestamp.year, entry.timestamp.month, entry.timestamp.day);
+        if (result.containsKey(day)) {
+          result[day] = (result[day] ?? 0.0) + entry.weightVolume!;
+        }
+      }
+    }
+    return result;
+  }
+
+  Map<DateTime, int> getDailyCalisthenicsByDay({int days = 7}) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final result = <DateTime, int>{};
+
+    for (int i = days - 1; i >= 0; i--) {
+      final date = today.subtract(Duration(days: i));
+      result[date] = 0;
+    }
+
+    for (final entry in _history) {
+      if (entry.category == HistoryCategory.daily) {
+        final day = DateTime(
+            entry.timestamp.year, entry.timestamp.month, entry.timestamp.day);
+        if (result.containsKey(day)) {
+          result[day] =
+              (result[day] ?? 0) + (entry.pushUps ?? 0) + (entry.chinUps ?? 0);
+        }
+      }
+    }
+    return result;
   }
 
   static String methodLabel(DailyMethod method) {
