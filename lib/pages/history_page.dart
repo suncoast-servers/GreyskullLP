@@ -12,7 +12,8 @@ class HistoryPage extends StatelessWidget {
         final entries = trainingState.history;
         if (entries.isEmpty) {
           return const Center(
-            child: Text('No activity logged yet. Complete a workout to build history.'),
+            child: Text(
+                'No activity logged yet. Complete a workout to build history.'),
           );
         }
         return ListView.separated(
