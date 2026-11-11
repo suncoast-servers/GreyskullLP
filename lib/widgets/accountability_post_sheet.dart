@@ -68,7 +68,7 @@ class _AccountabilityPostSheetState extends State<AccountabilityPostSheet> {
     final url = trainingState.forumUrl;
     final uri = Uri.tryParse(url);
     if (uri != null) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
     }
     if (mounted) {
       Navigator.of(context).pop();
