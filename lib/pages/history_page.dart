@@ -198,7 +198,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  initialValue: exercise,
+                  value: exercise,
                   decoration: const InputDecoration(labelText: 'Movement'),
                   items: const [
                     DropdownMenuItem(
@@ -336,7 +336,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  initialValue: [
+                  value: [
                     'Push-ups',
                     'Dead-Hang Chins',
                     'Sit-ups',
@@ -360,7 +360,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  initialValue: model,
+                  value: model,
                   decoration: const InputDecoration(labelText: 'Target Model'),
                   items: const [
                     DropdownMenuItem(

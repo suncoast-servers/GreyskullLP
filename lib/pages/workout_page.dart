@@ -275,7 +275,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildWorkoutButton(
-              IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
+              const IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
               'Weight Program',
               onTap: () =>
                   _openSubPage(const WorkoutPageWeight(), 'Weight Program'),

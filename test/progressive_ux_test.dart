@@ -172,7 +172,7 @@ void main() {
           findsOneWidget);
 
       // Tap 'Adjust Level'
-      final adjustBtn = find.widgetWithText(TextButton, 'Adjust Level');
+      final adjustBtn = find.text('Adjust Level');
       expect(adjustBtn, findsOneWidget);
       await tester.tap(adjustBtn);
       await tester.pumpAndSettle();
@@ -265,8 +265,7 @@ void main() {
       expect(trainingState.programLevel, equals(ProgramLevel.villain));
 
       // Tap Reset Starter Onboarding Prompt
-      final resetBtn = find.widgetWithText(
-          OutlinedButton, 'Reset Starter Onboarding Prompt');
+      final resetBtn = find.text('Reset Starter Onboarding Prompt');
       expect(resetBtn, findsOneWidget);
       await tester.ensureVisible(resetBtn);
       await tester.tap(resetBtn);
