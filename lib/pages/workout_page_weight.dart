@@ -3,6 +3,7 @@ import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/social_share_service.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
+import 'package:greyskull_lp/widgets/custom_program_editor_sheet.dart';
 
 class WorkoutPageWeight extends StatefulWidget {
   const WorkoutPageWeight({super.key});
@@ -147,6 +148,84 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
         );
       },
     ).then((_) => customController.dispose());
+  }
+
+  void _showDuplicatePresetDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Duplicate from Book Preset'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Copy all workouts, core lifts, and plug-in accessories from an official book preset into your custom program.',
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            ...TrainingState.officialBookTemplates.map((template) {
+              final details = TrainingState.templateDefinitions[template]!;
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.fitness_center),
+                title: Text(details.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(details.subtitle,
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  trainingState.duplicateTemplateFromPreset(template);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text('Cloned ${details.name} into Custom Program'),
+                    ),
+                  );
+                },
+              );
+            }),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmResetToFactory(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reset to Factory Defaults?'),
+        content: const Text(
+          'Revert custom program to factory starting template? All added workout days and custom core lifts will be reset.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              trainingState.resetCustomTemplateToDefault();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Custom program reset to factory defaults.')),
+              );
+            },
+            child: const Text('Revert to Factory',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _logSession(
@@ -297,7 +376,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                       ),
                       items: BarbellTemplate.values.map((template) {
                         final details =
-                            TrainingState.templateDefinitions[template]!;
+                            trainingState.getTemplateDetails(template);
                         return DropdownMenuItem(
                           value: template,
                           child: Text(
@@ -335,6 +414,38 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                       style:
                           const TextStyle(fontSize: 12, color: Colors.black87),
                     ),
+                    if (trainingState.isCustomTemplateActive) ...[
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ElevatedButton.icon(
+                            key: const Key('customize_program_btn'),
+                            onPressed: () =>
+                                CustomProgramEditorSheet.show(context),
+                            icon: const Icon(Icons.tune, size: 16),
+                            label: const Text('Customize Program'),
+                          ),
+                          OutlinedButton.icon(
+                            key: const Key('duplicate_preset_btn'),
+                            onPressed: () =>
+                                _showDuplicatePresetDialog(context),
+                            icon: const Icon(Icons.copy, size: 16),
+                            label: const Text('Duplicate Preset'),
+                          ),
+                          if (trainingState.isCustomTemplateModified)
+                            OutlinedButton.icon(
+                              key: const Key('reset_custom_btn'),
+                              onPressed: () => _confirmResetToFactory(context),
+                              icon: const Icon(Icons.restore,
+                                  size: 16, color: Colors.red),
+                              label: const Text('Revert to Factory',
+                                  style: TextStyle(color: Colors.red)),
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

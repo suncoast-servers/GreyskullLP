@@ -457,7 +457,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
                 items: BarbellTemplate.values.map((template) {
-                  final details = TrainingState.templateDefinitions[template]!;
+                  final details = trainingState.getTemplateDetails(template);
                   return DropdownMenuItem(
                     value: template,
                     child: Text(
