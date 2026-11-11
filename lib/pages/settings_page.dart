@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
@@ -88,6 +88,17 @@ class _SettingsPageState extends State<SettingsPage> {
           XFile.fromData(bytes, mimeType: 'application/json', name: fileName)
         ],
       ),
+    );
+  }
+
+  Future<void> _copyBackupToClipboard() async {
+    final payload = trainingState.exportBackupJson();
+    await Clipboard.setData(ClipboardData(text: payload));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Backup JSON copied to clipboard!')),
     );
   }
 
@@ -821,10 +832,24 @@ class _SettingsPageState extends State<SettingsPage> {
                 },
               ),
               const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _shareBackup,
-                icon: const Icon(Icons.ios_share),
-                label: const Text('Export and Share Backup JSON'),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _shareBackup,
+                      icon: const Icon(Icons.ios_share, size: 16),
+                      label: const Text('Share File'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _copyBackupToClipboard,
+                      icon: const Icon(Icons.copy, size: 16),
+                      label: const Text('Copy JSON'),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               TextField(
@@ -841,6 +866,61 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: _restoreBackup,
                 icon: const Icon(Icons.restore),
                 label: const Text('Restore from Pasted Backup'),
+              ),
+              const Divider(height: 32),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.verified_user_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Privacy & Data Ownership',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'The official Greyskull LP app is 100% local-first and open-source. '
+                      'Your workouts, lifts, body statistics, and nutrition logs belong to you—not our servers. '
+                      'We do not track, profile, monetize, or harvest your personal health data.',
+                      style: TextStyle(fontSize: 12, height: 1.4),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Data Loss Protection: Because records are stored on-device, deleting the app will remove local history unless you export a backup. '
+                      'Use "Share File" or "Copy JSON" above before switching phones or uninstalling.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const Divider(height: 32),
               const Text(
