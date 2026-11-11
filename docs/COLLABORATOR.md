@@ -23,6 +23,14 @@ flutter pub get
 flutter doctor -v
 ```
 
+## Program reference
+
+Barbell templates and calisthenics methods must match Johnny Pain’s **3rd edition** in the repo:
+
+- [`docs/reference/Greyskull_LP_3rd_edition.pdf`](../reference/Greyskull_LP_3rd_edition.pdf)
+- [`docs/reference/README.md`](../reference/README.md)
+- `lib/program/program_source.dart` (edition pointer; TODO for 4th edition)
+
 ## Workflow (required)
 
 `main` is **protected**: no direct pushes, PR + approval required, CODEOWNERS review.

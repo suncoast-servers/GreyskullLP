@@ -35,7 +35,7 @@ Contractor may parallelize research spikes (store platform, forum stack) early w
 
 ## Ryan-owned actions
 
-- Provide PDF ebook to contractor (secure channel, not git).
+- Official program PDF in repo: `docs/reference/Greyskull_LP_3rd_edition.pdf` (4th edition TBD — see `lib/program/program_source.dart`).
 - Apple Developer / App Store Connect.
 - Google Play Developer account (create when ready).
 - Approve store listings, privacy policy URL, and attribution copy.

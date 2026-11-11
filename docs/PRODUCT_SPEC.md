@@ -2,7 +2,7 @@
 
 **Sanction:** Official Greyskull LP program (Johnny Pain).  
 **Positioning:** Free, open-source workout app published by [Suncoast Servers](https://github.com/suncoast-servers).  
-**Ryan provides:** Authoritative PDF ebook (not stored in git), store account ownership, merge/release approval.
+**Ryan provides:** Store account ownership, merge/release approval. **Authoritative program text:** [`docs/reference/Greyskull_LP_3rd_edition.pdf`](../reference/Greyskull_LP_3rd_edition.pdf) (in repo; see `docs/reference/README.md`).
 
 ## Brand & visual direction
 

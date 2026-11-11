@@ -12,6 +12,8 @@ App development for the official Greyskull LP workout program — **free and ope
 ## Description
 GreyskullLP is a fitness app designed to help users track their workout routines and progress. The app offers customizable exercises and allows users to monitor their improvements over time. This project has been sanctioned by Johnny Pain, the author of the official workout plan, and I am working on this with his permission.
 
+**Official program reference (in repo):** [Greyskull LP, 3rd edition (PDF)](docs/reference/Greyskull_LP_3rd_edition.pdf) — see [`docs/reference/README.md`](docs/reference/README.md). Feature work should match this text (`lib/program/program_source.dart`).
+
 ## Features
 - User-friendly interface for inputting workouts.
 - Progress tracking with graphs and charts.

@@ -6,6 +6,13 @@ Guidance for **Cursor**, **Claude Code**, **Codex**, and human contributors.
 
 Open-source **Flutter** app for the official **Greyskull LP** program (sanctioned by Johnny Pain). Goal: **Google Play** and **Apple App Store** releases under **Suncoast Servers** ownership.
 
+## Program fidelity (required reading)
+
+- **Authoritative text (in repo):** `docs/reference/Greyskull_LP_3rd_edition.pdf` — barbell templates, methods, and rules must align with this edition unless an issue says otherwise.
+- **Pointer / edition constant:** `lib/program/program_source.dart`
+- **Do not** invent program variants; use book templates plus user customization hooks defined in issues/PRs.
+- **4th edition:** Not in repo yet — follow the TODO in `program_source.dart` when Johnny Pain releases it.
+
 ## Ownership
 
 | Role | Who |
