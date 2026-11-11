@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 
 class WorkoutPageLadder extends StatefulWidget {
   const WorkoutPageLadder({super.key});
@@ -85,7 +87,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
         'Optional: $optional\n\n'
         'Ladders Breakdown:\n$ladderBreakdown';
 
-    trainingState.logDailyMethodSession(
+    final draft = trainingState.logDailyMethodSession(
       method: DailyMethod.ladder,
       pushUps: pushUps,
       chinUps: chinUps,
@@ -124,7 +126,27 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      if (!mounted) return;
+      if (trainingState.accountabilityMode ==
+              AccountabilityPostMode.onWorkoutComplete &&
+          draft != null) {
+        AccountabilityPostSheet.show(context, draft: draft);
+      } else if (trainingState.accountabilityMode ==
+              AccountabilityPostMode.manual &&
+          draft != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Ladder session logged to history'),
+            action: SnackBarAction(
+              label: 'Post to Forum',
+              onPressed: () =>
+                  AccountabilityPostSheet.show(context, draft: draft),
+            ),
+          ),
+        );
+      }
+    });
   }
 
   @override

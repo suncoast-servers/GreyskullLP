@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:greyskull_lp/models/accountability_post.dart';
+import 'package:greyskull_lp/services/accountability_template_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,6 +11,112 @@ enum DailyMethod {
   frequency,
   ladder,
   totalWork,
+}
+
+enum BarbellTemplate {
+  ogBase,
+  villain,
+  gladiator,
+  twoDaySplit,
+  fourDaySplit,
+}
+
+class TemplateLift {
+  final String name;
+  final String prescription;
+  final int sets;
+  final int defaultReps;
+  final bool isAmrap;
+  final bool isUpperBody;
+
+  const TemplateLift({
+    required this.name,
+    required this.prescription,
+    this.sets = 3,
+    this.defaultReps = 5,
+    this.isAmrap = true,
+    this.isUpperBody = false,
+  });
+}
+
+class TemplateWorkoutDay {
+  final String code;
+  final String title;
+  final String subtitle;
+  final List<TemplateLift> coreLifts;
+  final List<String> defaultAccessories;
+
+  const TemplateWorkoutDay({
+    required this.code,
+    required this.title,
+    required this.subtitle,
+    required this.coreLifts,
+    this.defaultAccessories = const [],
+  });
+}
+
+class BarbellTemplateDetails {
+  final BarbellTemplate template;
+  final String name;
+  final String subtitle;
+  final String bookReference;
+  final String scheduleDescription;
+  final List<TemplateWorkoutDay> workouts;
+
+  const BarbellTemplateDetails({
+    required this.template,
+    required this.name,
+    required this.subtitle,
+    required this.bookReference,
+    required this.scheduleDescription,
+    required this.workouts,
+  });
+}
+
+enum ProgramLevel {
+  foundation(
+    levelNumber: 1,
+    displayName: 'Foundation (Starter Path)',
+    shortLabel: 'Level 1: Foundation',
+    badge: 'Starter',
+    subtitle: 'Base Barbell Progression + Frequency Method',
+    description:
+        'Johnny Pain’s recommended starter path: master the core barbell lifts (Press, Squat, Bench, Deadlift) and accumulate clean daily push-ups & chin-ups with zero accessory distraction.',
+  ),
+  villain(
+    levelNumber: 2,
+    displayName: 'Villain (Arms & Neck Plug-ins)',
+    shortLabel: 'Level 2: Villain',
+    badge: 'Intermediate',
+    subtitle: 'Base Program + Plug-in Accessories + Ladder Method',
+    description:
+        'Adds Johnny Pain’s iconic arms & neck plug-ins (curls, neck harness, weighted chins) and unlocks the Ladder Method for ascending calisthenics work.',
+  ),
+  gladiator(
+    levelNumber: 3,
+    displayName: 'Gladiator (Advanced Hypertrophy & Splits)',
+    shortLabel: 'Level 3: Gladiator',
+    badge: 'Advanced',
+    subtitle: 'All Barbell Splits + Total Work Method + Full Customization',
+    description:
+        'Unlocks high-volume hypertrophy splits (Gladiator, Two-Day, Four-Day LCI), density Total Work calisthenics, and unrestricted custom accessory programming.',
+  );
+
+  final int levelNumber;
+  final String displayName;
+  final String shortLabel;
+  final String badge;
+  final String subtitle;
+  final String description;
+
+  const ProgramLevel({
+    required this.levelNumber,
+    required this.displayName,
+    required this.shortLabel,
+    required this.badge,
+    required this.subtitle,
+    required this.description,
+  });
 }
 
 enum NutritionMode {
@@ -57,6 +165,20 @@ class FrequencySet {
           DateTime.now(),
     );
   }
+}
+
+class MethodTransitionMilestone {
+  final String title;
+  final String description;
+  final DateTime timestamp;
+  final String methodCategory;
+
+  const MethodTransitionMilestone({
+    required this.title,
+    required this.description,
+    required this.timestamp,
+    required this.methodCategory,
+  });
 }
 
 class HistoryEntry {
@@ -175,6 +297,13 @@ class HistoryEntry {
 
 class TrainingState extends ChangeNotifier {
   static const String _prefsKey = 'greyskull_training_state_v1';
+  ProgramLevel _programLevel = ProgramLevel.foundation;
+  bool _hasCompletedOnboarding = false;
+  bool _socialSharePromptEnabled = true;
+  String _socialShareHashtag = '#GreyskullLP #JohnnyPain';
+  BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
+  int _activeBarbellRotationIndex = 0;
+  final Map<String, List<String>> _customAccessoriesByWorkout = {};
 
   GreyskullSkin _activeSkin = GreyskullSkin.ironAndBone;
   DailyMethod _activeDailyMethod = DailyMethod.frequency;
@@ -189,11 +318,19 @@ class TrainingState extends ChangeNotifier {
   DateTime _macroTrackingDate = _normalizedDay(DateTime.now());
   String _usdaApiKey = '';
 
+  static const String defaultForumUrl = 'https://forum.greyskullnation.com/';
+  static const String defaultForumLoginUrl =
+      'https://www.greyskullnation.com/wp-login.php';
+
   bool _forumSignedIn = false;
   String _forumDisplayName = '';
-  String _forumUrl = 'https://www.greyskullnation.com/forum';
-  String _forumLoginUrl = 'https://www.greyskullnation.com/wp-login.php';
+  String _forumUrl = defaultForumUrl;
+  String _forumLoginUrl = defaultForumLoginUrl;
   String _storeUrl = 'https://store.greyskullnation.com/';
+
+  AccountabilityPostMode _accountabilityMode = AccountabilityPostMode.off;
+  final List<AccountabilityDraft> _accountabilityDrafts = [];
+  AccountabilityDraft? _latestAccountabilityDraft;
 
   final Set<String> _selectedWeightOptionalExercises = {
     'Barbell Row',
@@ -224,14 +361,294 @@ class TrainingState extends ChangeNotifier {
   int _activeTotalWorkTargetReps = 70;
   final List<int> _activeTotalWorkSets = [];
 
-  static const List<String> weightOptionalExerciseOptions = [
-    'Barbell Row',
-    'Romanian Deadlift',
-    'Deadlift',
-    'Split Squat',
-    'Farmer Carry',
-    'Core Circuit (placeholder)',
+  static const List<String> officialBookAccessories = [
+    'Bicep Curls (2 x 10–12)',
+    'Neck Harness Extensions (4 x 25+)',
+    'Weighted Chin-ups (2 x 6–8)',
+    'Weighted Dips (2 x 6–8)',
+    'Yates / Barbell Rows (2 x 6–8)',
+    'Power Cleans (3–5 x 3)',
+    'Direct Abdominal Work (3–5 sets)',
+    'Direct Calf Exercises (2–3 sets)',
+    'Barbell / Dumbbell Shrugs (2 x 10–12)',
+    'Face Pulls (2 x 15–20)',
+    'Forearm Wrist Curls (2 sets)',
+    'Dumbbell Pullovers (2 sets)',
   ];
+
+  static const List<String> weightOptionalExerciseOptions =
+      officialBookAccessories;
+
+  static const Map<BarbellTemplate, BarbellTemplateDetails>
+      templateDefinitions = {
+    BarbellTemplate.ogBase: BarbellTemplateDetails(
+      template: BarbellTemplate.ogBase,
+      name: '"OG" Base Program',
+      subtitle: 'The foundational 3-day A/B Greyskull linear progression',
+      bookReference: '3rd Edition, Chapter 3, pp. 47–48',
+      scheduleDescription:
+          '3 days/week (Mon/Wed/Fri): Week 1: A/B/A, Week 2: B/A/B',
+      workouts: [
+        TemplateWorkoutDay(
+          code: 'A',
+          title: 'Workout A (Press & Squat)',
+          subtitle: 'Upper body pressing first, followed by squat',
+          coreLifts: [
+            TemplateLift(
+                name: 'Overhead Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: [],
+        ),
+        TemplateWorkoutDay(
+          code: 'B',
+          title: 'Workout B (Bench & Deadlift)',
+          subtitle: 'Upper body bench first, followed by deadlift',
+          coreLifts: [
+            TemplateLift(
+                name: 'Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Deadlift',
+                prescription: '1 x 5+ (AMRAP)',
+                sets: 1,
+                isUpperBody: false),
+          ],
+          defaultAccessories: [],
+        ),
+      ],
+    ),
+    BarbellTemplate.villain: BarbellTemplateDetails(
+      template: BarbellTemplate.villain,
+      name: '"Villain" Arms & Neck Plugin',
+      subtitle: 'The most popular GSLP variant with Arms & Neck plug-ins',
+      bookReference: '3rd Edition, Chapter 4, pp. 56–61',
+      scheduleDescription: '3 days/week alternating Workout A and Workout B',
+      workouts: [
+        TemplateWorkoutDay(
+          code: 'A',
+          title: 'Workout A (Press, Squat, Chins, Neck)',
+          subtitle: 'Press + Chins + Squat + Neck Harness',
+          coreLifts: [
+            TemplateLift(
+                name: 'Overhead Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Weighted Chin-ups (2 x 6–8)',
+            'Neck Harness Extensions (4 x 25+)',
+          ],
+        ),
+        TemplateWorkoutDay(
+          code: 'B',
+          title: 'Workout B (Bench, Deadlift, Curls, Neck)',
+          subtitle: 'Bench + Curls + Deadlift + Neck Harness',
+          coreLifts: [
+            TemplateLift(
+                name: 'Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Deadlift',
+                prescription: '1 x 5+ (AMRAP)',
+                sets: 1,
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Bicep Curls (2 x 10–12)',
+            'Neck Harness Extensions (4 x 25+)',
+          ],
+        ),
+      ],
+    ),
+    BarbellTemplate.gladiator: BarbellTemplateDetails(
+      template: BarbellTemplate.gladiator,
+      name: 'Greyskull Gladiator (Hypertrophy)',
+      subtitle:
+          '"Linebacker" mass-gain focus with rotating pressing variants and dips',
+      bookReference: '3rd Edition, Chapter 6, pp. 106–109',
+      scheduleDescription: '3 days/week rotating A, B, and C',
+      workouts: [
+        TemplateWorkoutDay(
+          code: 'A',
+          title: 'Workout A (Press, Squat, Chins)',
+          subtitle: 'Press + Weighted Chins + Squat + Neck',
+          coreLifts: [
+            TemplateLift(
+                name: 'Overhead Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Weighted Chin-ups (2 x 6–8)',
+            'Neck Harness Extensions (4 x 25+)',
+          ],
+        ),
+        TemplateWorkoutDay(
+          code: 'B',
+          title: 'Workout B (Bench, Deadlift, Curls, Rows)',
+          subtitle: 'Bench + EZ-Bar Curls + Yates Row + Deadlift + Neck',
+          coreLifts: [
+            TemplateLift(
+                name: 'Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Deadlift',
+                prescription: '1 x 5+ (AMRAP)',
+                sets: 1,
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Bicep Curls (2 x 10–12)',
+            'Yates / Barbell Rows (2 x 6–8)',
+            'Neck Harness Extensions (4 x 25+)',
+          ],
+        ),
+        TemplateWorkoutDay(
+          code: 'C',
+          title: 'Workout C (Incline Bench, Front Squat, Dips)',
+          subtitle: 'Incline Bench + Weighted Dips + Front Squat + Neck',
+          coreLifts: [
+            TemplateLift(
+                name: 'Incline Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Front Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Weighted Dips (2 x 6–8)',
+            'Neck Harness Extensions (4 x 25+)',
+          ],
+        ),
+      ],
+    ),
+    BarbellTemplate.twoDaySplit: BarbellTemplateDetails(
+      template: BarbellTemplate.twoDaySplit,
+      name: 'Two-Day Split (Dan / Mike)',
+      subtitle:
+          'For busy professionals, travel, and recovery-constrained trainees',
+      bookReference: '3rd Edition, Chapter 3, pp. 49–53',
+      scheduleDescription:
+          '2 days/week (e.g., Tue/Fri) or flexible A/B cadence',
+      workouts: [
+        TemplateWorkoutDay(
+          code: 'A',
+          title: 'Workout A (Bench & Deadlift)',
+          subtitle: 'Bench Press + Deadlift + Curls',
+          coreLifts: [
+            TemplateLift(
+                name: 'Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Deadlift',
+                prescription: '1 x 5+ (AMRAP)',
+                sets: 1,
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Bicep Curls (2 x 10–12)',
+          ],
+        ),
+        TemplateWorkoutDay(
+          code: 'B',
+          title: 'Workout B (Press & Squat)',
+          subtitle: 'Overhead Press + Squat + Chins',
+          coreLifts: [
+            TemplateLift(
+                name: 'Overhead Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Weighted Chin-ups (2 x 6–8)',
+          ],
+        ),
+      ],
+    ),
+    BarbellTemplate.fourDaySplit: BarbellTemplateDetails(
+      template: BarbellTemplate.fourDaySplit,
+      name: 'Four-Day Single-Lift Split (LCI)',
+      subtitle:
+          'One primary compound lift per day for quick, high-intensity sessions',
+      bookReference: '3rd Edition, Chapter 3, pp. 54–55',
+      scheduleDescription: '4 days/week (e.g., Mon/Tue/Thu/Fri)',
+      workouts: [
+        TemplateWorkoutDay(
+          code: 'Day 1',
+          title: 'Day 1: Bench Press',
+          subtitle: 'Bench Press + Curls',
+          coreLifts: [
+            TemplateLift(
+                name: 'Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+          ],
+          defaultAccessories: ['Bicep Curls (2 x 10–12)'],
+        ),
+        TemplateWorkoutDay(
+          code: 'Day 2',
+          title: 'Day 2: Deadlift',
+          subtitle: 'Deadlift + Abdominal Work',
+          coreLifts: [
+            TemplateLift(
+                name: 'Deadlift',
+                prescription: '1 x 5+ (AMRAP)',
+                sets: 1,
+                isUpperBody: false),
+          ],
+          defaultAccessories: ['Direct Abdominal Work (3–5 sets)'],
+        ),
+        TemplateWorkoutDay(
+          code: 'Day 3',
+          title: 'Day 3: Overhead Press',
+          subtitle: 'Overhead Press + Weighted Dips',
+          coreLifts: [
+            TemplateLift(
+                name: 'Overhead Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+          ],
+          defaultAccessories: ['Weighted Dips (2 x 6–8)'],
+        ),
+        TemplateWorkoutDay(
+          code: 'Day 4',
+          title: 'Day 4: Squat',
+          subtitle: 'Squat + Calf Work',
+          coreLifts: [
+            TemplateLift(
+                name: 'Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: ['Direct Calf Exercises (2–3 sets)'],
+        ),
+      ],
+    ),
+  };
 
   static const List<String> dailyOptionalExerciseOptions = [
     'Dips',
@@ -243,6 +660,53 @@ class TrainingState extends ChangeNotifier {
   ];
 
   GreyskullSkin get activeSkin => _activeSkin;
+  ProgramLevel get programLevel => _programLevel;
+  bool get hasCompletedOnboarding => _hasCompletedOnboarding;
+  bool get isLadderMethodUnlocked => _programLevel.levelNumber >= 2;
+  bool get isTotalWorkMethodUnlocked => _programLevel.levelNumber >= 3;
+  bool get isAccessoriesUnlocked => _programLevel.levelNumber >= 2;
+  bool get isAdvancedSplitsUnlocked => _programLevel.levelNumber >= 3;
+
+  bool get socialSharePromptEnabled => _socialSharePromptEnabled;
+  String get socialShareHashtag => _socialShareHashtag;
+
+  BarbellTemplate get activeBarbellTemplate => _activeBarbellTemplate;
+  int get activeBarbellRotationIndex => _activeBarbellRotationIndex;
+
+  BarbellTemplateDetails get activeBarbellTemplateDetails =>
+      templateDefinitions[_activeBarbellTemplate]!;
+
+  TemplateWorkoutDay get currentTemplateWorkout {
+    final workouts = activeBarbellTemplateDetails.workouts;
+    if (workouts.isEmpty) {
+      return templateDefinitions[BarbellTemplate.ogBase]!.workouts.first;
+    }
+    final index = _activeBarbellRotationIndex % workouts.length;
+    return workouts[index];
+  }
+
+  List<String> getAccessoriesForWorkout(
+      BarbellTemplate template, String workoutCode) {
+    final key = '${template.name}_$workoutCode';
+    if (_customAccessoriesByWorkout.containsKey(key)) {
+      return List<String>.unmodifiable(_customAccessoriesByWorkout[key]!);
+    }
+    final workouts = templateDefinitions[template]?.workouts ?? [];
+    final match = workouts.where((w) => w.code == workoutCode);
+    if (match.isNotEmpty) {
+      return List<String>.unmodifiable(match.first.defaultAccessories);
+    }
+    return const [];
+  }
+
+  List<String> get currentWorkoutAccessories => getAccessoriesForWorkout(
+      _activeBarbellTemplate, currentTemplateWorkout.code);
+
+  bool isCurrentWorkoutCustomized() {
+    final key = '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
+    return _customAccessoriesByWorkout.containsKey(key);
+  }
+
   DailyMethod get activeDailyMethod => _activeDailyMethod;
   NutritionMode get nutritionMode => _nutritionMode;
   BackupPreference get backupPreference => _backupPreference;
@@ -259,6 +723,11 @@ class TrainingState extends ChangeNotifier {
   String get forumUrl => _forumUrl;
   String get forumLoginUrl => _forumLoginUrl;
   String get storeUrl => _storeUrl;
+  AccountabilityPostMode get accountabilityMode => _accountabilityMode;
+  List<AccountabilityDraft> get accountabilityDrafts =>
+      List<AccountabilityDraft>.unmodifiable(_accountabilityDrafts.reversed);
+  AccountabilityDraft? get latestAccountabilityDraft =>
+      _latestAccountabilityDraft;
 
   Set<String> get selectedWeightOptionalExercises =>
       Set<String>.from(_selectedWeightOptionalExercises);
@@ -361,6 +830,15 @@ class TrainingState extends ChangeNotifier {
   Map<String, dynamic> _buildPayload() {
     return <String, dynamic>{
       'schemaVersion': 2,
+      'programLevel': _programLevel.name,
+      'hasCompletedOnboarding': _hasCompletedOnboarding,
+      'socialSharePromptEnabled': _socialSharePromptEnabled,
+      'socialShareHashtag': _socialShareHashtag,
+      'activeBarbellTemplate': _activeBarbellTemplate.name,
+      'activeBarbellRotationIndex': _activeBarbellRotationIndex,
+      'customAccessoriesByWorkout': _customAccessoriesByWorkout.map(
+        (key, list) => MapEntry(key, List<dynamic>.from(list)),
+      ),
       'activeSkin': _activeSkin.name,
       'activeDailyMethod': _activeDailyMethod.name,
       'nutritionMode': _nutritionMode.name,
@@ -392,6 +870,9 @@ class TrainingState extends ChangeNotifier {
       'forumUrl': _forumUrl,
       'forumLoginUrl': _forumLoginUrl,
       'storeUrl': _storeUrl,
+      'accountabilityMode': _accountabilityMode.name,
+      'accountabilityDrafts':
+          _accountabilityDrafts.map((d) => d.toJsonMap()).toList(),
       'selectedWeightOptionalExercises':
           _selectedWeightOptionalExercises.toList(),
       'selectedDailyOptionalExercises':
@@ -401,6 +882,36 @@ class TrainingState extends ChangeNotifier {
   }
 
   void _applyMap(Map<String, dynamic> map) {
+    _programLevel = ProgramLevel.values.firstWhere(
+      (value) => value.name == (map['programLevel'] as String? ?? ''),
+      orElse: () => ProgramLevel.foundation,
+    );
+    _hasCompletedOnboarding = map['hasCompletedOnboarding'] as bool? ?? false;
+
+    _socialSharePromptEnabled =
+        map['socialSharePromptEnabled'] as bool? ?? true;
+    _socialShareHashtag =
+        map['socialShareHashtag'] as String? ?? '#GreyskullLP #JohnnyPain';
+
+    _activeBarbellTemplate = BarbellTemplate.values.firstWhere(
+      (value) => value.name == (map['activeBarbellTemplate'] as String? ?? ''),
+      orElse: () => BarbellTemplate.ogBase,
+    );
+    final workoutsCount = activeBarbellTemplateDetails.workouts.length;
+    _activeBarbellRotationIndex =
+        (map['activeBarbellRotationIndex'] as int? ?? 0)
+            .clamp(0, workoutsCount > 0 ? workoutsCount - 1 : 0);
+    _customAccessoriesByWorkout.clear();
+    if (map['customAccessoriesByWorkout'] is Map) {
+      final rawMap = map['customAccessoriesByWorkout'] as Map;
+      for (final entry in rawMap.entries) {
+        if (entry.value is List) {
+          _customAccessoriesByWorkout[entry.key.toString()] =
+              (entry.value as List).whereType<String>().toList();
+        }
+      }
+    }
+
     _activeSkin = GreyskullSkin.values.firstWhere(
       (value) => value.name == (map['activeSkin'] as String? ?? ''),
       orElse: () => GreyskullSkin.ironAndBone,
@@ -481,9 +992,27 @@ class TrainingState extends ChangeNotifier {
     _usdaApiKey = map['usdaApiKey'] as String? ?? '';
     _forumSignedIn = map['forumSignedIn'] as bool? ?? false;
     _forumDisplayName = map['forumDisplayName'] as String? ?? '';
-    _forumUrl = map['forumUrl'] as String? ?? _forumUrl;
+    final savedForumUrl = map['forumUrl'] as String? ?? _forumUrl;
+    if (savedForumUrl == 'https://greyskullnation.com/forum' ||
+        savedForumUrl == 'https://www.greyskullnation.com/forum') {
+      _forumUrl = defaultForumUrl;
+    } else {
+      _forumUrl = savedForumUrl;
+    }
     _forumLoginUrl = map['forumLoginUrl'] as String? ?? _forumLoginUrl;
     _storeUrl = map['storeUrl'] as String? ?? _storeUrl;
+
+    _accountabilityMode = AccountabilityPostMode.values.firstWhere(
+      (m) => m.name == map['accountabilityMode'],
+      orElse: () => AccountabilityPostMode.off,
+    );
+    _accountabilityDrafts
+      ..clear()
+      ..addAll(
+        (map['accountabilityDrafts'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(AccountabilityDraft.fromJsonMap),
+      );
 
     _selectedWeightOptionalExercises
       ..clear()
@@ -535,6 +1064,121 @@ class TrainingState extends ChangeNotifier {
     }
     _activeSkin = skin;
     _notifyAndPersist();
+  }
+
+  void setProgramLevel(ProgramLevel level) {
+    if (_programLevel == level) {
+      return;
+    }
+    _programLevel = level;
+    _notifyAndPersist();
+  }
+
+  void completeOnboarding({ProgramLevel? selectedLevel}) {
+    _hasCompletedOnboarding = true;
+    if (selectedLevel != null) {
+      _programLevel = selectedLevel;
+    }
+    _notifyAndPersist();
+  }
+
+  void resetOnboarding() {
+    _hasCompletedOnboarding = false;
+    _programLevel = ProgramLevel.foundation;
+    _notifyAndPersist();
+  }
+
+  void setSocialSharePromptEnabled(bool enabled) {
+    if (_socialSharePromptEnabled == enabled) {
+      return;
+    }
+    _socialSharePromptEnabled = enabled;
+    _notifyAndPersist();
+  }
+
+  void setSocialShareHashtag(String value) {
+    final trimmed = value.trim();
+    if (_socialShareHashtag == trimmed) {
+      return;
+    }
+    _socialShareHashtag =
+        trimmed.isEmpty ? '#GreyskullLP #JohnnyPain' : trimmed;
+    _notifyAndPersist();
+  }
+
+  void setBarbellTemplate(BarbellTemplate template) {
+    if (_activeBarbellTemplate == template) {
+      return;
+    }
+    _activeBarbellTemplate = template;
+    final maxIndex = (templateDefinitions[template]?.workouts.length ?? 1) - 1;
+    if (_activeBarbellRotationIndex > maxIndex) {
+      _activeBarbellRotationIndex = 0;
+    }
+    _notifyAndPersist();
+  }
+
+  void setBarbellRotationIndex(int index) {
+    final workoutsCount = activeBarbellTemplateDetails.workouts.length;
+    if (workoutsCount == 0) return;
+    final clamped = index.clamp(0, workoutsCount - 1);
+    if (_activeBarbellRotationIndex == clamped) return;
+    _activeBarbellRotationIndex = clamped;
+    _notifyAndPersist();
+  }
+
+  void advanceBarbellRotation() {
+    final workoutsCount = activeBarbellTemplateDetails.workouts.length;
+    if (workoutsCount > 0) {
+      _activeBarbellRotationIndex =
+          (_activeBarbellRotationIndex + 1) % workoutsCount;
+      _notifyAndPersist();
+    }
+  }
+
+  void addAccessoryToCurrentWorkout(String accessory) {
+    final trimmed = accessory.trim();
+    if (trimmed.isEmpty) return;
+    final key = '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
+    final currentList = List<String>.from(currentWorkoutAccessories);
+    if (!currentList.contains(trimmed)) {
+      currentList.add(trimmed);
+      _customAccessoriesByWorkout[key] = currentList;
+      _notifyAndPersist();
+    }
+  }
+
+  void removeAccessoryFromCurrentWorkout(int index) {
+    final currentList = List<String>.from(currentWorkoutAccessories);
+    if (index >= 0 && index < currentList.length) {
+      currentList.removeAt(index);
+      final key =
+          '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
+      _customAccessoriesByWorkout[key] = currentList;
+      _notifyAndPersist();
+    }
+  }
+
+  void reorderAccessoriesInCurrentWorkout(int oldIndex, int newIndex) {
+    final currentList = List<String>.from(currentWorkoutAccessories);
+    if (oldIndex < 0 || oldIndex >= currentList.length) return;
+    if (newIndex < 0 || newIndex > currentList.length) return;
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final item = currentList.removeAt(oldIndex);
+    currentList.insert(newIndex, item);
+    final key = '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
+    _customAccessoriesByWorkout[key] = currentList;
+    _notifyAndPersist();
+  }
+
+  void resetCurrentWorkoutAccessoriesToDefault() {
+    final key = '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
+    if (_customAccessoriesByWorkout.containsKey(key)) {
+      _customAccessoriesByWorkout.remove(key);
+      _notifyAndPersist();
+    }
   }
 
   void setActiveDailyMethod(DailyMethod method) {
@@ -651,6 +1295,14 @@ class TrainingState extends ChangeNotifier {
     _notifyAndPersist();
   }
 
+  void resetForumUrlsToDefault() {
+    _forumUrl = defaultForumUrl;
+    _forumLoginUrl = defaultForumLoginUrl;
+    _notifyAndPersist();
+  }
+
+  static const String defaultStoreUrl = 'https://store.greyskullnation.com/';
+
   void setStoreUrl(String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty || trimmed == _storeUrl) {
@@ -660,24 +1312,157 @@ class TrainingState extends ChangeNotifier {
     _notifyAndPersist();
   }
 
-  void logWeightSession({
+  void resetStoreUrlToDefault() {
+    _storeUrl = defaultStoreUrl;
+    _notifyAndPersist();
+  }
+
+  void setAccountabilityMode(AccountabilityPostMode mode) {
+    _accountabilityMode = mode;
+    _notifyAndPersist();
+  }
+
+  AccountabilityDraft queueWeightSessionDraft({
     required String coreLiftSummary,
     required String optionalExerciseSummary,
     required double volume,
     String notes = '',
   }) {
+    final postContent = AccountabilityTemplateService.generateWeightSessionPost(
+      coreLiftSummary: coreLiftSummary,
+      optionalExerciseSummary: optionalExerciseSummary,
+      volume: volume,
+      notes: notes,
+      userDisplayName: _forumDisplayName,
+    );
+    final draft = AccountabilityDraft(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      title: 'Weight Program Session',
+      content: postContent,
+      category: 'weight',
+    );
+    _accountabilityDrafts.add(draft);
+    _latestAccountabilityDraft = draft;
+    return draft;
+  }
+
+  AccountabilityDraft queueDailyMethodDraft({
+    required DailyMethod method,
+    required int pushUps,
+    required int chinUps,
+    required bool usedNegatives,
+    required String optionalExerciseSummary,
+  }) {
+    final postContent = AccountabilityTemplateService.generateDailyMethodPost(
+      method: method,
+      pushUps: pushUps,
+      chinUps: chinUps,
+      usedNegatives: usedNegatives,
+      optionalExerciseSummary: optionalExerciseSummary,
+      userDisplayName: _forumDisplayName,
+    );
+    final draft = AccountabilityDraft(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      title: '${methodLabel(method)} Session',
+      content: postContent,
+      category: 'daily',
+    );
+    _accountabilityDrafts.add(draft);
+    _latestAccountabilityDraft = draft;
+    return draft;
+  }
+
+  AccountabilityDraft queueDailySummaryDraft([DateTime? date]) {
+    final targetDate = date ?? DateTime.now();
+    final postContent = AccountabilityTemplateService.generateDailySummaryPost(
+      date: targetDate,
+      history: _history,
+      pushUpTarget: _dailyPushUpTarget,
+      chinUpTarget: _dailyChinUpTarget,
+      proteinConsumed: _dailyProteinConsumed,
+      calorieConsumed: _dailyCaloriesConsumed,
+      userDisplayName: _forumDisplayName,
+    );
+    final draft = AccountabilityDraft(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      title: 'End-of-Day Summary',
+      content: postContent,
+      category: 'summary',
+    );
+    _accountabilityDrafts.add(draft);
+    _latestAccountabilityDraft = draft;
+    _notifyAndPersist();
+    return draft;
+  }
+
+  void removeAccountabilityDraft(String id) {
+    _accountabilityDrafts.removeWhere((d) => d.id == id);
+    if (_latestAccountabilityDraft?.id == id) {
+      _latestAccountabilityDraft = null;
+    }
+    _notifyAndPersist();
+  }
+
+  void clearAccountabilityDrafts() {
+    _accountabilityDrafts.clear();
+    _latestAccountabilityDraft = null;
+    _notifyAndPersist();
+  }
+
+  void markAccountabilityDraftPosted(String id) {
+    final index = _accountabilityDrafts.indexWhere((d) => d.id == id);
+    if (index != -1) {
+      _accountabilityDrafts[index] =
+          _accountabilityDrafts[index].copyWith(isPosted: true);
+      _notifyAndPersist();
+    }
+  }
+
+  AccountabilityDraft? logWeightSession({
+    required String coreLiftSummary,
+    required String optionalExerciseSummary,
+    required double volume,
+    String templateName = '',
+    String workoutName = '',
+    String notes = '',
+  }) {
     // TODO(ForumSync): Sync food/workout summaries to forum for accountability posts.
+    final effectiveTitle = (templateName.isNotEmpty && workoutName.isNotEmpty)
+        ? '$templateName — $workoutName'
+        : 'Weight Program Session';
+    final detailsBuffer = StringBuffer()
+      ..writeln('Core Lifts: $coreLiftSummary')
+      ..writeln('Accessories: $optionalExerciseSummary')
+      ..writeln('Total Volume: ${volume.toStringAsFixed(1)} lbs');
+    if (notes.trim().isNotEmpty) {
+      detailsBuffer.writeln('Notes: ${notes.trim()}');
+    }
+
     _history.add(
       HistoryEntry(
         timestamp: DateTime.now(),
-        title: 'Weight Program Session',
+        title: effectiveTitle,
+        details: detailsBuffer.toString().trim(),
         category: HistoryCategory.weight,
         weightVolume: volume,
-        details:
-            '$coreLiftSummary\nOptional: $optionalExerciseSummary${notes.isEmpty ? '' : '\nNotes: $notes'}',
       ),
     );
+
+    AccountabilityDraft? draft;
+    if (_accountabilityMode != AccountabilityPostMode.off) {
+      draft = queueWeightSessionDraft(
+        coreLiftSummary: coreLiftSummary,
+        optionalExerciseSummary: optionalExerciseSummary,
+        volume: volume,
+        notes: notes,
+      );
+    }
+
     _notifyAndPersist();
+    return draft;
   }
 
   // --- Frequency Method Mutators ---
@@ -823,7 +1608,7 @@ class TrainingState extends ChangeNotifier {
     }
   }
 
-  void logDailyMethodSession({
+  AccountabilityDraft? logDailyMethodSession({
     required DailyMethod method,
     required int pushUps,
     required int chinUps,
@@ -849,7 +1634,20 @@ class TrainingState extends ChangeNotifier {
         methodMetadata: metadata,
       ),
     );
+
+    AccountabilityDraft? draft;
+    if (_accountabilityMode != AccountabilityPostMode.off) {
+      draft = queueDailyMethodDraft(
+        method: method,
+        pushUps: pushUps,
+        chinUps: chinUps,
+        usedNegatives: usedNegatives,
+        optionalExerciseSummary: optionalExerciseSummary,
+      );
+    }
+
     _notifyAndPersist();
+    return draft;
   }
 
   void logDietIntake({
@@ -881,6 +1679,208 @@ class TrainingState extends ChangeNotifier {
     _notifyAndPersist();
   }
 
+  int calculateCurrentStreakDays() {
+    if (_history.isEmpty) return 0;
+    final workoutDates = _history
+        .where((e) =>
+            e.category == HistoryCategory.weight ||
+            e.category == HistoryCategory.daily)
+        .map((e) =>
+            DateTime(e.timestamp.year, e.timestamp.month, e.timestamp.day))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    if (workoutDates.isEmpty) return 0;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    if (workoutDates.first != today && workoutDates.first != yesterday) {
+      return 0;
+    }
+
+    int streak = 1;
+    DateTime checkDate = workoutDates.first;
+
+    for (int i = 1; i < workoutDates.length; i++) {
+      final expectedPrev = checkDate.subtract(const Duration(days: 1));
+      if (workoutDates[i] == expectedPrev) {
+        streak++;
+        checkDate = expectedPrev;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  List<MethodTransitionMilestone> getMethodTransitions() {
+    final milestones = <MethodTransitionMilestone>[];
+    final chronological = List<HistoryEntry>.from(_history)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    bool hasWeight = false;
+    bool hasFrequency = false;
+    bool hasLadder = false;
+    bool hasTotalWork = false;
+    double cumulativeVolume = 0;
+    int cumulativePushUps = 0;
+    bool hit5kVolume = false;
+    bool hit25kVolume = false;
+    bool hit100PushUps = false;
+    bool hit500PushUps = false;
+
+    for (final entry in chronological) {
+      if (entry.category == HistoryCategory.weight) {
+        if (!hasWeight) {
+          hasWeight = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: 'Started Barbell Program',
+              description:
+                  'Logged first Greyskull LP heavy resistance session.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Resistance',
+            ),
+          );
+        }
+        cumulativeVolume += (entry.weightVolume ?? 0);
+        if (!hit5kVolume && cumulativeVolume >= 5000) {
+          hit5kVolume = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: '5,000 lbs Volume Milestone',
+              description: 'Surpassed 5,000 lbs of total resistance work.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Resistance',
+            ),
+          );
+        }
+        if (!hit25kVolume && cumulativeVolume >= 25000) {
+          hit25kVolume = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: '25,000 lbs Volume Milestone',
+              description: 'Surpassed 25,000 lbs of total resistance work.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Resistance',
+            ),
+          );
+        }
+      } else if (entry.category == HistoryCategory.daily) {
+        final title = entry.title.toLowerCase();
+        if (title.contains('frequency') && !hasFrequency) {
+          hasFrequency = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: 'Adopted Frequency Method',
+              description:
+                  'Began daily sub-maximal bodyweight volume practice.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Frequency',
+            ),
+          );
+        } else if (title.contains('ladder') && !hasLadder) {
+          hasLadder = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: 'Graduated to Ladder Method',
+              description:
+                  'Progressed calisthenics work to ascending ladder rungs.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Ladder',
+            ),
+          );
+        } else if (title.contains('total work') && !hasTotalWork) {
+          hasTotalWork = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: 'Advanced to Total Work Method',
+              description:
+                  'Took on time-constrained density calisthenics sessions.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Total Work',
+            ),
+          );
+        }
+
+        cumulativePushUps += (entry.pushUps ?? 0);
+        if (!hit100PushUps && cumulativePushUps >= 100) {
+          hit100PushUps = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: '100 Push-ups Club',
+              description: 'Accumulated over 100 bodyweight push-ups.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Calisthenics',
+            ),
+          );
+        }
+        if (!hit500PushUps && cumulativePushUps >= 500) {
+          hit500PushUps = true;
+          milestones.add(
+            MethodTransitionMilestone(
+              title: '500 Push-ups Elite',
+              description: 'Accumulated over 500 bodyweight push-ups.',
+              timestamp: entry.timestamp,
+              methodCategory: 'Calisthenics',
+            ),
+          );
+        }
+      }
+    }
+
+    return milestones.reversed.toList();
+  }
+
+  Map<DateTime, double> getDailyVolumeByDay({int days = 7}) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final result = <DateTime, double>{};
+
+    for (int i = days - 1; i >= 0; i--) {
+      final date = today.subtract(Duration(days: i));
+      result[date] = 0.0;
+    }
+
+    for (final entry in _history) {
+      if (entry.category == HistoryCategory.weight &&
+          entry.weightVolume != null) {
+        final day = DateTime(
+            entry.timestamp.year, entry.timestamp.month, entry.timestamp.day);
+        if (result.containsKey(day)) {
+          result[day] = (result[day] ?? 0.0) + entry.weightVolume!;
+        }
+      }
+    }
+    return result;
+  }
+
+  Map<DateTime, int> getDailyCalisthenicsByDay({int days = 7}) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final result = <DateTime, int>{};
+
+    for (int i = days - 1; i >= 0; i--) {
+      final date = today.subtract(Duration(days: i));
+      result[date] = 0;
+    }
+
+    for (final entry in _history) {
+      if (entry.category == HistoryCategory.daily) {
+        final day = DateTime(
+            entry.timestamp.year, entry.timestamp.month, entry.timestamp.day);
+        if (result.containsKey(day)) {
+          result[day] =
+              (result[day] ?? 0) + (entry.pushUps ?? 0) + (entry.chinUps ?? 0);
+        }
+      }
+    }
+    return result;
+  }
+
   static String methodLabel(DailyMethod method) {
     switch (method) {
       case DailyMethod.frequency:
@@ -910,6 +1910,10 @@ class TrainingState extends ChangeNotifier {
       case BackupPreference.cloudSyncFuture:
         return 'Cloud sync (future)';
     }
+  }
+
+  static String barbellTemplateLabel(BarbellTemplate template) {
+    return templateDefinitions[template]?.name ?? template.name;
   }
 }
 
