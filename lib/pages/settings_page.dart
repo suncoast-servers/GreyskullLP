@@ -289,6 +289,42 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const Divider(height: 32),
               const Text(
+                'Barbell Program Template',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Official Greyskull LP progression structures (Johnny Pain 3rd Edition):',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<BarbellTemplate>(
+                key: ValueKey(trainingState.activeBarbellTemplate),
+                initialValue: trainingState.activeBarbellTemplate,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+                items: BarbellTemplate.values.map((template) {
+                  final details = TrainingState.templateDefinitions[template]!;
+                  return DropdownMenuItem(
+                    value: template,
+                    child: Text(
+                      details.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (newTemplate) {
+                  if (newTemplate != null) {
+                    trainingState.setBarbellTemplate(newTemplate);
+                  }
+                },
+              ),
+              const Divider(height: 32),
+              const Text(
                 'Weight Program Optional Exercises',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),

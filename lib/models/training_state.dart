@@ -11,6 +11,66 @@ enum DailyMethod {
   totalWork,
 }
 
+enum BarbellTemplate {
+  ogBase,
+  villain,
+  gladiator,
+  twoDaySplit,
+  fourDaySplit,
+}
+
+class TemplateLift {
+  final String name;
+  final String prescription;
+  final int sets;
+  final int defaultReps;
+  final bool isAmrap;
+  final bool isUpperBody;
+
+  const TemplateLift({
+    required this.name,
+    required this.prescription,
+    this.sets = 3,
+    this.defaultReps = 5,
+    this.isAmrap = true,
+    this.isUpperBody = false,
+  });
+}
+
+class TemplateWorkoutDay {
+  final String code;
+  final String title;
+  final String subtitle;
+  final List<TemplateLift> coreLifts;
+  final List<String> defaultAccessories;
+
+  const TemplateWorkoutDay({
+    required this.code,
+    required this.title,
+    required this.subtitle,
+    required this.coreLifts,
+    this.defaultAccessories = const [],
+  });
+}
+
+class BarbellTemplateDetails {
+  final BarbellTemplate template;
+  final String name;
+  final String subtitle;
+  final String bookReference;
+  final String scheduleDescription;
+  final List<TemplateWorkoutDay> workouts;
+
+  const BarbellTemplateDetails({
+    required this.template,
+    required this.name,
+    required this.subtitle,
+    required this.bookReference,
+    required this.scheduleDescription,
+    required this.workouts,
+  });
+}
+
 enum NutritionMode {
   cutting,
   bulking,
@@ -175,6 +235,9 @@ class HistoryEntry {
 
 class TrainingState extends ChangeNotifier {
   static const String _prefsKey = 'greyskull_training_state_v1';
+  BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
+  int _activeBarbellRotationIndex = 0;
+  final Map<String, List<String>> _customAccessoriesByWorkout = {};
 
   GreyskullSkin _activeSkin = GreyskullSkin.ironAndBone;
   DailyMethod _activeDailyMethod = DailyMethod.frequency;
@@ -224,14 +287,294 @@ class TrainingState extends ChangeNotifier {
   int _activeTotalWorkTargetReps = 70;
   final List<int> _activeTotalWorkSets = [];
 
-  static const List<String> weightOptionalExerciseOptions = [
-    'Barbell Row',
-    'Romanian Deadlift',
-    'Deadlift',
-    'Split Squat',
-    'Farmer Carry',
-    'Core Circuit (placeholder)',
+  static const List<String> officialBookAccessories = [
+    'Bicep Curls (2 x 10–12)',
+    'Neck Harness Extensions (4 x 25+)',
+    'Weighted Chin-ups (2 x 6–8)',
+    'Weighted Dips (2 x 6–8)',
+    'Yates / Barbell Rows (2 x 6–8)',
+    'Power Cleans (3–5 x 3)',
+    'Direct Abdominal Work (3–5 sets)',
+    'Direct Calf Exercises (2–3 sets)',
+    'Barbell / Dumbbell Shrugs (2 x 10–12)',
+    'Face Pulls (2 x 15–20)',
+    'Forearm Wrist Curls (2 sets)',
+    'Dumbbell Pullovers (2 sets)',
   ];
+
+  static const List<String> weightOptionalExerciseOptions =
+      officialBookAccessories;
+
+  static const Map<BarbellTemplate, BarbellTemplateDetails>
+      templateDefinitions = {
+    BarbellTemplate.ogBase: BarbellTemplateDetails(
+      template: BarbellTemplate.ogBase,
+      name: '"OG" Base Program',
+      subtitle: 'The foundational 3-day A/B Greyskull linear progression',
+      bookReference: '3rd Edition, Chapter 3, pp. 47–48',
+      scheduleDescription:
+          '3 days/week (Mon/Wed/Fri): Week 1: A/B/A, Week 2: B/A/B',
+      workouts: [
+        TemplateWorkoutDay(
+          code: 'A',
+          title: 'Workout A (Press & Squat)',
+          subtitle: 'Upper body pressing first, followed by squat',
+          coreLifts: [
+            TemplateLift(
+                name: 'Overhead Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: [],
+        ),
+        TemplateWorkoutDay(
+          code: 'B',
+          title: 'Workout B (Bench & Deadlift)',
+          subtitle: 'Upper body bench first, followed by deadlift',
+          coreLifts: [
+            TemplateLift(
+                name: 'Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Deadlift',
+                prescription: '1 x 5+ (AMRAP)',
+                sets: 1,
+                isUpperBody: false),
+          ],
+          defaultAccessories: [],
+        ),
+      ],
+    ),
+    BarbellTemplate.villain: BarbellTemplateDetails(
+      template: BarbellTemplate.villain,
+      name: '"Villain" Arms & Neck Plugin',
+      subtitle: 'The most popular GSLP variant with Arms & Neck plug-ins',
+      bookReference: '3rd Edition, Chapter 4, pp. 56–61',
+      scheduleDescription: '3 days/week alternating Workout A and Workout B',
+      workouts: [
+        TemplateWorkoutDay(
+          code: 'A',
+          title: 'Workout A (Press, Squat, Chins, Neck)',
+          subtitle: 'Press + Chins + Squat + Neck Harness',
+          coreLifts: [
+            TemplateLift(
+                name: 'Overhead Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Weighted Chin-ups (2 x 6–8)',
+            'Neck Harness Extensions (4 x 25+)',
+          ],
+        ),
+        TemplateWorkoutDay(
+          code: 'B',
+          title: 'Workout B (Bench, Deadlift, Curls, Neck)',
+          subtitle: 'Bench + Curls + Deadlift + Neck Harness',
+          coreLifts: [
+            TemplateLift(
+                name: 'Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Deadlift',
+                prescription: '1 x 5+ (AMRAP)',
+                sets: 1,
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Bicep Curls (2 x 10–12)',
+            'Neck Harness Extensions (4 x 25+)',
+          ],
+        ),
+      ],
+    ),
+    BarbellTemplate.gladiator: BarbellTemplateDetails(
+      template: BarbellTemplate.gladiator,
+      name: 'Greyskull Gladiator (Hypertrophy)',
+      subtitle:
+          '"Linebacker" mass-gain focus with rotating pressing variants and dips',
+      bookReference: '3rd Edition, Chapter 6, pp. 106–109',
+      scheduleDescription: '3 days/week rotating A, B, and C',
+      workouts: [
+        TemplateWorkoutDay(
+          code: 'A',
+          title: 'Workout A (Press, Squat, Chins)',
+          subtitle: 'Press + Weighted Chins + Squat + Neck',
+          coreLifts: [
+            TemplateLift(
+                name: 'Overhead Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Weighted Chin-ups (2 x 6–8)',
+            'Neck Harness Extensions (4 x 25+)',
+          ],
+        ),
+        TemplateWorkoutDay(
+          code: 'B',
+          title: 'Workout B (Bench, Deadlift, Curls, Rows)',
+          subtitle: 'Bench + EZ-Bar Curls + Yates Row + Deadlift + Neck',
+          coreLifts: [
+            TemplateLift(
+                name: 'Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Deadlift',
+                prescription: '1 x 5+ (AMRAP)',
+                sets: 1,
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Bicep Curls (2 x 10–12)',
+            'Yates / Barbell Rows (2 x 6–8)',
+            'Neck Harness Extensions (4 x 25+)',
+          ],
+        ),
+        TemplateWorkoutDay(
+          code: 'C',
+          title: 'Workout C (Incline Bench, Front Squat, Dips)',
+          subtitle: 'Incline Bench + Weighted Dips + Front Squat + Neck',
+          coreLifts: [
+            TemplateLift(
+                name: 'Incline Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Front Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Weighted Dips (2 x 6–8)',
+            'Neck Harness Extensions (4 x 25+)',
+          ],
+        ),
+      ],
+    ),
+    BarbellTemplate.twoDaySplit: BarbellTemplateDetails(
+      template: BarbellTemplate.twoDaySplit,
+      name: 'Two-Day Split (Dan / Mike)',
+      subtitle:
+          'For busy professionals, travel, and recovery-constrained trainees',
+      bookReference: '3rd Edition, Chapter 3, pp. 49–53',
+      scheduleDescription:
+          '2 days/week (e.g., Tue/Fri) or flexible A/B cadence',
+      workouts: [
+        TemplateWorkoutDay(
+          code: 'A',
+          title: 'Workout A (Bench & Deadlift)',
+          subtitle: 'Bench Press + Deadlift + Curls',
+          coreLifts: [
+            TemplateLift(
+                name: 'Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Deadlift',
+                prescription: '1 x 5+ (AMRAP)',
+                sets: 1,
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Bicep Curls (2 x 10–12)',
+          ],
+        ),
+        TemplateWorkoutDay(
+          code: 'B',
+          title: 'Workout B (Press & Squat)',
+          subtitle: 'Overhead Press + Squat + Chins',
+          coreLifts: [
+            TemplateLift(
+                name: 'Overhead Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+            TemplateLift(
+                name: 'Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: [
+            'Weighted Chin-ups (2 x 6–8)',
+          ],
+        ),
+      ],
+    ),
+    BarbellTemplate.fourDaySplit: BarbellTemplateDetails(
+      template: BarbellTemplate.fourDaySplit,
+      name: 'Four-Day Single-Lift Split (LCI)',
+      subtitle:
+          'One primary compound lift per day for quick, high-intensity sessions',
+      bookReference: '3rd Edition, Chapter 3, pp. 54–55',
+      scheduleDescription: '4 days/week (e.g., Mon/Tue/Thu/Fri)',
+      workouts: [
+        TemplateWorkoutDay(
+          code: 'Day 1',
+          title: 'Day 1: Bench Press',
+          subtitle: 'Bench Press + Curls',
+          coreLifts: [
+            TemplateLift(
+                name: 'Bench Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+          ],
+          defaultAccessories: ['Bicep Curls (2 x 10–12)'],
+        ),
+        TemplateWorkoutDay(
+          code: 'Day 2',
+          title: 'Day 2: Deadlift',
+          subtitle: 'Deadlift + Abdominal Work',
+          coreLifts: [
+            TemplateLift(
+                name: 'Deadlift',
+                prescription: '1 x 5+ (AMRAP)',
+                sets: 1,
+                isUpperBody: false),
+          ],
+          defaultAccessories: ['Direct Abdominal Work (3–5 sets)'],
+        ),
+        TemplateWorkoutDay(
+          code: 'Day 3',
+          title: 'Day 3: Overhead Press',
+          subtitle: 'Overhead Press + Weighted Dips',
+          coreLifts: [
+            TemplateLift(
+                name: 'Overhead Press',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: true),
+          ],
+          defaultAccessories: ['Weighted Dips (2 x 6–8)'],
+        ),
+        TemplateWorkoutDay(
+          code: 'Day 4',
+          title: 'Day 4: Squat',
+          subtitle: 'Squat + Calf Work',
+          coreLifts: [
+            TemplateLift(
+                name: 'Squat',
+                prescription: '2 x 5, 1 x 5+ (AMRAP)',
+                isUpperBody: false),
+          ],
+          defaultAccessories: ['Direct Calf Exercises (2–3 sets)'],
+        ),
+      ],
+    ),
+  };
 
   static const List<String> dailyOptionalExerciseOptions = [
     'Dips',
@@ -243,6 +586,43 @@ class TrainingState extends ChangeNotifier {
   ];
 
   GreyskullSkin get activeSkin => _activeSkin;
+  BarbellTemplate get activeBarbellTemplate => _activeBarbellTemplate;
+  int get activeBarbellRotationIndex => _activeBarbellRotationIndex;
+
+  BarbellTemplateDetails get activeBarbellTemplateDetails =>
+      templateDefinitions[_activeBarbellTemplate]!;
+
+  TemplateWorkoutDay get currentTemplateWorkout {
+    final workouts = activeBarbellTemplateDetails.workouts;
+    if (workouts.isEmpty) {
+      return templateDefinitions[BarbellTemplate.ogBase]!.workouts.first;
+    }
+    final index = _activeBarbellRotationIndex % workouts.length;
+    return workouts[index];
+  }
+
+  List<String> getAccessoriesForWorkout(
+      BarbellTemplate template, String workoutCode) {
+    final key = '${template.name}_$workoutCode';
+    if (_customAccessoriesByWorkout.containsKey(key)) {
+      return List<String>.unmodifiable(_customAccessoriesByWorkout[key]!);
+    }
+    final workouts = templateDefinitions[template]?.workouts ?? [];
+    final match = workouts.where((w) => w.code == workoutCode);
+    if (match.isNotEmpty) {
+      return List<String>.unmodifiable(match.first.defaultAccessories);
+    }
+    return const [];
+  }
+
+  List<String> get currentWorkoutAccessories => getAccessoriesForWorkout(
+      _activeBarbellTemplate, currentTemplateWorkout.code);
+
+  bool isCurrentWorkoutCustomized() {
+    final key = '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
+    return _customAccessoriesByWorkout.containsKey(key);
+  }
+
   DailyMethod get activeDailyMethod => _activeDailyMethod;
   NutritionMode get nutritionMode => _nutritionMode;
   BackupPreference get backupPreference => _backupPreference;
@@ -361,6 +741,11 @@ class TrainingState extends ChangeNotifier {
   Map<String, dynamic> _buildPayload() {
     return <String, dynamic>{
       'schemaVersion': 2,
+      'activeBarbellTemplate': _activeBarbellTemplate.name,
+      'activeBarbellRotationIndex': _activeBarbellRotationIndex,
+      'customAccessoriesByWorkout': _customAccessoriesByWorkout.map(
+        (key, list) => MapEntry(key, List<dynamic>.from(list)),
+      ),
       'activeSkin': _activeSkin.name,
       'activeDailyMethod': _activeDailyMethod.name,
       'nutritionMode': _nutritionMode.name,
@@ -401,6 +786,25 @@ class TrainingState extends ChangeNotifier {
   }
 
   void _applyMap(Map<String, dynamic> map) {
+    _activeBarbellTemplate = BarbellTemplate.values.firstWhere(
+      (value) => value.name == (map['activeBarbellTemplate'] as String? ?? ''),
+      orElse: () => BarbellTemplate.ogBase,
+    );
+    final workoutsCount = activeBarbellTemplateDetails.workouts.length;
+    _activeBarbellRotationIndex =
+        (map['activeBarbellRotationIndex'] as int? ?? 0)
+            .clamp(0, workoutsCount > 0 ? workoutsCount - 1 : 0);
+    _customAccessoriesByWorkout.clear();
+    if (map['customAccessoriesByWorkout'] is Map) {
+      final rawMap = map['customAccessoriesByWorkout'] as Map;
+      for (final entry in rawMap.entries) {
+        if (entry.value is List) {
+          _customAccessoriesByWorkout[entry.key.toString()] =
+              (entry.value as List).whereType<String>().toList();
+        }
+      }
+    }
+
     _activeSkin = GreyskullSkin.values.firstWhere(
       (value) => value.name == (map['activeSkin'] as String? ?? ''),
       orElse: () => GreyskullSkin.ironAndBone,
@@ -537,6 +941,81 @@ class TrainingState extends ChangeNotifier {
     _notifyAndPersist();
   }
 
+  void setBarbellTemplate(BarbellTemplate template) {
+    if (_activeBarbellTemplate == template) {
+      return;
+    }
+    _activeBarbellTemplate = template;
+    final maxIndex = (templateDefinitions[template]?.workouts.length ?? 1) - 1;
+    if (_activeBarbellRotationIndex > maxIndex) {
+      _activeBarbellRotationIndex = 0;
+    }
+    _notifyAndPersist();
+  }
+
+  void setBarbellRotationIndex(int index) {
+    final workoutsCount = activeBarbellTemplateDetails.workouts.length;
+    if (workoutsCount == 0) return;
+    final clamped = index.clamp(0, workoutsCount - 1);
+    if (_activeBarbellRotationIndex == clamped) return;
+    _activeBarbellRotationIndex = clamped;
+    _notifyAndPersist();
+  }
+
+  void advanceBarbellRotation() {
+    final workoutsCount = activeBarbellTemplateDetails.workouts.length;
+    if (workoutsCount > 0) {
+      _activeBarbellRotationIndex =
+          (_activeBarbellRotationIndex + 1) % workoutsCount;
+      _notifyAndPersist();
+    }
+  }
+
+  void addAccessoryToCurrentWorkout(String accessory) {
+    final trimmed = accessory.trim();
+    if (trimmed.isEmpty) return;
+    final key = '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
+    final currentList = List<String>.from(currentWorkoutAccessories);
+    if (!currentList.contains(trimmed)) {
+      currentList.add(trimmed);
+      _customAccessoriesByWorkout[key] = currentList;
+      _notifyAndPersist();
+    }
+  }
+
+  void removeAccessoryFromCurrentWorkout(int index) {
+    final currentList = List<String>.from(currentWorkoutAccessories);
+    if (index >= 0 && index < currentList.length) {
+      currentList.removeAt(index);
+      final key =
+          '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
+      _customAccessoriesByWorkout[key] = currentList;
+      _notifyAndPersist();
+    }
+  }
+
+  void reorderAccessoriesInCurrentWorkout(int oldIndex, int newIndex) {
+    final currentList = List<String>.from(currentWorkoutAccessories);
+    if (oldIndex < 0 || oldIndex >= currentList.length) return;
+    if (newIndex < 0 || newIndex > currentList.length) return;
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final item = currentList.removeAt(oldIndex);
+    currentList.insert(newIndex, item);
+    final key = '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
+    _customAccessoriesByWorkout[key] = currentList;
+    _notifyAndPersist();
+  }
+
+  void resetCurrentWorkoutAccessoriesToDefault() {
+    final key = '${_activeBarbellTemplate.name}_${currentTemplateWorkout.code}';
+    if (_customAccessoriesByWorkout.containsKey(key)) {
+      _customAccessoriesByWorkout.remove(key);
+      _notifyAndPersist();
+    }
+  }
+
   void setActiveDailyMethod(DailyMethod method) {
     if (_activeDailyMethod == method) {
       return;
@@ -664,17 +1143,29 @@ class TrainingState extends ChangeNotifier {
     required String coreLiftSummary,
     required String optionalExerciseSummary,
     required double volume,
+    String templateName = '',
+    String workoutName = '',
     String notes = '',
   }) {
     // TODO(ForumSync): Sync food/workout summaries to forum for accountability posts.
+    final effectiveTitle = (templateName.isNotEmpty && workoutName.isNotEmpty)
+        ? '$templateName — $workoutName'
+        : 'Weight Program Session';
+    final detailsBuffer = StringBuffer()
+      ..writeln('Core Lifts: $coreLiftSummary')
+      ..writeln('Accessories: $optionalExerciseSummary')
+      ..writeln('Total Volume: ${volume.toStringAsFixed(1)} lbs');
+    if (notes.trim().isNotEmpty) {
+      detailsBuffer.writeln('Notes: ${notes.trim()}');
+    }
+
     _history.add(
       HistoryEntry(
         timestamp: DateTime.now(),
-        title: 'Weight Program Session',
+        title: effectiveTitle,
+        details: detailsBuffer.toString().trim(),
         category: HistoryCategory.weight,
         weightVolume: volume,
-        details:
-            '$coreLiftSummary\nOptional: $optionalExerciseSummary${notes.isEmpty ? '' : '\nNotes: $notes'}',
       ),
     );
     _notifyAndPersist();
@@ -910,6 +1401,10 @@ class TrainingState extends ChangeNotifier {
       case BackupPreference.cloudSyncFuture:
         return 'Cloud sync (future)';
     }
+  }
+
+  static String barbellTemplateLabel(BarbellTemplate template) {
+    return templateDefinitions[template]?.name ?? template.name;
   }
 }
 
