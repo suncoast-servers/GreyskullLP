@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:greyskull_lp/models/accountability_post.dart';
+import 'package:greyskull_lp/services/accountability_template_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -325,6 +327,10 @@ class TrainingState extends ChangeNotifier {
   String _forumUrl = defaultForumUrl;
   String _forumLoginUrl = defaultForumLoginUrl;
   String _storeUrl = 'https://store.greyskullnation.com/';
+
+  AccountabilityPostMode _accountabilityMode = AccountabilityPostMode.off;
+  final List<AccountabilityDraft> _accountabilityDrafts = [];
+  AccountabilityDraft? _latestAccountabilityDraft;
 
   final Set<String> _selectedWeightOptionalExercises = {
     'Barbell Row',
@@ -717,6 +723,11 @@ class TrainingState extends ChangeNotifier {
   String get forumUrl => _forumUrl;
   String get forumLoginUrl => _forumLoginUrl;
   String get storeUrl => _storeUrl;
+  AccountabilityPostMode get accountabilityMode => _accountabilityMode;
+  List<AccountabilityDraft> get accountabilityDrafts =>
+      List<AccountabilityDraft>.unmodifiable(_accountabilityDrafts.reversed);
+  AccountabilityDraft? get latestAccountabilityDraft =>
+      _latestAccountabilityDraft;
 
   Set<String> get selectedWeightOptionalExercises =>
       Set<String>.from(_selectedWeightOptionalExercises);
@@ -859,6 +870,9 @@ class TrainingState extends ChangeNotifier {
       'forumUrl': _forumUrl,
       'forumLoginUrl': _forumLoginUrl,
       'storeUrl': _storeUrl,
+      'accountabilityMode': _accountabilityMode.name,
+      'accountabilityDrafts':
+          _accountabilityDrafts.map((d) => d.toJsonMap()).toList(),
       'selectedWeightOptionalExercises':
           _selectedWeightOptionalExercises.toList(),
       'selectedDailyOptionalExercises':
@@ -987,6 +1001,18 @@ class TrainingState extends ChangeNotifier {
     }
     _forumLoginUrl = map['forumLoginUrl'] as String? ?? _forumLoginUrl;
     _storeUrl = map['storeUrl'] as String? ?? _storeUrl;
+
+    _accountabilityMode = AccountabilityPostMode.values.firstWhere(
+      (m) => m.name == map['accountabilityMode'],
+      orElse: () => AccountabilityPostMode.off,
+    );
+    _accountabilityDrafts
+      ..clear()
+      ..addAll(
+        (map['accountabilityDrafts'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(AccountabilityDraft.fromJsonMap),
+      );
 
     _selectedWeightOptionalExercises
       ..clear()
@@ -1291,7 +1317,111 @@ class TrainingState extends ChangeNotifier {
     _notifyAndPersist();
   }
 
-  void logWeightSession({
+  void setAccountabilityMode(AccountabilityPostMode mode) {
+    _accountabilityMode = mode;
+    _notifyAndPersist();
+  }
+
+  AccountabilityDraft queueWeightSessionDraft({
+    required String coreLiftSummary,
+    required String optionalExerciseSummary,
+    required double volume,
+    String notes = '',
+  }) {
+    final postContent = AccountabilityTemplateService.generateWeightSessionPost(
+      coreLiftSummary: coreLiftSummary,
+      optionalExerciseSummary: optionalExerciseSummary,
+      volume: volume,
+      notes: notes,
+      userDisplayName: _forumDisplayName,
+    );
+    final draft = AccountabilityDraft(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      title: 'Weight Program Session',
+      content: postContent,
+      category: 'weight',
+    );
+    _accountabilityDrafts.add(draft);
+    _latestAccountabilityDraft = draft;
+    return draft;
+  }
+
+  AccountabilityDraft queueDailyMethodDraft({
+    required DailyMethod method,
+    required int pushUps,
+    required int chinUps,
+    required bool usedNegatives,
+    required String optionalExerciseSummary,
+  }) {
+    final postContent = AccountabilityTemplateService.generateDailyMethodPost(
+      method: method,
+      pushUps: pushUps,
+      chinUps: chinUps,
+      usedNegatives: usedNegatives,
+      optionalExerciseSummary: optionalExerciseSummary,
+      userDisplayName: _forumDisplayName,
+    );
+    final draft = AccountabilityDraft(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      title: '${methodLabel(method)} Session',
+      content: postContent,
+      category: 'daily',
+    );
+    _accountabilityDrafts.add(draft);
+    _latestAccountabilityDraft = draft;
+    return draft;
+  }
+
+  AccountabilityDraft queueDailySummaryDraft([DateTime? date]) {
+    final targetDate = date ?? DateTime.now();
+    final postContent = AccountabilityTemplateService.generateDailySummaryPost(
+      date: targetDate,
+      history: _history,
+      pushUpTarget: _dailyPushUpTarget,
+      chinUpTarget: _dailyChinUpTarget,
+      proteinConsumed: _dailyProteinConsumed,
+      calorieConsumed: _dailyCaloriesConsumed,
+      userDisplayName: _forumDisplayName,
+    );
+    final draft = AccountabilityDraft(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      title: 'End-of-Day Summary',
+      content: postContent,
+      category: 'summary',
+    );
+    _accountabilityDrafts.add(draft);
+    _latestAccountabilityDraft = draft;
+    _notifyAndPersist();
+    return draft;
+  }
+
+  void removeAccountabilityDraft(String id) {
+    _accountabilityDrafts.removeWhere((d) => d.id == id);
+    if (_latestAccountabilityDraft?.id == id) {
+      _latestAccountabilityDraft = null;
+    }
+    _notifyAndPersist();
+  }
+
+  void clearAccountabilityDrafts() {
+    _accountabilityDrafts.clear();
+    _latestAccountabilityDraft = null;
+    _notifyAndPersist();
+  }
+
+  void markAccountabilityDraftPosted(String id) {
+    final index = _accountabilityDrafts.indexWhere((d) => d.id == id);
+    if (index != -1) {
+      _accountabilityDrafts[index] =
+          _accountabilityDrafts[index].copyWith(isPosted: true);
+      _notifyAndPersist();
+    }
+  }
+
+  AccountabilityDraft? logWeightSession({
     required String coreLiftSummary,
     required String optionalExerciseSummary,
     required double volume,
@@ -1320,7 +1450,19 @@ class TrainingState extends ChangeNotifier {
         weightVolume: volume,
       ),
     );
+
+    AccountabilityDraft? draft;
+    if (_accountabilityMode != AccountabilityPostMode.off) {
+      draft = queueWeightSessionDraft(
+        coreLiftSummary: coreLiftSummary,
+        optionalExerciseSummary: optionalExerciseSummary,
+        volume: volume,
+        notes: notes,
+      );
+    }
+
     _notifyAndPersist();
+    return draft;
   }
 
   // --- Frequency Method Mutators ---
@@ -1466,7 +1608,7 @@ class TrainingState extends ChangeNotifier {
     }
   }
 
-  void logDailyMethodSession({
+  AccountabilityDraft? logDailyMethodSession({
     required DailyMethod method,
     required int pushUps,
     required int chinUps,
@@ -1492,7 +1634,20 @@ class TrainingState extends ChangeNotifier {
         methodMetadata: metadata,
       ),
     );
+
+    AccountabilityDraft? draft;
+    if (_accountabilityMode != AccountabilityPostMode.off) {
+      draft = queueDailyMethodDraft(
+        method: method,
+        pushUps: pushUps,
+        chinUps: chinUps,
+        usedNegatives: usedNegatives,
+        optionalExerciseSummary: optionalExerciseSummary,
+      );
+    }
+
     _notifyAndPersist();
+    return draft;
   }
 
   void logDietIntake({

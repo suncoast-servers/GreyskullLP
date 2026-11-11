@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
+import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:share_plus/share_plus.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -58,6 +60,19 @@ class _SettingsPageState extends State<SettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Settings saved')),
     );
+  }
+
+  String _accountabilityModeDescription(AccountabilityPostMode mode) {
+    switch (mode) {
+      case AccountabilityPostMode.off:
+        return 'Accountability posts are disabled.';
+      case AccountabilityPostMode.manual:
+        return 'Manually draft and share posts via "Post to Forum" actions.';
+      case AccountabilityPostMode.onWorkoutComplete:
+        return 'Automatically pop up the formatted draft whenever a workout is completed.';
+      case AccountabilityPostMode.endOfDaySummary:
+        return 'Compile all completed lifts, daily calisthenics, and nutrition into one daily summary.';
+    }
   }
 
   Future<void> _shareBackup() async {
@@ -556,6 +571,160 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: const Icon(Icons.restart_alt, size: 16),
                 label: const Text('Reset Forum URLs to Default'),
               ),
+              const Divider(height: 32),
+              const Text(
+                'Forum Accountability Posts',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Share progress with the Greyskull Nation community for mutual accountability.',
+                style: TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Posting Mode',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Off'),
+                    selected: trainingState.accountabilityMode ==
+                        AccountabilityPostMode.off,
+                    onSelected: (selected) {
+                      if (selected) {
+                        trainingState
+                            .setAccountabilityMode(AccountabilityPostMode.off);
+                      }
+                    },
+                  ),
+                  ChoiceChip(
+                    label: const Text('Manual'),
+                    selected: trainingState.accountabilityMode ==
+                        AccountabilityPostMode.manual,
+                    onSelected: (selected) {
+                      if (selected) {
+                        trainingState.setAccountabilityMode(
+                            AccountabilityPostMode.manual);
+                      }
+                    },
+                  ),
+                  ChoiceChip(
+                    label: const Text('On Workout Complete'),
+                    selected: trainingState.accountabilityMode ==
+                        AccountabilityPostMode.onWorkoutComplete,
+                    onSelected: (selected) {
+                      if (selected) {
+                        trainingState.setAccountabilityMode(
+                            AccountabilityPostMode.onWorkoutComplete);
+                      }
+                    },
+                  ),
+                  ChoiceChip(
+                    label: const Text('End-of-Day Summary'),
+                    selected: trainingState.accountabilityMode ==
+                        AccountabilityPostMode.endOfDaySummary,
+                    onSelected: (selected) {
+                      if (selected) {
+                        trainingState.setAccountabilityMode(
+                            AccountabilityPostMode.endOfDaySummary);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _accountabilityModeDescription(
+                    trainingState.accountabilityMode),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  final draft = trainingState.queueDailySummaryDraft();
+                  AccountabilityPostSheet.show(context, draft: draft);
+                },
+                icon: const Icon(Icons.summarize, size: 16),
+                label: const Text("Draft Today's End-of-Day Summary"),
+              ),
+              if (trainingState.accountabilityDrafts.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pending Drafts (${trainingState.accountabilityDrafts.length})',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          trainingState.clearAccountabilityDrafts(),
+                      child: const Text('Clear All',
+                          style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: trainingState.accountabilityDrafts.length,
+                  itemBuilder: (context, index) {
+                    final draft = trainingState.accountabilityDrafts[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      child: ListTile(
+                        dense: true,
+                        leading: Icon(
+                          draft.category == 'weight'
+                              ? Icons.fitness_center
+                              : (draft.category == 'daily'
+                                  ? Icons.accessibility_new
+                                  : Icons.calendar_today),
+                          size: 20,
+                        ),
+                        title: Text(draft.title,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(
+                          '${draft.timestamp.year}-${draft.timestamp.month.toString().padLeft(2, '0')}-${draft.timestamp.day.toString().padLeft(2, '0')} — ${draft.category}',
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.open_in_new, size: 18),
+                              tooltip: 'Open / Copy Draft',
+                              onPressed: () => AccountabilityPostSheet.show(
+                                  context,
+                                  draft: draft),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 18),
+                              tooltip: 'Delete Draft',
+                              onPressed: () => trainingState
+                                  .removeAccountabilityDraft(draft.id),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
               const Divider(height: 32),
               const Text(
                 'Store Integration',

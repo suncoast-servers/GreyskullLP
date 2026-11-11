@@ -1,6 +1,8 @@
-import '../services/social_share_service.dart';
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/services/social_share_service.dart';
+import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 
 class WorkoutPageWeight extends StatefulWidget {
   const WorkoutPageWeight({super.key});
@@ -171,7 +173,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     final totalVolume = _calculateTotalVolume(coreLifts);
     final templateDetails = trainingState.activeBarbellTemplateDetails;
 
-    trainingState.logWeightSession(
+    final draft = trainingState.logWeightSession(
       templateName: templateDetails.name,
       workoutName: currentWorkout.title,
       coreLiftSummary: coreLiftSummaries.join('\n'),
@@ -197,13 +199,38 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
       }
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Workout logged! Advanced rotation to: ${trainingState.currentTemplateWorkout.title}',
+    if (!mounted) {
+      return;
+    }
+
+    if (trainingState.accountabilityMode ==
+            AccountabilityPostMode.onWorkoutComplete &&
+        draft != null) {
+      AccountabilityPostSheet.show(context, draft: draft);
+    } else if (trainingState.accountabilityMode ==
+            AccountabilityPostMode.manual &&
+        draft != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Workout logged! Advanced rotation to: ${trainingState.currentTemplateWorkout.title}',
+          ),
+          action: SnackBarAction(
+            label: 'Post to Forum',
+            onPressed: () =>
+                AccountabilityPostSheet.show(context, draft: draft),
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Workout logged! Advanced rotation to: ${trainingState.currentTemplateWorkout.title}',
+          ),
+        ),
+      );
+    }
   }
 
   @override
