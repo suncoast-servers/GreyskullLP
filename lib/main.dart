@@ -10,6 +10,7 @@ import 'package:greyskull_lp/pages/settings_page.dart';
 import 'package:greyskull_lp/pages/stats_page.dart';
 import 'package:greyskull_lp/pages/store_page.dart';
 import 'package:greyskull_lp/pages/workout_page.dart';
+import 'package:greyskull_lp/widgets/bento_menu_icon.dart';
 import 'themes/theme.dart';
 
 Future<void> main() async {
@@ -146,7 +147,8 @@ class MainPageState extends State<MainPage> {
         leading: _selectedIndex == -1
             ? null
             : IconButton(
-                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Main menu',
+                icon: const BentoMenuIcon(),
                 onPressed: () {
                   setState(() {
                     _selectedIndex = -1;

@@ -53,4 +53,4 @@ Contractor may parallelize research spikes (store platform, forum stack) early w
 
 **TODO — new GitHub issue (design upgrade epic):** After v0.1, run a dedicated **elevated UI / design system** pass (“design pair extraordinaire”): explore multiple visual directions (typography, spacing, components, iconography, motion), prototype options on device, and lock a v1 design language beyond color-token skins.
 
-**TODO — new GitHub issue (navigation affordance):** Replace the global AppBar control that uses a **back arrow** to return to the home hub so it is not confused with workout subpage “Back to workout menu.” Target: a clear **main menu** icon (e.g. **bento / 2×3 grid**). Implementation deferred until after current PR queue review.
+**Done (v0.1):** AppBar returns to the home hub via a **bento (2×3) main menu** icon, not a back arrow (`lib/widgets/bento_menu_icon.dart`).

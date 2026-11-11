@@ -1,37 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
-class StorePage extends StatefulWidget {
+/// v0.1: open the official storefront in the system browser (no embedded WebView).
+class StorePage extends StatelessWidget {
   const StorePage({super.key});
 
-  @override
-  State<StorePage> createState() => _StorePageState();
-}
+  static const String _defaultUrl = 'https://store.greyskullnation.com/';
 
-class _StorePageState extends State<StorePage> {
-  WebViewController? _controller;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _initControllerIfNeeded();
-  }
-
-  void _initControllerIfNeeded() {
-    final url = trainingState.storeUrl;
-    _controller ??= WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted);
-    _controller!.loadRequest(Uri.parse(url));
-  }
-
-  Future<void> _openExternal(String url) async {
+  Future<void> _openStore(BuildContext context) async {
+    final url = trainingState.storeUrl.trim().isEmpty
+        ? _defaultUrl
+        : trainingState.storeUrl;
     final uri = Uri.tryParse(url);
     if (uri == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Store URL is invalid.')),
+        );
+      }
       return;
     }
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the store.')),
+      );
+    }
   }
 
   @override
@@ -39,19 +34,34 @@ class _StorePageState extends State<StorePage> {
     return AnimatedBuilder(
       animation: trainingState,
       builder: (context, _) {
-        _initControllerIfNeeded();
-        return Column(
+        final url = trainingState.storeUrl.trim().isEmpty
+            ? _defaultUrl
+            : trainingState.storeUrl;
+        return ListView(
+          padding: const EdgeInsets.all(24),
           children: [
-            ListTile(
-              title: const Text('Greyskull Store'),
-              subtitle: Text(trainingState.storeUrl),
-              trailing: IconButton(
-                icon: const Icon(Icons.open_in_new),
-                onPressed: () => _openExternal(trainingState.storeUrl),
-              ),
+            const Text(
+              'Greyskull Store',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            const Divider(height: 1),
-            Expanded(child: WebViewWidget(controller: _controller!)),
+            const SizedBox(height: 8),
+            const Text(
+              'Shop books, apparel, and coaching on the official Greyskull Nation storefront. '
+              'Opens in your browser — no in-app purchase or API keys required.',
+            ),
+            const SizedBox(height: 16),
+            Text('URL: $url', style: TextStyle(color: Colors.grey.shade600)),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => _openStore(context),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Open Greyskull Store'),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Change the store URL in Settings if needed.',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
           ],
         );
       },

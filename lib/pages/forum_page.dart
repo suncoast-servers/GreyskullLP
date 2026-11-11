@@ -1,39 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
-class ForumPage extends StatefulWidget {
+/// v0.1: open the community forum in the system browser (no WordPress API keys in app).
+class ForumPage extends StatelessWidget {
   const ForumPage({super.key});
 
-  @override
-  State<ForumPage> createState() => _ForumPageState();
-}
-
-class _ForumPageState extends State<ForumPage> {
-  WebViewController? _controller;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _initControllerIfNeeded();
-  }
-
-  void _initControllerIfNeeded() {
-    if (_controller != null) {
-      return;
-    }
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted);
-    _controller!.loadRequest(Uri.parse(trainingState.forumUrl));
-  }
-
-  Future<void> _openExternal(String url) async {
+  Future<void> _openUrl(BuildContext context, String url) async {
     final uri = Uri.tryParse(url);
     if (uri == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('URL is invalid.')),
+        );
+      }
       return;
     }
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the forum.')),
+      );
+    }
   }
 
   @override
@@ -41,52 +29,40 @@ class _ForumPageState extends State<ForumPage> {
     return AnimatedBuilder(
       animation: trainingState,
       builder: (context, _) {
-        if (!trainingState.forumSignedIn) {
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              const Text(
-                'Forum Sign-In Required',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Sign in from Settings, or open the WordPress login page below. '
-                'Once credentials/API details are provided by the owner, this can be upgraded to proper auth sync.',
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/settings'),
-                icon: const Icon(Icons.settings),
-                label: const Text('Open Settings'),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () => _openExternal(trainingState.forumLoginUrl),
-                icon: const Icon(Icons.open_in_new),
-                label: const Text('Open Forum Login in Browser'),
-              ),
-            ],
-          );
-        }
-
-        _initControllerIfNeeded();
-        return Column(
+        return ListView(
+          padding: const EdgeInsets.all(24),
           children: [
-            ListTile(
-              title: Text(
-                trainingState.forumDisplayName.isEmpty
-                    ? 'Signed in'
-                    : 'Signed in as ${trainingState.forumDisplayName}',
-              ),
-              subtitle: Text(trainingState.forumUrl),
-              trailing: IconButton(
-                icon: const Icon(Icons.open_in_new),
-                onPressed: () => _openExternal(trainingState.forumUrl),
-              ),
+            const Text(
+              'Greyskull Nation Forum',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
-            const Divider(height: 1),
-            Expanded(child: WebViewWidget(controller: _controller!)),
+            const SizedBox(height: 8),
+            const Text(
+              'Browse and post in the community using your browser. '
+              'This open-source app does not embed forum API secrets — account login happens on the website.',
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Forum: ${trainingState.forumUrl}',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => _openUrl(context, trainingState.forumUrl),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Open Forum'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => _openUrl(context, trainingState.forumLoginUrl),
+              icon: const Icon(Icons.login),
+              label: const Text('Forum Login / Register'),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Optional display name and forum URLs are in Settings.',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
           ],
         );
       },
