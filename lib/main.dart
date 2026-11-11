@@ -30,6 +30,7 @@ class GreyskullApp extends StatelessWidget {
         final currentSkin = trainingState.activeSkin;
         return MaterialApp(
           title: 'Greyskull LP',
+          debugShowCheckedModeBanner: false,
           theme: AppTheme.themeFor(currentSkin),
           darkTheme: AppTheme.themeFor(currentSkin),
           themeMode: currentSkin.isDark ? ThemeMode.dark : ThemeMode.light,
