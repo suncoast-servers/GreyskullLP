@@ -1,2 +1,0 @@
-/Users/umerwaqas/Downloads/ryan_ellenburg/GreyskullLP/android/app/.cxx/RelWithDebInfo/2e362m4o/arm64-v8a/CMakeFiles/edit_cache.dir
-/Users/umerwaqas/Downloads/ryan_ellenburg/GreyskullLP/android/app/.cxx/RelWithDebInfo/2e362m4o/arm64-v8a/CMakeFiles/rebuild_cache.dir
