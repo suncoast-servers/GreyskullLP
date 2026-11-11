@@ -25,7 +25,7 @@ All active delivery issues are tagged in GitHub milestone **[GreyskullLP v1](htt
 
 ## Phase order (suggested)
 
-1. **Stabilize & ship path** — CI green, release builds documented, store checklists (#12–#13).
+1. **Stabilize & ship path** — CI green, release builds documented, store checklists (#12–#13) — **merged via PR #27** (`docs/APPLE_RELEASE_READINESS.md`, `docs/GOOGLE_PLAY_RELEASE_READINESS.md`, Android `key.properties` pattern).
 2. **Book fidelity** — Templates, methods, statistics (#14–#17).
 3. **Look & feel** — Theme proposals (#18) — **merged (v0.1 skins approved)**; see follow-ups below.
 4. **Integrations** — Forum/store research, accountability, social (#19–#22).
