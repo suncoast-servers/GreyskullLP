@@ -55,56 +55,42 @@ class _WorkoutPageState extends State<WorkoutPage> {
   Widget _buildWorkoutMainPage() {
     widget.titleNotifier.value = "Workout";
 
+    final method = trainingState.activeDailyMethod;
+    final (IconData dailyIcon, String dailyLabel, Widget dailyPage) =
+        switch (method) {
+      DailyMethod.frequency => (
+          Icons.repeat,
+          'Frequency Method',
+          const WorkoutPageFrequency(),
+        ),
+      DailyMethod.ladder => (
+          Icons.trending_up,
+          'Ladder Method',
+          const WorkoutPageLadder(),
+        ),
+      DailyMethod.totalWork => (
+          Icons.balance,
+          'Total Work Method',
+          const WorkoutPageTotalWork(),
+        ),
+    };
+
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildWorkoutButton(
-                  IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
-                  'Weight Program',
-                  const WorkoutPageWeight()),
-              _buildWorkoutButton(
-                Icons.repeat,
-                'Frequency Method',
-                const WorkoutPageFrequency(),
-                isActive:
-                    trainingState.activeDailyMethod == DailyMethod.frequency,
-              ),
-            ],
+          _buildWorkoutButton(
+            IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
+            'Weight Program',
+            const WorkoutPageWeight(),
           ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildWorkoutButton(
-                Icons.trending_up,
-                'Ladder Method',
-                const WorkoutPageLadder(),
-                isActive: trainingState.activeDailyMethod == DailyMethod.ladder,
-              ),
-              _buildWorkoutButton(
-                Icons.balance,
-                'Total Work Method',
-                const WorkoutPageTotalWork(),
-                isActive:
-                    trainingState.activeDailyMethod == DailyMethod.totalWork,
-              ),
-            ],
-          ),
+          _buildWorkoutButton(dailyIcon, dailyLabel, dailyPage),
         ],
       ),
     );
   }
 
-  Widget _buildWorkoutButton(
-    IconData icon,
-    String label,
-    Widget page, {
-    bool isActive = false,
-  }) {
+  Widget _buildWorkoutButton(IconData icon, String label, Widget page) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () => _openSubPage(page, label),
@@ -115,11 +101,6 @@ class _WorkoutPageState extends State<WorkoutPage> {
             Icon(icon, size: 50),
             const SizedBox(height: 4),
             Text(label, style: const TextStyle(fontSize: 16)),
-            if (isActive)
-              const Text(
-                'Active',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              ),
           ],
         ),
       ),
