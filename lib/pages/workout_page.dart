@@ -105,19 +105,24 @@ class _WorkoutPageState extends State<WorkoutPage> {
     Widget page, {
     bool isActive = false,
   }) {
-    return Column(
-      children: [
-        IconButton(
-          icon: Icon(icon, size: 50),
-          onPressed: () => _openSubPage(page, label),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => _openSubPage(page, label),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Icon(icon, size: 50),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(fontSize: 16)),
+            if (isActive)
+              const Text(
+                'Active',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+          ],
         ),
-        Text(label, style: const TextStyle(fontSize: 16)),
-        if (isActive)
-          const Text(
-            'Active',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-          ),
-      ],
+      ),
     );
   }
 }

@@ -9,24 +9,112 @@ class WorkoutPageTotalWork extends StatefulWidget {
 }
 
 class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
-  int _pushUpsDone = 0;
-  int _chinUpsDone = 0;
-  bool _usedNegatives = false;
+  int _repsThisSet = 15;
+
+  void _addSet() {
+    if (_repsThisSet <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Please enter at least 1 rep for this set.')),
+      );
+      return;
+    }
+
+    trainingState.addTotalWorkSet(_repsThisSet);
+
+    if (trainingState.activeTotalWorkCompletedReps >=
+        trainingState.activeTotalWorkTargetReps) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Target reached! ${trainingState.activeTotalWorkCompletedReps} / ${trainingState.activeTotalWorkTargetReps} reps completed in ${trainingState.activeTotalWorkSets.length} sets.',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
 
   void _logSession() {
+    final sets = trainingState.activeTotalWorkSets;
+    if (sets.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Log at least one set before saving to history.')),
+      );
+      return;
+    }
+
+    final exercise = trainingState.activeTotalWorkExercise;
+    final usedNegatives = trainingState.activeTotalWorkUsedNegatives;
+    final target = trainingState.activeTotalWorkTargetReps;
+    final model = trainingState.activeTotalWorkModel;
+    final totalReps = trainingState.activeTotalWorkCompletedReps;
     final optional = trainingState.selectedDailyOptionalExercises.isEmpty
         ? 'None selected'
         : trainingState.selectedDailyOptionalExercises.join(', ');
 
+    final setBreakdown = sets
+        .asMap()
+        .entries
+        .map((e) => 'Set ${e.key + 1}: ${e.value} reps')
+        .join('\n');
+
+    final isPushUp = exercise == 'Push-ups';
+    final pushUps = isPushUp ? totalReps : 0;
+    final chinUps = (exercise == 'Dead-Hang Chins' || exercise == 'Chin-ups')
+        ? totalReps
+        : 0;
+
+    final details =
+        'Exercise: $exercise${usedNegatives ? ' (negatives used)' : ''}\n'
+        'Model: ${model == 'daily' ? 'Daily Work Target' : 'Weekly Work Target'}\n'
+        'Target: $target reps\n'
+        'Completed: $totalReps reps in ${sets.length} set${sets.length == 1 ? '' : 's'}\n'
+        'Optional: $optional\n\n'
+        'Sets Breakdown:\n$setBreakdown';
+
     trainingState.logDailyMethodSession(
       method: DailyMethod.totalWork,
-      pushUps: _pushUpsDone,
-      chinUps: _chinUpsDone,
-      usedNegatives: _usedNegatives,
+      pushUps: pushUps,
+      chinUps: chinUps,
+      usedNegatives: usedNegatives,
       optionalExerciseSummary: optional,
+      title:
+          'Total Work Method ($exercise - ${model == 'daily' ? 'Daily' : 'Weekly'})',
+      customDetails: details,
+      metadata: {
+        'exercise': exercise,
+        'model': model,
+        'targetReps': target,
+        'totalReps': totalReps,
+        'setsCount': sets.length,
+        'sets': List<int>.from(sets),
+      },
     );
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Total Work session logged to history')),
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Total Work Session Saved'),
+        content: Text(
+          'Saved $totalReps reps of $exercise in ${sets.length} sets toward $target rep target.\n\n'
+          'Would you like to clear this active session?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Keep Numbers'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              trainingState.resetActiveTotalWorkSession();
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('Clear Session'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -35,100 +123,395 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
     return AnimatedBuilder(
       animation: trainingState,
       builder: (context, _) {
+        final isActive =
+            trainingState.activeDailyMethod == DailyMethod.totalWork;
+        final selectedExercise = trainingState.activeTotalWorkExercise;
+        final usedNegatives = trainingState.activeTotalWorkUsedNegatives;
+        final model = trainingState.activeTotalWorkModel;
+        final targetReps = trainingState.activeTotalWorkTargetReps;
+        final sets = trainingState.activeTotalWorkSets;
+        final completed = trainingState.activeTotalWorkCompletedReps;
+        final remaining = trainingState.activeTotalWorkRemainingReps;
+        final progress =
+            targetReps > 0 ? (completed / targetReps).clamp(0.0, 1.0) : 0.0;
+        final percent = (progress * 100).toInt();
+
+        final bookPresets = model == 'daily'
+            ? [
+                selectedExercise == 'Dead-Hang Chins' ? 10 : 70,
+                selectedExercise == 'Dead-Hang Chins' ? 20 : 100,
+                selectedExercise == 'Dead-Hang Chins' ? 30 : 150,
+              ]
+            : [
+                selectedExercise == 'Dead-Hang Chins' ? 60 : 420,
+                selectedExercise == 'Dead-Hang Chins' ? 120 : 600,
+              ];
+
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text('Total Work Method',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            const Text('Daily base: push-ups + chin-ups/negatives'),
+            Row(
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Total Work Method',
+                        style: TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Assign daily or weekly volume targets per movement. Chip away throughout the schedule, staying shy of failure.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isActive)
+                  const Chip(
+                    label: Text('Active',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    backgroundColor: Colors.black12,
+                  ),
+              ],
+            ),
             const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () =>
-                  trainingState.setActiveDailyMethod(DailyMethod.totalWork),
-              child: Text(
-                trainingState.activeDailyMethod == DailyMethod.totalWork
-                    ? 'Currently Active Method'
-                    : 'Use Total Work Method',
+            if (!isActive)
+              OutlinedButton.icon(
+                onPressed: () =>
+                    trainingState.setActiveDailyMethod(DailyMethod.totalWork),
+                icon: const Icon(Icons.check_circle_outline),
+                label: const Text('Set as Active Method'),
+              ),
+            const SizedBox(height: 12),
+
+            // Book Guidelines Alert
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.black12),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Book Principles (3rd Edition pp. 70–74):',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    '• Diagnostic Testing: Conduct 2-min max push-ups, 2-min sit-ups, 5-min burpees, and 1-set dead-hang chins to set targets.\n'
+                    '• Daily Target vs Weekly Target: Start with daily targets (e.g., Ralph Day 1: 70 push-ups, 10 chins), then graduate to weekly totals (Daily × 6 = 420 push-ups, 60 chins).\n'
+                    '• Never to failure: Chip away in manageable sets.',
+                    style: TextStyle(fontSize: 12, height: 1.4),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            _CounterCard(
-              label: 'Push-ups done',
-              target: trainingState.dailyPushUpTarget,
-              value: _pushUpsDone,
-              onDecrease: () => setState(
-                  () => _pushUpsDone = (_pushUpsDone - 5).clamp(0, 500)),
-              onIncrease: () => setState(
-                  () => _pushUpsDone = (_pushUpsDone + 5).clamp(0, 500)),
+            const SizedBox(height: 14),
+
+            // Exercise & Model Configuration
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Official Movement (3rd Edition):',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedExercise,
+                      decoration:
+                          const InputDecoration(border: OutlineInputBorder()),
+                      items: const [
+                        DropdownMenuItem(
+                            value: 'Push-ups', child: Text('Push-ups')),
+                        DropdownMenuItem(
+                            value: 'Dead-Hang Chins',
+                            child: Text('Dead-Hang Chins')),
+                        DropdownMenuItem(
+                            value: 'Sit-ups', child: Text('Sit-ups')),
+                        DropdownMenuItem(
+                            value: 'Burpees', child: Text('Burpees')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          trainingState.setTotalWorkExercise(val);
+                          if (val == 'Dead-Hang Chins' && targetReps > 50) {
+                            trainingState.setTotalWorkTargetReps(10);
+                          } else if (val != 'Dead-Hang Chins' &&
+                              targetReps < 50) {
+                            trainingState.setTotalWorkTargetReps(70);
+                          }
+                        }
+                      },
+                    ),
+                    if (selectedExercise == 'Dead-Hang Chins') ...[
+                      const SizedBox(height: 6),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text(
+                            'Used negatives instead of full dead-hang chins'),
+                        subtitle: const Text(
+                            'Jump/step to top, lower under control for 5–6s'),
+                        value: usedNegatives,
+                        onChanged: (val) =>
+                            trainingState.setTotalWorkUsedNegatives(val),
+                      ),
+                    ],
+                    const Divider(height: 24),
+                    const Text('Target Model:',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                            value: 'daily', label: Text('Daily Target')),
+                        ButtonSegment(
+                            value: 'weekly',
+                            label: Text('Weekly Target (Daily × 6)')),
+                      ],
+                      selected: {model},
+                      onSelectionChanged: (set) {
+                        final newModel = set.first;
+                        trainingState.setTotalWorkModel(newModel);
+                        if (newModel == 'weekly' && targetReps <= 150) {
+                          trainingState.setTotalWorkTargetReps(targetReps * 6);
+                        } else if (newModel == 'daily' && targetReps > 200) {
+                          trainingState
+                              .setTotalWorkTargetReps((targetReps / 6).round());
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Text('Target Reps ($model): $targetReps reps',
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        ...bookPresets.map((reps) => ChoiceChip(
+                              label: Text('$reps reps (Book preset)'),
+                              selected: targetReps == reps,
+                              onSelected: (_) =>
+                                  trainingState.setTotalWorkTargetReps(reps),
+                            )),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-            _CounterCard(
-              label: 'Chin-ups / negatives done',
-              target: trainingState.dailyChinUpTarget,
-              value: _chinUpsDone,
-              onDecrease: () => setState(
-                  () => _chinUpsDone = (_chinUpsDone - 1).clamp(0, 250)),
-              onIncrease: () => setState(
-                  () => _chinUpsDone = (_chinUpsDone + 1).clamp(0, 250)),
+            const SizedBox(height: 16),
+
+            // Progress Card
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Volume Progress',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Text('$completed / $targetReps reps ($percent%)'),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 10,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Sets completed: ${sets.length}',
+                            style: const TextStyle(fontSize: 13)),
+                        Text(
+                          remaining == 0
+                              ? 'Target achieved!'
+                              : '$remaining reps remaining',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: remaining == 0
+                                ? Colors.green
+                                : Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-            SwitchListTile(
-              title: const Text('Used negatives instead of full chin-ups'),
-              value: _usedNegatives,
-              onChanged: (value) => setState(() => _usedNegatives = value),
+            const SizedBox(height: 16),
+
+            // Log Set Card
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Log Set #${sets.length + 1}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => setState(() =>
+                              _repsThisSet = (_repsThisSet - 5).clamp(1, 200)),
+                          icon: const Icon(Icons.remove_circle_outline),
+                        ),
+                        IconButton(
+                          onPressed: () => setState(() =>
+                              _repsThisSet = (_repsThisSet - 1).clamp(1, 200)),
+                          icon: const Icon(Icons.remove),
+                        ),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              '$_repsThisSet reps',
+                              style: const TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => setState(() =>
+                              _repsThisSet = (_repsThisSet + 1).clamp(1, 200)),
+                          icon: const Icon(Icons.add),
+                        ),
+                        IconButton(
+                          onPressed: () => setState(() =>
+                              _repsThisSet = (_repsThisSet + 5).clamp(1, 200)),
+                          icon: const Icon(Icons.add_circle_outline),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12)),
+                        onPressed: _addSet,
+                        icon: const Icon(Icons.check),
+                        label: Text('Record Set ($_repsThisSet reps)'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-            const Text('Optional add-ons (from Settings):'),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: trainingState.selectedDailyOptionalExercises.isEmpty
-                  ? [const Chip(label: Text('None selected yet'))]
-                  : trainingState.selectedDailyOptionalExercises
-                      .map((exercise) => Chip(label: Text(exercise)))
-                      .toList(),
+            const SizedBox(height: 16),
+
+            // Completed Sets List
+            if (sets.isNotEmpty) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Sets Completed (${sets.length}):',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold)),
+                  TextButton(
+                    onPressed: () =>
+                        trainingState.resetActiveTotalWorkSession(),
+                    child: const Text('Reset',
+                        style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ...sets.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final reps = entry.value;
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.black12,
+                      child: Text('#${idx + 1}'),
+                    ),
+                    title: Text('Set ${idx + 1}: $reps reps'),
+                    trailing: IconButton(
+                      icon:
+                          const Icon(Icons.delete_outline, color: Colors.grey),
+                      onPressed: () => trainingState.removeTotalWorkSet(idx),
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 16),
+            ],
+
+            // Optional Add-ons Section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Optional Accessories (from Settings):',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          trainingState.selectedDailyOptionalExercises.isEmpty
+                              ? [const Chip(label: Text('None selected yet'))]
+                              : trainingState.selectedDailyOptionalExercises
+                                  .map((e) => Chip(label: Text(e)))
+                                  .toList(),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
+
+            // Save Session to History
             ElevatedButton.icon(
-              onPressed: _logSession,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: sets.isEmpty ? null : _logSession,
               icon: const Icon(Icons.save),
-              label: const Text('Log Today\'s Total Work Session'),
+              label: const Text(
+                'Log Total Work Session to History',
+                style: TextStyle(fontSize: 16),
+              ),
             ),
+            const SizedBox(height: 32),
           ],
         );
       },
-    );
-  }
-}
-
-class _CounterCard extends StatelessWidget {
-  const _CounterCard({
-    required this.label,
-    required this.target,
-    required this.value,
-    required this.onDecrease,
-    required this.onIncrease,
-  });
-
-  final String label;
-  final int target;
-  final int value;
-  final VoidCallback onDecrease;
-  final VoidCallback onIncrease;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Expanded(child: Text('$label: $value / target $target')),
-            IconButton(onPressed: onDecrease, icon: const Icon(Icons.remove)),
-            IconButton(onPressed: onIncrease, icon: const Icon(Icons.add)),
-          ],
-        ),
-      ),
     );
   }
 }
