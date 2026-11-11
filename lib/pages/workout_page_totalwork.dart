@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
+import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
 
 class WorkoutPageTotalWork extends StatefulWidget {
   const WorkoutPageTotalWork({super.key});
@@ -12,6 +13,7 @@ class WorkoutPageTotalWork extends StatefulWidget {
 
 class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
   int _repsThisSet = 15;
+  final Set<String> _completedAccessories = {};
 
   void _addSet() {
     if (_repsThisSet <= 0) {
@@ -52,9 +54,17 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
     final target = trainingState.activeTotalWorkTargetReps;
     final model = trainingState.activeTotalWorkModel;
     final totalReps = trainingState.activeTotalWorkCompletedReps;
-    final optional = trainingState.selectedDailyOptionalExercises.isEmpty
-        ? 'None selected'
-        : trainingState.selectedDailyOptionalExercises.join(', ');
+
+    final configuredAccessories =
+        trainingState.getCalisthenicsAccessories(DailyMethod.totalWork);
+    final accessorySummaries = <String>[];
+    for (final acc in configuredAccessories) {
+      final done = _completedAccessories.contains(acc);
+      accessorySummaries.add('$acc [${done ? "Completed" : "Skipped"}]');
+    }
+    final optional = accessorySummaries.isEmpty
+        ? 'None configured'
+        : accessorySummaries.join(', ');
 
     final setBreakdown = sets
         .asMap()
@@ -73,7 +83,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
         'Model: ${model == 'daily' ? 'Daily Work Target' : 'Weekly Work Target'}\n'
         'Target: $target reps\n'
         'Completed: $totalReps reps in ${sets.length} set${sets.length == 1 ? '' : 's'}\n'
-        'Optional: $optional\n\n'
+        'Optional Accessories: $optional\n\n'
         'Sets Breakdown:\n$setBreakdown';
 
     final draft = trainingState.logDailyMethodSession(
@@ -92,6 +102,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
         'totalReps': totalReps,
         'setsCount': sets.length,
         'sets': List<int>.from(sets),
+        'accessories': accessorySummaries,
       },
     );
 
@@ -111,6 +122,9 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
           ElevatedButton(
             onPressed: () {
               trainingState.resetActiveTotalWorkSession();
+              setState(() {
+                _completedAccessories.clear();
+              });
               Navigator.of(ctx).pop();
             },
             child: const Text('Clear Session'),
@@ -440,29 +454,17 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
               const SizedBox(height: 16),
             ],
 
-            // Optional Add-ons Section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Optional Accessories (from Settings):',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children:
-                          trainingState.selectedDailyOptionalExercises.isEmpty
-                              ? [const Chip(label: Text('None selected yet'))]
-                              : trainingState.selectedDailyOptionalExercises
-                                  .map((e) => Chip(label: Text(e)))
-                                  .toList(),
-                    ),
-                  ],
-                ),
-              ),
+            // Optional Accessories Section
+            CalisthenicsAccessoriesSection(
+              method: DailyMethod.totalWork,
+              completedAccessories: _completedAccessories,
+              onCompletedChanged: (updated) {
+                setState(() {
+                  _completedAccessories
+                    ..clear()
+                    ..addAll(updated);
+                });
+              },
             ),
             const SizedBox(height: 20),
 

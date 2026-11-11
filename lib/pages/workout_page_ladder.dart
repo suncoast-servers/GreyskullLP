@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
+import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
 
 class WorkoutPageLadder extends StatefulWidget {
   const WorkoutPageLadder({super.key});
@@ -11,6 +12,7 @@ class WorkoutPageLadder extends StatefulWidget {
 }
 
 class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
+  final Set<String> _completedAccessories = {};
   void _completeRung() {
     trainingState.recordLadderRung();
   }
@@ -64,9 +66,17 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
     final usedNegatives = trainingState.activeLadderUsedNegatives;
     final totalReps = trainingState.activeLadderTotalReps;
     final peak = trainingState.activeLadderPeakRung;
-    final optional = trainingState.selectedDailyOptionalExercises.isEmpty
-        ? 'None selected'
-        : trainingState.selectedDailyOptionalExercises.join(', ');
+
+    final configuredAccessories =
+        trainingState.getCalisthenicsAccessories(DailyMethod.ladder);
+    final accessorySummaries = <String>[];
+    for (final acc in configuredAccessories) {
+      final done = _completedAccessories.contains(acc);
+      accessorySummaries.add('$acc [${done ? "Completed" : "Skipped"}]');
+    }
+    final optional = accessorySummaries.isEmpty
+        ? 'None configured'
+        : accessorySummaries.join(', ');
 
     final ladderBreakdown = allLadders
         .asMap()
@@ -84,7 +94,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
         'Total Reps: $totalReps\n'
         'Ladders completed: ${allLadders.length}\n'
         'Peak Rung: $peak\n'
-        'Optional: $optional\n\n'
+        'Optional Accessories: $optional\n\n'
         'Ladders Breakdown:\n$ladderBreakdown';
 
     final draft = trainingState.logDailyMethodSession(
@@ -101,6 +111,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
         'peakRung': peak,
         'laddersCount': allLadders.length,
         'ladders': allLadders,
+        'accessories': accessorySummaries,
       },
     );
 
@@ -120,6 +131,9 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
           ElevatedButton(
             onPressed: () {
               trainingState.resetActiveLadderSession();
+              setState(() {
+                _completedAccessories.clear();
+              });
               Navigator.of(ctx).pop();
             },
             child: const Text('Clear Session'),
@@ -354,29 +368,17 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
               const SizedBox(height: 16),
             ],
 
-            // Optional Add-ons Section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Optional Accessories (from Settings):',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children:
-                          trainingState.selectedDailyOptionalExercises.isEmpty
-                              ? [const Chip(label: Text('None selected yet'))]
-                              : trainingState.selectedDailyOptionalExercises
-                                  .map((e) => Chip(label: Text(e)))
-                                  .toList(),
-                    ),
-                  ],
-                ),
-              ),
+            // Optional Accessories Section
+            CalisthenicsAccessoriesSection(
+              method: DailyMethod.ladder,
+              completedAccessories: _completedAccessories,
+              onCompletedChanged: (updated) {
+                setState(() {
+                  _completedAccessories
+                    ..clear()
+                    ..addAll(updated);
+                });
+              },
             ),
             const SizedBox(height: 20),
 

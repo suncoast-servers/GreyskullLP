@@ -137,8 +137,7 @@ class MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const exerciseIcon =
-        Icon(IconData(0xf6e6, fontFamily: 'MaterialSymbols'));
+    const exerciseIcon = Icon(IconData(0xf6e6, fontFamily: 'MaterialSymbols'));
 
     return Scaffold(
       appBar: AppBar(

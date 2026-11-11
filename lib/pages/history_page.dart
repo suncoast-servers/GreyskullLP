@@ -336,12 +336,8 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: [
-                    'Push-ups',
-                    'Dead-Hang Chins',
-                    'Sit-ups',
-                    'Burpees'
-                  ].contains(exercise)
+                  value: ['Push-ups', 'Dead-Hang Chins', 'Sit-ups', 'Burpees']
+                          .contains(exercise)
                       ? exercise
                       : 'Push-ups',
                   decoration: const InputDecoration(labelText: 'Movement'),
