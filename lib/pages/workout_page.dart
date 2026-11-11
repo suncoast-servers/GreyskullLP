@@ -75,17 +75,21 @@ class _WorkoutPageState extends State<WorkoutPage> {
         ),
     };
 
-    return Center(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildWorkoutButton(
-            IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
-            'Weight Program',
-            const WorkoutPageWeight(),
-          ),
-          _buildWorkoutButton(dailyIcon, dailyLabel, dailyPage),
-        ],
+    return SizedBox.expand(
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildWorkoutButton(
+              IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
+              'Weight Program',
+              const WorkoutPageWeight(),
+            ),
+            const SizedBox(width: 48),
+            _buildWorkoutButton(dailyIcon, dailyLabel, dailyPage),
+          ],
+        ),
       ),
     );
   }
