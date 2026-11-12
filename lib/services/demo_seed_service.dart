@@ -26,13 +26,24 @@ class DemoSeedService {
       'Beginner on the OG Base program for ~30 days, Villain for ~30 days, '
       'then Gladiator with Frequency → Ladder → Total Work transitions.';
 
-  /// Scenario B (issue #56) lands separately; the picker already reads this
-  /// list so both fixtures share one import path.
+  static const int scenarioBLengthDays = 90;
+
+  static const String scenarioBTitle =
+      'Scenario B — 90-day cut (Frequency → Ladder → Total Work)';
+  static const String scenarioBDescription =
+      'Overweight trainee in a calorie deficit: stalled/reset barbell loads, '
+      'a downward bodyweight trend and Frequency → Ladder → Total Work.';
+
   static List<DemoScenario> get scenarios => const [
         DemoScenario(
           id: 'scenario_a',
           title: scenarioATitle,
           description: scenarioADescription,
+        ),
+        DemoScenario(
+          id: 'scenario_b',
+          title: scenarioBTitle,
+          description: scenarioBDescription,
         ),
       ];
 
@@ -48,6 +59,8 @@ class DemoSeedService {
     switch (scenarioId) {
       case 'scenario_a':
         return buildScenarioAJson(endDate: endDate);
+      case 'scenario_b':
+        return buildScenarioBJson(endDate: endDate);
       default:
         throw ArgumentError.value(scenarioId, 'scenarioId', 'Unknown scenario');
     }
@@ -174,6 +187,137 @@ class DemoSeedService {
     };
   }
 
+  static String buildScenarioBJson({
+    DateTime? endDate,
+    TrainingState? state,
+  }) =>
+      jsonEncode(buildScenarioB(endDate: endDate, state: state));
+
+  /// Scenario B (issue #56): overweight trainee cutting.
+  ///
+  /// Differences from scenario A that matter for QA:
+  /// - calorie deficit with a falling bodyweight note every diet entry
+  /// - two barbell days a week with periodic stalls and 10% resets
+  /// - lower calisthenics volume and later method transitions
+  static Map<String, dynamic> buildScenarioB({
+    DateTime? endDate,
+    TrainingState? state,
+    int seed = 7,
+  }) {
+    final templateState = state ?? trainingState;
+    final random = Random(seed);
+    final today = _dayOnly(endDate ?? DateTime.now());
+    final start = today.subtract(const Duration(days: scenarioBLengthDays - 1));
+
+    const ladderStart = 40;
+    const totalWorkStart = 70;
+
+    final history = <Map<String, dynamic>>[];
+    final liftWeights = <String, double>{};
+    var rotation = 0;
+    var liftSession = 0;
+
+    for (var dayIndex = 0; dayIndex < scenarioBLengthDays; dayIndex++) {
+      final date = start.add(Duration(days: dayIndex));
+      final progress = dayIndex / (scenarioBLengthDays - 1);
+      final phase =
+          dayIndex < ladderStart ? 1 : (dayIndex < totalWorkStart ? 2 : 3);
+      final template = switch (phase) {
+        1 => BarbellTemplate.ogBase,
+        2 => BarbellTemplate.villain,
+        _ => BarbellTemplate.twoDaySplit,
+      };
+      final details = templateState.getTemplateDetails(template);
+      final workouts = details.workouts;
+      if (workouts.isEmpty) continue;
+
+      // Cutting trainee trains twice a week (Tue/Sat).
+      final isLiftDay =
+          date.weekday == DateTime.tuesday || date.weekday == DateTime.saturday;
+      if (isLiftDay) {
+        final workout = workouts[rotation % workouts.length];
+        rotation++;
+        liftSession++;
+        history.add(
+          _weightEntry(
+            date: date,
+            templateName: details.name,
+            workout: workout,
+            liftWeights: liftWeights,
+            random: random,
+            phase: phase,
+            isCutting: true,
+            sessionIndex: liftSession,
+          ),
+        );
+      }
+
+      // Calisthenics six days a week at reduced volume (deficit recovery).
+      if (date.weekday != DateTime.sunday) {
+        history.addAll(
+          _calisthenicsEntries(
+            date: date,
+            dayIndex: dayIndex,
+            phase: phase,
+            random: random,
+            intensity: 0.8,
+          ),
+        );
+      }
+
+      // Diet: five logs a week with a falling bodyweight trend.
+      if (date.weekday != DateTime.sunday &&
+          date.weekday != DateTime.wednesday) {
+        final protein = 150 + random.nextInt(8);
+        final calories = 1780 + random.nextInt(120);
+        final bodyweight = 118.0 - progress * 6.4;
+        history.add({
+          'timestamp': _at(date, const _ClockTime(hour: 20, minute: 30))
+              .toIso8601String(),
+          'title': 'Diet Intake',
+          'category': 'diet',
+          'proteinGrams': protein,
+          'calories': calories,
+          'details':
+              'Protein: ${protein}g, Calories: $calories\nBodyweight: ${bodyweight.toStringAsFixed(1)} kg\nNote: Demo fixture (Scenario B, cutting)',
+        });
+      }
+    }
+
+    return {
+      'schemaVersion': 2,
+      'programLevel': 'gladiator',
+      'hasCompletedOnboarding': true,
+      'activeBarbellTemplate': 'twoDaySplit',
+      'activeBarbellRotationIndex': rotation % 2,
+      'activeSkin': 'ironAndBone',
+      'activeDailyMethod': 'totalWork',
+      'nutritionMode': 'cutting',
+      'backupPreference': 'manualExport',
+      'dailyPushUpTarget': 100,
+      'dailyChinUpTarget': 30,
+      'dailyProteinTarget': 160,
+      'dailyCalorieTarget': 1850,
+      'dailyProteinConsumed': 0,
+      'dailyCaloriesConsumed': 0,
+      'macroTrackingDate': today.toIso8601String(),
+      'frequencyTrackingDate': today.toIso8601String(),
+      'todayFrequencySets': <dynamic>[],
+      'todayFrequencyAccessories': <dynamic>[],
+      'activeLadderExercise': 'Chin-ups',
+      'activeLadderUsedNegatives': true,
+      'activeCompletedLadders': <dynamic>[],
+      'activeCurrentLadderRungs': <dynamic>[],
+      'activeTotalWorkExercise': 'Push-ups',
+      'activeTotalWorkUsedNegatives': false,
+      'activeTotalWorkModel': 'weekly',
+      'activeTotalWorkTargetReps': 200,
+      'activeTotalWorkSets': <dynamic>[],
+      'accountabilityMode': 'off',
+      'history': history,
+    };
+  }
+
   static Map<String, dynamic> _weightEntry({
     required DateTime date,
     required String templateName,
@@ -181,14 +325,22 @@ class DemoSeedService {
     required Map<String, double> liftWeights,
     required Random random,
     required int phase,
+    bool isCutting = false,
+    int sessionIndex = 0,
   }) {
     final coreSummaries = <String>[];
     var volume = 0.0;
 
     for (final lift in workout.coreLifts) {
-      final weight = _nextWeight(lift, liftWeights);
+      final weight = _nextWeight(
+        lift,
+        liftWeights,
+        isCutting: isCutting,
+        sessionIndex: sessionIndex,
+      );
       final sets = lift.sets <= 0 ? 3 : lift.sets;
-      final amrapReps = lift.isAmrap ? 5 + random.nextInt(8) : 5;
+      final amrapReps =
+          lift.isAmrap ? 5 + random.nextInt(isCutting ? 4 : 8) : 5;
       var liftVolume = 0.0;
       for (var set = 0; set < sets; set++) {
         final reps = set == sets - 1 && lift.isAmrap ? amrapReps : 5;
@@ -227,13 +379,16 @@ class DemoSeedService {
     required int dayIndex,
     required int phase,
     required Random random,
+    double intensity = 1.0,
   }) {
     final progress = dayIndex / (scenarioALengthDays - 1);
 
     if (phase == 1) {
       // Frequency: sub-maximal sets spread through the day.
-      final totalPushUps = (45 + progress * 110).round() + random.nextInt(6);
-      final totalChinUps = (10 + progress * 32).round() + random.nextInt(3);
+      final totalPushUps =
+          ((45 + progress * 110) * intensity).round() + random.nextInt(6);
+      final totalChinUps =
+          ((10 + progress * 32) * intensity).round() + random.nextInt(3);
       final sets = 3 + random.nextInt(3); // 3-5 sets
       final breakdown = <String>[];
       var pushRemaining = totalPushUps;
@@ -288,8 +443,9 @@ class DemoSeedService {
         rungs.add(rungList);
       }
 
-      final pushUps = (70 + progress * 90).round() + random.nextInt(8);
-      final pushTarget = (90 + progress * 90).round();
+      final pushUps =
+          ((70 + progress * 90) * intensity).round() + random.nextInt(8);
+      final pushTarget = ((90 + progress * 90) * intensity).round();
 
       return [
         {
@@ -366,11 +522,19 @@ class DemoSeedService {
 
   static double _nextWeight(
     TemplateLift lift,
-    Map<String, double> liftWeights,
-  ) {
+    Map<String, double> liftWeights, {
+    bool isCutting = false,
+    int sessionIndex = 0,
+  }) {
     final base = _baseWeightFor(lift);
     final current = liftWeights[lift.name] ?? base;
-    final next = current <= 0 ? base : current;
+    var next = current <= 0 ? base : current;
+
+    if (isCutting && sessionIndex > 0 && sessionIndex % 5 == 0) {
+      // Cutting trainees stall: take a 10% reset instead of adding load.
+      next = (next * 0.9).roundToDouble();
+    }
+
     final increment = lift.isUpperBody ? 2.5 : 5.0;
     liftWeights[lift.name] = next + increment;
     return next;
