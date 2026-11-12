@@ -427,6 +427,11 @@ class TrainingState extends ChangeNotifier {
   ProgramLevel _programLevel = ProgramLevel.foundation;
   bool _hasCompletedOnboarding = false;
   bool _socialSharePromptEnabled = true;
+
+  // Workout timing (#75)
+  bool _restTimerEnabled = true;
+  int _restTimerSeconds = 90;
+  bool _restTimerSoundEnabled = true;
   String _socialShareHashtag = '#GreyskullLP #JohnnyPain';
   BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
   int _activeBarbellRotationIndex = 0;
@@ -907,6 +912,13 @@ class TrainingState extends ChangeNotifier {
   bool get isAdvancedSplitsUnlocked => _programLevel.levelNumber >= 3;
 
   bool get socialSharePromptEnabled => _socialSharePromptEnabled;
+
+  /// Workout timing settings (#75).
+  bool get restTimerEnabled => _restTimerEnabled;
+  int get restTimerSeconds => _restTimerSeconds;
+  bool get restTimerSoundEnabled => _restTimerSoundEnabled;
+
+  static const List<int> restTimerPresets = [60, 90, 120, 180];
   String get socialShareHashtag => _socialShareHashtag;
 
   BarbellTemplate get activeBarbellTemplate => _activeBarbellTemplate;
@@ -1257,6 +1269,9 @@ class TrainingState extends ChangeNotifier {
       'programLevel': _programLevel.name,
       'hasCompletedOnboarding': _hasCompletedOnboarding,
       'socialSharePromptEnabled': _socialSharePromptEnabled,
+      'restTimerEnabled': _restTimerEnabled,
+      'restTimerSeconds': _restTimerSeconds,
+      'restTimerSoundEnabled': _restTimerSoundEnabled,
       'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
@@ -1326,6 +1341,9 @@ class TrainingState extends ChangeNotifier {
 
     _socialSharePromptEnabled =
         map['socialSharePromptEnabled'] as bool? ?? true;
+    _restTimerEnabled = map['restTimerEnabled'] as bool? ?? true;
+    _restTimerSeconds = (map['restTimerSeconds'] as int? ?? 90).clamp(15, 600);
+    _restTimerSoundEnabled = map['restTimerSoundEnabled'] as bool? ?? true;
     _socialShareHashtag =
         map['socialShareHashtag'] as String? ?? '#GreyskullLP #JohnnyPain';
 
@@ -1576,6 +1594,25 @@ class TrainingState extends ChangeNotifier {
       return;
     }
     _socialSharePromptEnabled = enabled;
+    _notifyAndPersist();
+  }
+
+  void setRestTimerEnabled(bool enabled) {
+    if (_restTimerEnabled == enabled) return;
+    _restTimerEnabled = enabled;
+    _notifyAndPersist();
+  }
+
+  void setRestTimerSeconds(int seconds) {
+    final clamped = seconds.clamp(15, 600);
+    if (_restTimerSeconds == clamped) return;
+    _restTimerSeconds = clamped;
+    _notifyAndPersist();
+  }
+
+  void setRestTimerSoundEnabled(bool enabled) {
+    if (_restTimerSoundEnabled == enabled) return;
+    _restTimerSoundEnabled = enabled;
     _notifyAndPersist();
   }
 

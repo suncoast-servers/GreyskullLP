@@ -714,6 +714,61 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const Divider(height: 32),
               const Text(
+                'Workout Timing',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Countdown between sets during barbell sessions.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Rest timer between sets'),
+                subtitle: const Text(
+                  'Starts automatically when a set is marked complete.',
+                ),
+                value: trainingState.restTimerEnabled,
+                onChanged: (val) => trainingState.setRestTimerEnabled(val),
+              ),
+              if (trainingState.restTimerEnabled) ...[
+                const SizedBox(height: 4),
+                DropdownButtonFormField<int>(
+                  key: ValueKey(trainingState.restTimerSeconds),
+                  initialValue: trainingState.restTimerSeconds,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Default rest',
+                  ),
+                  items: TrainingState.restTimerPresets
+                      .map(
+                        (seconds) => DropdownMenuItem<int>(
+                          value: seconds,
+                          child: Text('$seconds seconds'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      trainingState.setRestTimerSeconds(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Sound and vibration when rest ends'),
+                  value: trainingState.restTimerSoundEnabled,
+                  onChanged: (val) =>
+                      trainingState.setRestTimerSoundEnabled(val),
+                ),
+              ],
+              const Divider(height: 32),
+              const Text(
                 'Backups',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
