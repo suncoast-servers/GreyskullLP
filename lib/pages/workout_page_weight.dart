@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/services/social_share_service.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/custom_program_editor_sheet.dart';
@@ -111,10 +112,11 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                         },
                       ),
                       const SizedBox(height: 14),
-                      const Center(
+                      Center(
                           child: Text('OR ENTER CUSTOM ACCESSORY',
-                              style:
-                                  TextStyle(fontSize: 11, color: Colors.grey))),
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.mutedText(context)))),
                       const SizedBox(height: 14),
                     ],
                     TextField(
@@ -163,9 +165,10 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Copy all workouts, core lifts, and plug-in accessories from an official book preset into your custom program.',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              style:
+                  TextStyle(fontSize: 13, color: AppTheme.mutedText(context)),
             ),
             const SizedBox(height: 12),
             ...TrainingState.officialBookTemplates.map((template) {
@@ -353,18 +356,24 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
+                  color: AppTheme.resistanceAccent(context)
+                      .withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
+                  border: Border.all(
+                      color: AppTheme.resistanceAccent(context)
+                          .withValues(alpha: 0.35)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.info_outline, size: 16, color: Colors.blue),
-                    SizedBox(width: 8),
+                    Icon(Icons.info_outline,
+                        size: 16, color: AppTheme.resistanceAccent(context)),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Level 1 (Foundation): Keep it simple. Johnny Pain advises mastering core lifts first before adding plug-in accessories.',
-                        style: TextStyle(fontSize: 12, color: Colors.black87),
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.onSurface),
                       ),
                     ),
                   ],
@@ -379,12 +388,12 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Official Greyskull LP Template',
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
-                          color: Colors.grey),
+                          color: AppTheme.mutedText(context)),
                     ),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<BarbellTemplate>(
@@ -426,15 +435,16 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                     const SizedBox(height: 4),
                     Text(
                       'Book ref: ${templateDetails.bookReference}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 12,
-                          color: Colors.indigo,
+                          color: AppTheme.resistanceAccent(context),
                           fontStyle: FontStyle.italic),
                     ),
                     Text(
                       'Cadence: ${templateDetails.scheduleDescription}',
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.black87),
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurface),
                     ),
                     if (trainingState.isCustomTemplateActive) ...[
                       const SizedBox(height: 10),
@@ -545,8 +555,8 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                     ),
                     Text(
                       currentWorkout.subtitle,
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.black54),
+                      style: TextStyle(
+                          fontSize: 12, color: AppTheme.mutedText(context)),
                     ),
                   ],
                 ),
@@ -558,16 +568,22 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.12),
+                color: Theme.of(context)
+                    .colorScheme
+                    .secondary
+                    .withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: Colors.amber.shade700.withValues(alpha: 0.3)),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .secondary
+                        .withValues(alpha: 0.35)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.info_outline,
-                      size: 20, color: Colors.amber.shade900),
+                      size: 20, color: Theme.of(context).colorScheme.secondary),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
@@ -590,10 +606,10 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                 ),
                 Text(
                   '${_completedCoreLifts.length}/${coreLifts.length} complete',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey),
+                      color: AppTheme.mutedText(context)),
                 ),
               ],
             ),
@@ -676,10 +692,11 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                           horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: lift.isUpperBody
-                                            ? Colors.blue
-                                                .withValues(alpha: 0.15)
-                                            : Colors.orange
-                                                .withValues(alpha: 0.15),
+                                            ? AppTheme.resistanceAccent(context)
+                                                .withValues(alpha: 0.16)
+                                            : AppTheme.calisthenicsAccent(
+                                                    context)
+                                                .withValues(alpha: 0.16),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
@@ -690,8 +707,10 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                           fontSize: 10,
                                           fontWeight: FontWeight.w600,
                                           color: lift.isUpperBody
-                                              ? Colors.blue.shade800
-                                              : Colors.orange.shade900,
+                                              ? AppTheme.resistanceAccent(
+                                                  context)
+                                              : AppTheme.calisthenicsAccent(
+                                                  context),
                                         ),
                                       ),
                                     ),
@@ -810,8 +829,8 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                       style: TextStyle(
                         fontSize: 11,
                         color: accessories.length > 3
-                            ? Colors.red.shade700
-                            : Colors.grey,
+                            ? Theme.of(context).colorScheme.error
+                            : AppTheme.mutedText(context),
                         fontWeight: accessories.length > 3
                             ? FontWeight.bold
                             : FontWeight.normal,
@@ -835,9 +854,9 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                   child: Center(
                     child: Column(
                       children: [
-                        const Text(
+                        Text(
                           'No plug-in accessories scheduled for this workout.',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppTheme.mutedText(context)),
                         ),
                         const SizedBox(height: 6),
                         OutlinedButton.icon(
@@ -902,8 +921,9 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                             },
                           ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              size: 18, color: Colors.redAccent),
+                          icon: Icon(Icons.delete_outline,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.error),
                           tooltip: 'Remove',
                           onPressed: () {
                             setState(() {

@@ -1,6 +1,7 @@
 import '../services/social_share_service.dart';
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -536,7 +537,8 @@ class _HistoryPageState extends State<HistoryPage> {
             children: [
               Text(
                 'Logged: ${entry.timestamp.toLocal()}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style:
+                    TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
               ),
               const SizedBox(height: 8),
               Text('Category: ${_labelForCategory(entry.category)}',
@@ -646,7 +648,7 @@ class _HistoryPageState extends State<HistoryPage> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: Colors.black12,
+                                      color: AppTheme.subtleFill(context),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(

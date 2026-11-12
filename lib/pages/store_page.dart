@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// v0.1: open the official storefront in the system browser (no embedded WebView).
@@ -50,7 +51,8 @@ class StorePage extends StatelessWidget {
               'Opens in your browser with no in-app purchase or API keys required.',
             ),
             const SizedBox(height: 16),
-            Text('URL: $url', style: TextStyle(color: Colors.grey.shade600)),
+            Text('URL: $url',
+                style: TextStyle(color: AppTheme.mutedText(context))),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: () => _openStore(context),
@@ -60,7 +62,8 @@ class StorePage extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'Change the store URL in Settings if needed.',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              style:
+                  TextStyle(fontSize: 13, color: AppTheme.mutedText(context)),
             ),
           ],
         );

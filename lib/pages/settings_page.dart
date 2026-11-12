@@ -257,7 +257,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       ],
                     ),
                     trailing: isSelected
-                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        ? Icon(Icons.check_circle,
+                            color: AppTheme.positiveAccent(context))
                         : null,
                   ),
                 );
@@ -268,9 +269,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Johnny Pain progressive UX: start simple with the base barbell program and frequency method, then graduate to accessories and higher density methods.',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+                style:
+                    TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
               ),
               const SizedBox(height: 8),
               ...ProgramLevel.values.map((lvl) {
@@ -282,7 +284,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     side: BorderSide(
                       color: isSelected
                           ? Theme.of(context).primaryColor
-                          : Colors.grey.shade300,
+                          : Theme.of(context).colorScheme.outline,
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -314,7 +316,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ? Theme.of(context)
                                     .primaryColor
                                     .withValues(alpha: 0.15)
-                                : Colors.grey.shade200,
+                                : AppTheme.mutedText(context)
+                                    .withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -324,7 +327,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               fontWeight: FontWeight.bold,
                               color: isSelected
                                   ? Theme.of(context).primaryColor
-                                  : Colors.black54,
+                                  : AppTheme.mutedText(context),
                             ),
                           ),
                         ),
@@ -341,8 +344,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         Text(
                           lvl.description,
-                          style: const TextStyle(
-                              fontSize: 11, color: Colors.black87),
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context).colorScheme.onSurface),
                         ),
                       ],
                     ),
@@ -352,15 +356,15 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.shield_outlined,
-                      size: 16, color: Colors.green),
+                  Icon(Icons.shield_outlined,
+                      size: 16, color: AppTheme.positiveAccent(context)),
                   const SizedBox(width: 6),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Zero data loss: changing your level changes UI complexity without deleting or modifying any prior workout history or PRs.',
                       style: TextStyle(
                           fontSize: 11,
-                          color: Colors.green,
+                          color: AppTheme.positiveAccent(context),
                           fontStyle: FontStyle.italic),
                     ),
                   ),
@@ -460,9 +464,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Official Greyskull LP progression structures (Johnny Pain 3rd Edition):',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+                style:
+                    TextStyle(fontSize: 13, color: AppTheme.mutedText(context)),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<BarbellTemplate>(

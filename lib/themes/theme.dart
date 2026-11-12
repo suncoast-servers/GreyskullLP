@@ -133,7 +133,8 @@ class AppTheme {
         onSecondary: Color(0xFF121212),
         surface: surface,
         onSurface: boneWhite,
-        error: Color(0xFFCF6679),
+        onSurfaceVariant: mutedBone,
+        error: Color(0xFFFF8A80),
         onError: Colors.black,
         outline: border,
       ),
@@ -213,6 +214,7 @@ class AppTheme {
         onSecondary: Color(0xFF000000),
         surface: surface,
         onSurface: pureWhite,
+        onSurfaceVariant: coldSteel,
         error: Color(0xFFFF453A),
         onError: Colors.black,
         outline: sharpBorder,
@@ -294,6 +296,7 @@ class AppTheme {
         onSecondary: Color(0xFFFFFFFF),
         surface: surface,
         onSurface: charcoal,
+        onSurfaceVariant: slateMuted,
         error: Color(0xFFD32F2F),
         onError: Colors.white,
         outline: lightBorder,
@@ -323,6 +326,36 @@ class AppTheme {
       ),
     );
   }
+
+  /// Muted/secondary foreground that stays legible on every skin.
+  static Color mutedText(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
+
+  /// Subtle track/fill colour for progress bars and chips.
+  static Color subtleFill(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return scheme.onSurface.withValues(alpha: 0.16);
+  }
+
+  /// Accent colours for analytics and status surfaces.
+  ///
+  /// Light variants are darker (WCAG AA on white cards) while dark variants are
+  /// brighter, so the same semantic colour reads on all three skins.
+  static Color positiveAccent(BuildContext context) => _accent(context,
+      light: const Color(0xFF2E7D32), dark: const Color(0xFF66BB6A));
+
+  static Color negativeAccent(BuildContext context) => _accent(context,
+      light: const Color(0xFFC62828), dark: const Color(0xFFEF5350));
+
+  static Color resistanceAccent(BuildContext context) => _accent(context,
+      light: const Color(0xFF1565C0), dark: const Color(0xFF64B5F6));
+
+  static Color calisthenicsAccent(BuildContext context) => _accent(context,
+      light: const Color(0xFFE65100), dark: const Color(0xFFFFB74D));
+
+  static Color _accent(BuildContext context,
+          {required Color light, required Color dark}) =>
+      Theme.of(context).brightness == Brightness.dark ? dark : light;
 
   // Pre-built default themes
   static final ThemeData lightTheme = themeFor(GreyskullSkin.chalkAndSteel);

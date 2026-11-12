@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 
 class CalisthenicsAccessoriesSection extends StatefulWidget {
   final DailyMethod method;
@@ -159,7 +160,7 @@ class _CalisthenicsAccessoriesSectionState
                             '${accessories.length} configured for ${TrainingState.methodLabel(widget.method)}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: AppTheme.mutedText(context),
                             ),
                           ),
                         ],

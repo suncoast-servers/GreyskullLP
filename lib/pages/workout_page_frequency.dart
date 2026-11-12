@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
 
@@ -255,17 +256,17 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Frequency Method',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Sub-maximal sets spaced throughout the day. Stay shy of failure.',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AppTheme.mutedText(context)),
                 ),
               ],
             ),
@@ -291,14 +292,14 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                       label: 'Push-ups',
                       current: totalPushUps,
                       target: pushUpTarget,
-                      color: Colors.blueGrey,
+                      color: AppTheme.resistanceAccent(context),
                     ),
                     const SizedBox(height: 12),
                     _ProgressBar(
                       label: 'Chin-ups / Negatives',
                       current: totalChinUps,
                       target: chinUpTarget,
-                      color: Colors.teal,
+                      color: AppTheme.positiveAccent(context),
                     ),
                     const SizedBox(height: 4),
                     const Divider(height: 20),
@@ -370,9 +371,10 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Perform when fresh. Stop well before exhaustion.',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                      style: TextStyle(
+                          fontSize: 13, color: AppTheme.mutedText(context)),
                     ),
                     const SizedBox(height: 12),
                     _RepStepper(
@@ -456,8 +458,9 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                   ),
                   TextButton(
                     onPressed: () => trainingState.clearTodayFrequencySets(),
-                    child: const Text('Clear All',
-                        style: TextStyle(color: Colors.red)),
+                    child: Text('Clear All',
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
                   ),
                 ],
               ),
@@ -472,7 +475,7 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Colors.black12,
+                      backgroundColor: AppTheme.subtleFill(context),
                       child: Text('#${index + 1}'),
                     ),
                     title: Text(
@@ -480,8 +483,8 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                     ),
                     subtitle: Text('Logged at $time'),
                     trailing: IconButton(
-                      icon:
-                          const Icon(Icons.delete_outline, color: Colors.grey),
+                      icon: Icon(Icons.delete_outline,
+                          color: AppTheme.mutedText(context)),
                       onPressed: () => trainingState.removeFrequencySet(index),
                     ),
                   ),
@@ -545,7 +548,7 @@ class _ProgressBar extends StatelessWidget {
         const SizedBox(height: 6),
         LinearProgressIndicator(
           value: progress,
-          backgroundColor: Colors.black12,
+          backgroundColor: AppTheme.subtleFill(context),
           valueColor: AlwaysStoppedAnimation<Color>(color),
           minHeight: 8,
           borderRadius: BorderRadius.circular(4),

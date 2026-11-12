@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// v0.1: open the community forum in the system browser (no WordPress API keys in app).
@@ -44,7 +45,7 @@ class ForumPage extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Forum: ${trainingState.forumUrl}',
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: AppTheme.mutedText(context)),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -61,7 +62,8 @@ class ForumPage extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'Optional display name and forum URLs are in Settings.',
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              style:
+                  TextStyle(fontSize: 13, color: AppTheme.mutedText(context)),
             ),
           ],
         );

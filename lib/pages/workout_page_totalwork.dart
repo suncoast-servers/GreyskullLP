@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
 
@@ -184,17 +185,17 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Total Work Method',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Hit daily or weekly volume targets per movement. Chip away in manageable sets.',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AppTheme.mutedText(context)),
                 ),
               ],
             ),
@@ -336,8 +337,8 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: remaining == 0
-                                ? Colors.green
-                                : Colors.grey[700],
+                                ? AppTheme.positiveAccent(context)
+                                : AppTheme.mutedText(context),
                           ),
                         ),
                       ],
@@ -425,8 +426,9 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                   TextButton(
                     onPressed: () =>
                         trainingState.resetActiveTotalWorkSession(),
-                    child: const Text('Reset',
-                        style: TextStyle(color: Colors.red)),
+                    child: Text('Reset',
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
                   ),
                 ],
               ),
@@ -439,13 +441,13 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Colors.black12,
+                      backgroundColor: AppTheme.subtleFill(context),
                       child: Text('#${idx + 1}'),
                     ),
                     title: Text('Set ${idx + 1}: $reps reps'),
                     trailing: IconButton(
-                      icon:
-                          const Icon(Icons.delete_outline, color: Colors.grey),
+                      icon: Icon(Icons.delete_outline,
+                          color: AppTheme.mutedText(context)),
                       onPressed: () => trainingState.removeTotalWorkSet(idx),
                     ),
                   ),
