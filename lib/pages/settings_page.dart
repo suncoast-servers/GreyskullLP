@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/services/demo_seed_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:share_plus/share_plus.dart';
@@ -112,6 +113,45 @@ class _SettingsPageState extends State<SettingsPage> {
       SnackBar(
         content:
             Text(ok ? 'Backup restored successfully' : 'Backup restore failed'),
+      ),
+    );
+  }
+
+  Future<void> _importDemoScenario(DemoScenario scenario) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Load ${scenario.title}?'),
+        content: Text(
+          '${scenario.description}\n\n'
+          'This REPLACES the app\'s current workouts, history, and settings with '
+          '90 days of demo data. Export a backup first if you have real data '
+          'you want to keep.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Import demo data'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final ok = await trainingState
+        .importBackupJson(DemoSeedService.buildScenarioJson(scenario.id));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Demo data loaded — check the Stats and History tabs'
+              : 'Demo data import failed',
+        ),
       ),
     );
   }
@@ -932,6 +972,45 @@ class _SettingsPageState extends State<SettingsPage> {
                 'This app currently stores workouts, history, and settings locally on-device using SharedPreferences JSON. '
                 'Cloud sync is not enabled yet; export/share backup is available.',
               ),
+              if (DemoSeedService.isAvailable) ...[
+                const Divider(height: 32),
+                const Text(
+                  'QA / Demo Data',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Debug builds only. Loads a realistic dataset so Stats and History can be reviewed at 90-day scale. '
+                  'Replaceable anytime with a backup restore.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.65),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ...DemoSeedService.scenarios.map(
+                  (scenario) => Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: ListTile(
+                      leading: const Icon(Icons.science_outlined),
+                      title: Text(
+                        scenario.title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      subtitle: Text(
+                        scenario.description,
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      trailing: const Icon(Icons.download_outlined, size: 20),
+                      onTap: () => _importDemoScenario(scenario),
+                    ),
+                  ),
+                ),
+              ],
             ],
           );
         },
