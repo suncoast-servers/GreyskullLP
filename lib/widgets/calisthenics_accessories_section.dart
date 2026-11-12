@@ -6,11 +6,16 @@ class CalisthenicsAccessoriesSection extends StatefulWidget {
   final Set<String> completedAccessories;
   final ValueChanged<Set<String>> onCompletedChanged;
 
+  /// When false the section only manages the accessory list (add, reorder,
+  /// remove) and does not show per-day completion checkboxes.
+  final bool showCompletion;
+
   const CalisthenicsAccessoriesSection({
     super.key,
     required this.method,
     required this.completedAccessories,
     required this.onCompletedChanged,
+    this.showCompletion = true,
   });
 
   @override
@@ -194,19 +199,33 @@ class _CalisthenicsAccessoriesSectionState
                           : Theme.of(context).cardColor,
                       child: ListTile(
                         dense: true,
-                        leading: Checkbox(
-                          value: isDone,
-                          onChanged: (val) {
-                            final updated =
-                                Set<String>.from(widget.completedAccessories);
-                            if (val == true) {
-                              updated.add(item);
-                            } else {
-                              updated.remove(item);
-                            }
-                            widget.onCompletedChanged(updated);
-                          },
-                        ),
+                        onTap: widget.showCompletion
+                            ? () {
+                                final updated = Set<String>.from(
+                                    widget.completedAccessories);
+                                if (isDone) {
+                                  updated.remove(item);
+                                } else {
+                                  updated.add(item);
+                                }
+                                widget.onCompletedChanged(updated);
+                              }
+                            : null,
+                        leading: widget.showCompletion
+                            ? Checkbox(
+                                value: isDone,
+                                onChanged: (val) {
+                                  final updated = Set<String>.from(
+                                      widget.completedAccessories);
+                                  if (val == true) {
+                                    updated.add(item);
+                                  } else {
+                                    updated.remove(item);
+                                  }
+                                  widget.onCompletedChanged(updated);
+                                },
+                              )
+                            : null,
                         title: Text(
                           item,
                           style: TextStyle(
