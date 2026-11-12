@@ -3,21 +3,43 @@ import 'dart:convert';
 import 'package:greyskull_lp/models/food_search_result.dart';
 import 'package:http/http.dart' as http;
 
+/// Food lookups for the Diet page.
+///
+/// Open Food Facts is the keyless default. Building with
+/// `--dart-define=USDA_API_KEY=...` enables the USDA FoodData Central fallback
+/// for US/branded coverage without ever asking users for a key (issue #48).
 class FoodSearchService {
+  const FoodSearchService();
+
+  /// Empty in the public build, so the app stays keyless by default.
+  static const String buildTimeUsdaKey = String.fromEnvironment('USDA_API_KEY');
+
+  /// USDA is only queried when a build-time key exists and Open Food Facts
+  /// returned too few matches.
+  static bool shouldQueryUsda({
+    required int openFoodFactsCount,
+    required String apiKey,
+  }) =>
+      apiKey.trim().isNotEmpty && openFoodFactsCount < 8;
+
   Future<List<FoodSearchResult>> searchFoods(
     String query, {
-    required String usdaApiKey,
+    String? usdaApiKeyOverride,
   }) async {
     if (query.trim().isEmpty) {
       return <FoodSearchResult>[];
     }
 
+    final apiKey = (usdaApiKeyOverride ?? buildTimeUsdaKey).trim();
     final offResults = await _searchOpenFoodFacts(query);
-    if (usdaApiKey.trim().isEmpty || offResults.length >= 8) {
+    if (!shouldQueryUsda(
+      openFoodFactsCount: offResults.length,
+      apiKey: apiKey,
+    )) {
       return offResults;
     }
 
-    final usdaResults = await _searchUsda(query, usdaApiKey.trim());
+    final usdaResults = await _searchUsda(query, apiKey);
     final merged = <FoodSearchResult>[...offResults];
     for (final item in usdaResults) {
       final exists = merged.any(

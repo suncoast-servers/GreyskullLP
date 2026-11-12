@@ -446,7 +446,6 @@ class TrainingState extends ChangeNotifier {
   int _dailyProteinConsumed = 0;
   int _dailyCaloriesConsumed = 0;
   DateTime _macroTrackingDate = _normalizedDay(DateTime.now());
-  String _usdaApiKey = '';
 
   static const String defaultForumUrl = 'https://forum.greyskullnation.com/';
   static const String defaultForumLoginUrl =
@@ -1007,7 +1006,6 @@ class TrainingState extends ChangeNotifier {
   int get dailyProteinConsumed => _dailyProteinConsumed;
   int get dailyCaloriesConsumed => _dailyCaloriesConsumed;
   DateTime get macroTrackingDate => _macroTrackingDate;
-  String get usdaApiKey => _usdaApiKey;
   bool get forumSignedIn => _forumSignedIn;
   String get forumDisplayName => _forumDisplayName;
   String get forumUrl => _forumUrl;
@@ -1277,7 +1275,6 @@ class TrainingState extends ChangeNotifier {
       'activeTotalWorkModel': _activeTotalWorkModel,
       'activeTotalWorkTargetReps': _activeTotalWorkTargetReps,
       'activeTotalWorkSets': _activeTotalWorkSets,
-      'usdaApiKey': _usdaApiKey,
       'forumSignedIn': _forumSignedIn,
       'forumDisplayName': _forumDisplayName,
       'forumUrl': _forumUrl,
@@ -1440,7 +1437,6 @@ class TrainingState extends ChangeNotifier {
             .whereType<int>(),
       );
 
-    _usdaApiKey = map['usdaApiKey'] as String? ?? '';
     _forumSignedIn = map['forumSignedIn'] as bool? ?? false;
     _forumDisplayName = map['forumDisplayName'] as String? ?? '';
     final savedForumUrl = map['forumUrl'] as String? ?? _forumUrl;
@@ -1883,15 +1879,6 @@ class TrainingState extends ChangeNotifier {
       return;
     }
     _backupPreference = preference;
-    _notifyAndPersist();
-  }
-
-  void setUsdaApiKey(String value) {
-    final trimmed = value.trim();
-    if (_usdaApiKey == trimmed) {
-      return;
-    }
-    _usdaApiKey = trimmed;
     _notifyAndPersist();
   }
 
