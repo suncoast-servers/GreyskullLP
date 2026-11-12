@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/app_icons.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
@@ -22,7 +23,7 @@ enum _StatsRange {
 
 enum _StatsCategory {
   overview('Overview', Icons.dashboard_outlined),
-  resistance('Resistance', Icons.fitness_center),
+  resistance('Resistance', AppIcons.barbell),
   calisthenics('Calisthenics', Icons.accessibility_new),
   nutrition('Nutrition', Icons.restaurant);
 
@@ -300,7 +301,7 @@ class _StatsPageState extends State<StatsPage> {
                     ? '${(totalVolume / 1000).toStringAsFixed(1)}k lbs'
                     : '${totalVolume.toStringAsFixed(0)} lbs',
                 caption: '${weightEntries.length} weight sessions',
-                icon: Icons.fitness_center,
+                icon: AppIcons.barbell,
                 color: Colors.blue,
               ),
             ),
@@ -491,7 +492,7 @@ class _StatsPageState extends State<StatsPage> {
         title: 'No resistance workouts logged',
         subtitle:
             'Complete a workout on the Weight Program page to view your volume progression and load history.',
-        icon: Icons.fitness_center,
+        icon: AppIcons.barbell,
       );
     }
 
@@ -805,7 +806,7 @@ class _StatsPageState extends State<StatsPage> {
       child: ListTile(
         leading: Icon(
           entry.category == HistoryCategory.weight
-              ? Icons.fitness_center
+              ? AppIcons.barbell
               : entry.category == HistoryCategory.daily
                   ? Icons.accessibility_new
                   : Icons.restaurant,
