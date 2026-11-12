@@ -100,14 +100,11 @@ void main() {
       );
     });
 
-    testWidgets('SettingsPage allows resetting forum URLs to default',
+    testWidgets('SettingsPage hides production-irrelevant forum integration',
         (tester) async {
       tester.view.physicalSize = const Size(800, 6000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
-
-      trainingState.setForumUrl('https://custom-forum.net');
-      trainingState.setForumLoginUrl('https://custom-forum.net/login');
 
       await tester.pumpWidget(
         const MaterialApp(
@@ -116,20 +113,16 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final resetButton = find.text('Reset Forum URLs to Default');
-      expect(resetButton, findsOneWidget);
+      // Issue #47: forum/store/USDA integration blocks are no longer shipped.
+      expect(find.text('Forum Integration (WordPress)'), findsNothing);
+      expect(find.text('Forum URL'), findsNothing);
+      expect(find.text('Reset Forum URLs to Default'), findsNothing);
+      expect(find.text('Store Integration'), findsNothing);
+      expect(find.text('Free Calorie Data API'), findsNothing);
 
-      await tester.tap(resetButton);
-      await tester.pumpAndSettle();
-
-      expect(
-        trainingState.forumUrl,
-        equals(TrainingState.defaultForumUrl),
-      );
-      expect(
-        trainingState.forumLoginUrl,
-        equals(TrainingState.defaultForumLoginUrl),
-      );
+      // Defaults still back the in-app forum/store pages.
+      expect(TrainingState.defaultForumUrl, isNotEmpty);
+      expect(TrainingState.defaultStoreUrl, isNotEmpty);
     });
   });
 }

@@ -47,7 +47,7 @@ class StorePage extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'Shop books, apparel, and coaching on the official Greyskull Nation storefront. '
-              'Opens in your browser — no in-app purchase or API keys required.',
+              'Opens in your browser with no in-app purchase or API keys required.',
             ),
             const SizedBox(height: 16),
             Text('URL: $url', style: TextStyle(color: Colors.grey.shade600)),

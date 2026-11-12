@@ -39,7 +39,7 @@ class ForumPage extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'Browse and post in the community using your browser. '
-              'This open-source app does not embed forum API secrets — account login happens on the website.',
+              'This open-source app does not embed forum API secrets; account login happens on the website.',
             ),
             const SizedBox(height: 16),
             Text(

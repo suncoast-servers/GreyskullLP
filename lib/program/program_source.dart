@@ -8,7 +8,7 @@ const String officialBookPdfRepoPath =
     'docs/reference/Greyskull_LP_3rd_edition.pdf';
 
 /// Human-readable edition label for UI and release notes.
-const String officialProgramEditionLabel = 'Greyskull LP — 3rd edition';
+const String officialProgramEditionLabel = 'Greyskull LP (3rd edition)';
 
 // TODO(program-fidelity): When Johnny Pain publishes the 4th edition, add
 // docs/reference/Greyskull_LP_4th_edition.pdf (or successor filename), update

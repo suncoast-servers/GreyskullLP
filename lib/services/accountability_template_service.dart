@@ -15,7 +15,7 @@ class AccountabilityTemplateService {
   }) {
     final d = date ?? DateTime.now();
     final buffer = StringBuffer();
-    buffer.writeln('[b]Greyskull LP — Workout Accountability Log[/b]');
+    buffer.writeln('[b]Greyskull LP - Workout Accountability Log[/b]');
     buffer.writeln('📅 Date: ${formatDate(d)}');
     buffer.writeln('🏋️ Session Type: Barbell Strength Training');
     if (userDisplayName.trim().isNotEmpty) {
@@ -41,7 +41,7 @@ class AccountabilityTemplateService {
       buffer.writeln(notes.trim());
     }
     buffer.writeln();
-    buffer.writeln('— Logged with the Official Greyskull LP App');
+    buffer.writeln('- Logged with the Official Greyskull LP App');
     buffer.writeln('https://store.greyskullnation.com/');
     return buffer.toString().trim();
   }
@@ -58,7 +58,7 @@ class AccountabilityTemplateService {
     final d = date ?? DateTime.now();
     final methodName = TrainingState.methodLabel(method);
     final buffer = StringBuffer();
-    buffer.writeln('[b]Greyskull LP — Daily Calisthenics Accountability[/b]');
+    buffer.writeln('[b]Greyskull LP - Daily Calisthenics Accountability[/b]');
     buffer.writeln('📅 Date: ${formatDate(d)}');
     buffer.writeln('💪 Method: $methodName');
     if (userDisplayName.trim().isNotEmpty) {
@@ -74,7 +74,7 @@ class AccountabilityTemplateService {
       buffer.writeln('• Optional: $optionalExerciseSummary');
     }
     buffer.writeln();
-    buffer.writeln('— Logged with the Official Greyskull LP App');
+    buffer.writeln('- Logged with the Official Greyskull LP App');
     buffer.writeln('https://store.greyskullnation.com/');
     return buffer.toString().trim();
   }
@@ -96,7 +96,7 @@ class AccountabilityTemplateService {
     }).toList();
 
     final buffer = StringBuffer();
-    buffer.writeln('[b]Greyskull LP — End-of-Day Accountability Summary[/b]');
+    buffer.writeln('[b]Greyskull LP - End-of-Day Accountability Summary[/b]');
     buffer.writeln('📅 Date: ${formatDate(date)}');
     if (userDisplayName.trim().isNotEmpty) {
       buffer.writeln('👤 Lifter: ${userDisplayName.trim()}');
@@ -141,7 +141,7 @@ class AccountabilityTemplateService {
       buffer.writeln();
     }
 
-    buffer.writeln('— Logged with the Official Greyskull LP App');
+    buffer.writeln('- Logged with the Official Greyskull LP App');
     buffer.writeln('https://store.greyskullnation.com/');
     return buffer.toString().trim();
   }

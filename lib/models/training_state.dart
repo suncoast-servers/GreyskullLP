@@ -1892,7 +1892,7 @@ class TrainingState extends ChangeNotifier {
   }) {
     // TODO(ForumSync): Sync food/workout summaries to forum for accountability posts.
     final effectiveTitle = (templateName.isNotEmpty && workoutName.isNotEmpty)
-        ? '$templateName — $workoutName'
+        ? '$templateName - $workoutName'
         : 'Weight Program Session';
     final detailsBuffer = StringBuffer()
       ..writeln('Core Lifts: $coreLiftSummary')

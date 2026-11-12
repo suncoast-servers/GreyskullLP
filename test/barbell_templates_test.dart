@@ -158,7 +158,7 @@ void main() {
       expect(state.history.length, 1);
       final entry = state.history.first;
       expect(entry.category, HistoryCategory.weight);
-      expect(entry.title, '"OG" Base Program — Workout A (Press & Squat)');
+      expect(entry.title, '"OG" Base Program - Workout A (Press & Squat)');
       expect(entry.weightVolume, 8235.0);
       expect(entry.details, contains('Great AMRAP push'));
     });

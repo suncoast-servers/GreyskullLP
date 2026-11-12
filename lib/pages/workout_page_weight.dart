@@ -108,7 +108,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                       ),
                       const SizedBox(height: 14),
                       const Center(
-                          child: Text('— OR ENTER CUSTOM ACCESSORY —',
+                          child: Text('OR ENTER CUSTOM ACCESSORY',
                               style:
                                   TextStyle(fontSize: 11, color: Colors.grey))),
                       const SizedBox(height: 14),
