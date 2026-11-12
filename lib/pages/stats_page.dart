@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/app_icons.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
@@ -101,7 +102,7 @@ class _StatsPageState extends State<StatsPage> {
     );
   }
 
-  static Widget _buildMetricHelp(
+  Widget _buildMetricHelp(
       {required String title, required String description}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,8 +114,10 @@ class _StatsPageState extends State<StatsPage> {
         const SizedBox(height: 4),
         Text(
           description,
-          style:
-              const TextStyle(fontSize: 13, color: Colors.black87, height: 1.3),
+          style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurface,
+              height: 1.3),
         ),
       ],
     );
@@ -302,7 +305,7 @@ class _StatsPageState extends State<StatsPage> {
                     : '${totalVolume.toStringAsFixed(0)} lbs',
                 caption: '${weightEntries.length} weight sessions',
                 icon: AppIcons.barbell,
-                color: Colors.blue,
+                color: AppTheme.resistanceAccent(context),
               ),
             ),
             const SizedBox(width: 10),
@@ -312,7 +315,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '${totalPushUps + totalChinUps} reps',
                 caption: '$totalPushUps push, $totalChinUps chins',
                 icon: Icons.accessibility_new,
-                color: Colors.orange,
+                color: AppTheme.calisthenicsAccent(context),
               ),
             ),
           ],
@@ -328,7 +331,7 @@ class _StatsPageState extends State<StatsPage> {
                     ? 'Consistency on track!'
                     : 'Log today to start',
                 icon: Icons.local_fire_department,
-                color: Colors.redAccent,
+                color: AppTheme.negativeAccent(context),
               ),
             ),
             const SizedBox(width: 10),
@@ -338,7 +341,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '${rangedEntries.length}',
                 caption: 'Across all categories',
                 icon: Icons.done_all,
-                color: Colors.green,
+                color: AppTheme.positiveAccent(context),
               ),
             ),
           ],
@@ -362,7 +365,8 @@ class _StatsPageState extends State<StatsPage> {
                     ),
                     Text(
                       'Last $chartDays days',
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(
+                          fontSize: 11, color: AppTheme.mutedText(context)),
                     ),
                   ],
                 ),
@@ -370,7 +374,8 @@ class _StatsPageState extends State<StatsPage> {
                 SizedBox(
                   height: 140,
                   child: _TimeSeriesBarChart(
-                      data: volumeData, barColor: Colors.blue.shade700),
+                      data: volumeData,
+                      barColor: AppTheme.resistanceAccent(context)),
                 ),
               ],
             ),
@@ -401,20 +406,21 @@ class _StatsPageState extends State<StatsPage> {
                   ],
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Chronological evolution across Greyskull barbell and calisthenics protocols:',
-                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                  style: TextStyle(
+                      fontSize: 12, color: AppTheme.mutedText(context)),
                 ),
                 const SizedBox(height: 10),
                 if (methodTransitions.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Text(
                       'Complete sessions to unlock method transitions and volume badges.',
                       style: TextStyle(
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
-                          color: Colors.grey),
+                          color: AppTheme.mutedText(context)),
                     ),
                   )
                 else
@@ -430,7 +436,10 @@ class _StatsPageState extends State<StatsPage> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.amber.shade100,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.16),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -438,7 +447,7 @@ class _StatsPageState extends State<StatsPage> {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.amber.shade900,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
                           ),
@@ -455,8 +464,11 @@ class _StatsPageState extends State<StatsPage> {
                                 ),
                                 Text(
                                   m.description,
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.black87),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface),
                                 ),
                               ],
                             ),
@@ -516,7 +528,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '${totalVolume.toStringAsFixed(1)} lbs',
                 caption: '${weightEntries.length} sessions logged',
                 icon: Icons.line_weight,
-                color: Colors.blue,
+                color: AppTheme.resistanceAccent(context),
               ),
             ),
             const SizedBox(width: 10),
@@ -526,7 +538,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '${avgVolume.toStringAsFixed(1)} lbs',
                 caption: 'Mean load per session',
                 icon: Icons.functions,
-                color: Colors.indigo,
+                color: AppTheme.resistanceAccent(context),
               ),
             ),
           ],
@@ -546,7 +558,8 @@ class _StatsPageState extends State<StatsPage> {
                 SizedBox(
                   height: 150,
                   child: _TimeSeriesBarChart(
-                      data: volumeData, barColor: Colors.blue.shade800),
+                      data: volumeData,
+                      barColor: AppTheme.resistanceAccent(context)),
                 ),
               ],
             ),
@@ -613,7 +626,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '$totalPushUps',
                 caption: 'Bodyweight volume',
                 icon: Icons.horizontal_rule,
-                color: Colors.orange,
+                color: AppTheme.calisthenicsAccent(context),
               ),
             ),
             const SizedBox(width: 10),
@@ -623,7 +636,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '$totalChinUps',
                 caption: 'Upper body pulling volume',
                 icon: Icons.vertical_align_top,
-                color: Colors.deepOrange,
+                color: AppTheme.calisthenicsAccent(context),
               ),
             ),
           ],
@@ -643,7 +656,8 @@ class _StatsPageState extends State<StatsPage> {
                 SizedBox(
                   height: 150,
                   child: _TimeSeriesBarChart(
-                      data: repData, barColor: Colors.orange.shade700),
+                      data: repData,
+                      barColor: AppTheme.calisthenicsAccent(context)),
                 ),
               ],
             ),
@@ -662,14 +676,14 @@ class _StatsPageState extends State<StatsPage> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const SizedBox(height: 10),
-                _buildMethodDistributionRow(
-                    'Frequency Method', freqReps, Colors.blue),
+                _buildMethodDistributionRow('Frequency Method', freqReps,
+                    AppTheme.resistanceAccent(context)),
                 const SizedBox(height: 6),
-                _buildMethodDistributionRow(
-                    'Ladder Method', ladderReps, Colors.teal),
+                _buildMethodDistributionRow('Ladder Method', ladderReps,
+                    AppTheme.calisthenicsAccent(context)),
                 const SizedBox(height: 6),
-                _buildMethodDistributionRow(
-                    'Total Work Method', totalWorkReps, Colors.deepPurple),
+                _buildMethodDistributionRow('Total Work Method', totalWorkReps,
+                    AppTheme.positiveAccent(context)),
               ],
             ),
           ),
@@ -737,7 +751,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '${avgProtein}g / day',
                 caption: 'Target: ${trainingState.dailyProteinTarget}g',
                 icon: Icons.egg_alt_outlined,
-                color: Colors.green,
+                color: AppTheme.positiveAccent(context),
               ),
             ),
             const SizedBox(width: 10),
@@ -747,7 +761,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '$avgCalories kcal',
                 caption: 'Target: ${trainingState.dailyCalorieTarget} kcal',
                 icon: Icons.local_fire_department_outlined,
-                color: Colors.amber.shade800,
+                color: AppTheme.calisthenicsAccent(context),
               ),
             ),
           ],
@@ -775,7 +789,7 @@ class _StatsPageState extends State<StatsPage> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            Icon(icon, size: 54, color: Colors.grey.shade400),
+            Icon(icon, size: 54, color: AppTheme.mutedText(context)),
             const SizedBox(height: 12),
             Text(
               title,
@@ -786,8 +800,10 @@ class _StatsPageState extends State<StatsPage> {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 13, color: Colors.black54, height: 1.3),
+              style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.mutedText(context),
+                  height: 1.3),
             ),
           ],
         ),
@@ -851,8 +867,8 @@ class _TimeSeriesBarChart extends StatelessWidget {
           painter: _BarChartPainter(
             data: data,
             barColor: barColor,
-            textColor:
-                Theme.of(context).textTheme.bodySmall?.color ?? Colors.black87,
+            textColor: Theme.of(context).textTheme.bodySmall?.color ??
+                Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         );
       },
@@ -992,10 +1008,10 @@ class _MetricKpiCard extends StatelessWidget {
                   child: Text(
                     title,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey),
+                        color: AppTheme.mutedText(context)),
                   ),
                 ),
               ],
@@ -1010,7 +1026,8 @@ class _MetricKpiCard extends StatelessWidget {
             Text(
               caption,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11, color: Colors.black54),
+              style:
+                  TextStyle(fontSize: 11, color: AppTheme.mutedText(context)),
             ),
           ],
         ),

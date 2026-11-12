@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
 
@@ -181,17 +182,17 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Ladder Method',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Ascend rungs (1, 2, 3…) per ladder. Rest in a partner-paced rhythm.',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AppTheme.mutedText(context)),
                 ),
               ],
             ),
@@ -337,8 +338,9 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                           fontSize: 16, fontWeight: FontWeight.bold)),
                   TextButton(
                     onPressed: () => trainingState.resetActiveLadderSession(),
-                    child: const Text('Reset',
-                        style: TextStyle(color: Colors.red)),
+                    child: Text('Reset',
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
                   ),
                 ],
               ),
@@ -352,14 +354,14 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Colors.black12,
+                      backgroundColor: AppTheme.subtleFill(context),
                       child: Text('#${idx + 1}'),
                     ),
                     title: Text('Rungs: ${rungs.join(" - ")}'),
                     subtitle: Text('Volume: $reps reps (Peak: ${rungs.last})'),
                     trailing: IconButton(
-                      icon:
-                          const Icon(Icons.delete_outline, color: Colors.grey),
+                      icon: Icon(Icons.delete_outline,
+                          color: AppTheme.mutedText(context)),
                       onPressed: () => trainingState.removeCompletedLadder(idx),
                     ),
                   ),
@@ -419,7 +421,8 @@ class _StatColumn extends StatelessWidget {
         Text(value,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label,
+            style: TextStyle(fontSize: 12, color: AppTheme.mutedText(context))),
       ],
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 
 /// Modal bottom sheet to create and edit custom barbell programs from zero
 /// without requiring official book presets.
@@ -49,11 +50,12 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Select an official book template to copy into your custom program. '
               'All workout days, core lifts, and plug-in accessories will be cloned '
               'so you can customize them freely.',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              style:
+                  TextStyle(fontSize: 13, color: AppTheme.mutedText(context)),
             ),
             const SizedBox(height: 12),
             ...TrainingState.officialBookTemplates.map((template) {
@@ -339,9 +341,10 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Last Set AMRAP (5+ reps)',
                         style: TextStyle(fontSize: 14)),
-                    subtitle: const Text(
+                    subtitle: Text(
                         'GSLP standard: push final set to near failure',
-                        style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        style: TextStyle(
+                            fontSize: 12, color: AppTheme.mutedText(context))),
                     value: isAmrap,
                     onChanged: (val) => setDialogState(() => isAmrap = val),
                   ),
@@ -349,18 +352,19 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Upper Body Lift',
                         style: TextStyle(fontSize: 14)),
-                    subtitle: const Text(
+                    subtitle: Text(
                         'Greyskull rule: Upper body lifts are always performed before lower body lifts',
-                        style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        style: TextStyle(
+                            fontSize: 12, color: AppTheme.mutedText(context))),
                     value: isUpperBody,
                     onChanged: (val) => setDialogState(() => isUpperBody = val),
                   ),
                   const SizedBox(height: 8),
                   Text('Prescription: $prescription',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: Colors.indigo)),
+                          color: AppTheme.resistanceAccent(context))),
                 ],
               ),
             ),
@@ -417,17 +421,19 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Column(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Customize Barbell Program',
                             style: TextStyle(
                                 fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           Text(
                             'Build from zero without book presets',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.mutedText(context)),
                           ),
                         ],
                       ),
@@ -512,16 +518,22 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.15),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .secondary
+                          .withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.amber.shade700),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.secondary),
                     ),
-                    child: const Row(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, size: 18, color: Colors.amber),
-                        SizedBox(width: 8),
-                        Expanded(
+                        Icon(Icons.info_outline,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.secondary),
+                        const SizedBox(width: 8),
+                        const Expanded(
                           child: Text(
                             'Greyskull Rule: Compound upper body lifts (Press, Bench) are always performed before lower body lifts (Squat, Deadlift).',
                             style: TextStyle(fontSize: 12),
@@ -590,8 +602,9 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                                 ),
                                 if (days.length > 1)
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline,
-                                        size: 20, color: Colors.grey),
+                                    icon: Icon(Icons.delete_outline,
+                                        size: 20,
+                                        color: AppTheme.mutedText(context)),
                                     onPressed: () => trainingState
                                         .removeCustomWorkoutDay(dayIndex),
                                   ),
@@ -600,8 +613,9 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                             if (day.subtitle.isNotEmpty) ...[
                               const SizedBox(height: 2),
                               Text(day.subtitle,
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.grey)),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppTheme.mutedText(context))),
                             ],
                             const SizedBox(height: 10),
                             const Text('Core Lifts:',
@@ -609,13 +623,14 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                                     fontWeight: FontWeight.w600, fontSize: 13)),
                             const SizedBox(height: 4),
                             if (day.coreLifts.isEmpty)
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 8),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
                                 child: Text('No core lifts configured yet.',
                                     style: TextStyle(
                                         fontSize: 12,
                                         fontStyle: FontStyle.italic,
-                                        color: Colors.grey)),
+                                        color: AppTheme.mutedText(context))),
                               ),
                             ...day.coreLifts.asMap().entries.map((liftEntry) {
                               final liftIndex = liftEntry.key;
@@ -636,8 +651,8 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                                         : Icons.arrow_downward,
                                     size: 18,
                                     color: lift.isUpperBody
-                                        ? Colors.blue
-                                        : Colors.brown,
+                                        ? AppTheme.resistanceAccent(context)
+                                        : AppTheme.calisthenicsAccent(context),
                                   ),
                                   title: Text(lift.name,
                                       style: const TextStyle(
@@ -671,8 +686,9 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                                                   liftIndex + 2),
                                         ),
                                       IconButton(
-                                        icon: const Icon(Icons.delete_outline,
-                                            size: 18, color: Colors.grey),
+                                        icon: Icon(Icons.delete_outline,
+                                            size: 18,
+                                            color: AppTheme.mutedText(context)),
                                         onPressed: () => trainingState
                                             .removeCoreLiftFromCustomWorkout(
                                                 dayIndex, liftIndex),
