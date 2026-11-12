@@ -40,7 +40,6 @@ class _DietPageState extends State<DietPage> {
     try {
       final items = await _foodSearchService.searchFoods(
         query,
-        usdaApiKey: trainingState.usdaApiKey,
       );
       if (!mounted) {
         return;

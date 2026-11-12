@@ -46,18 +46,19 @@ void main() {
       expect(
         daily
             .where((e) => e['method'] == 'frequency')
-            .every((e) => ts(e as Map<String, dynamic>).isBefore(ladderStart)),
+            .every((e) => ts(e).isBefore(ladderStart)),
         isTrue,
       );
       expect(
         daily
             .where((e) => e['method'] == 'ladder')
-            .every((e) => !ts(e as Map<String, dynamic>).isBefore(ladderStart)),
+            .every((e) => !ts(e).isBefore(ladderStart)),
         isTrue,
       );
       expect(
-        daily.where((e) => e['method'] == 'totalWork').every(
-            (e) => !ts(e as Map<String, dynamic>).isBefore(totalWorkStart)),
+        daily
+            .where((e) => e['method'] == 'totalWork')
+            .every((e) => !ts(e).isBefore(totalWorkStart)),
         isTrue,
       );
     });
