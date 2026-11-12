@@ -14,6 +14,10 @@ class FoodSearchService {
   /// Empty in the public build, so the app stays keyless by default.
   static const String buildTimeUsdaKey = String.fromEnvironment('USDA_API_KEY');
 
+  /// Open Food Facts rejects requests without a descriptive User-Agent.
+  static const String userAgent =
+      'GreyskullLP/1.0 (+https://github.com/suncoast-servers/GreyskullLP)';
+
   /// USDA is only queried when a build-time key exists and Open Food Facts
   /// returned too few matches.
   static bool shouldQueryUsda({
@@ -65,8 +69,8 @@ class FoodSearchService {
       'page_size': '12',
     });
 
-    final response = await http.get(uri);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+    final response = await _get(uri);
+    if (response == null) {
       return <FoodSearchResult>[];
     }
 
@@ -117,6 +121,22 @@ class FoodSearchService {
     return output;
   }
 
+  /// GET with the required User-Agent and a short timeout; returns null on any
+  /// transport/HTTP failure so the UI can fall back to "no results".
+  Future<http.Response?> _get(Uri uri) async {
+    try {
+      final response = await http.get(uri, headers: {
+        'User-Agent': userAgent
+      }).timeout(const Duration(seconds: 12));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return null;
+      }
+      return response;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<FoodSearchResult>> _searchUsda(
       String query, String apiKey) async {
     final uri =
@@ -126,8 +146,8 @@ class FoodSearchService {
       'pageSize': '10',
     });
 
-    final response = await http.get(uri);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+    final response = await _get(uri);
+    if (response == null) {
       return <FoodSearchResult>[];
     }
 

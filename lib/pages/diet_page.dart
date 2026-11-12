@@ -47,6 +47,14 @@ class _DietPageState extends State<DietPage> {
       setState(() {
         _results = items;
       });
+      if (items.isEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No matches for "${query.trim()}"'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {

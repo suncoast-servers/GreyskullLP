@@ -38,6 +38,11 @@ void main() {
       );
     });
 
+    test('uses a descriptive User-Agent for Open Food Facts', () {
+      expect(FoodSearchService.userAgent, contains('GreyskullLP'));
+      expect(FoodSearchService.userAgent, contains('github.com'));
+    });
+
     test('blank queries short-circuit without any network call', () async {
       const service = FoodSearchService();
       expect(await service.searchFoods('   '), isEmpty);
