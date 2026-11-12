@@ -14,6 +14,10 @@ class WorkoutPageWeight extends StatefulWidget {
 
 class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   final Set<String> _completedCoreLifts = {};
+
+  /// Completed set indexes per lift (0-based), so users can tap 5 / 5 / AMRAP
+  /// individually instead of a single "done" checkbox.
+  final Map<String, Set<int>> _completedSetsByLift = {};
   final Set<String> _completedAccessories = {};
   final Map<String, TextEditingController> _weightControllers = {};
   final Map<String, TextEditingController> _repsControllers = {};
@@ -268,6 +272,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
 
     setState(() {
       _completedCoreLifts.clear();
+      _completedSetsByLift.clear();
       _completedAccessories.clear();
       _notesController.clear();
       for (final controller in _weightControllers.values) {
@@ -310,6 +315,23 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
         ),
       );
     }
+  }
+
+  Set<int> _setsForLift(String liftName) =>
+      _completedSetsByLift.putIfAbsent(liftName, () => <int>{});
+
+  void _toggleSet(String liftName, int setIndex, int totalSets) {
+    setState(() {
+      final sets = _setsForLift(liftName);
+      if (!sets.remove(setIndex)) {
+        sets.add(setIndex);
+      }
+      if (sets.length >= totalSets) {
+        _completedCoreLifts.add(liftName);
+      } else {
+        _completedCoreLifts.remove(liftName);
+      }
+    });
   }
 
   @override
@@ -580,9 +602,27 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
               final isCompleted = _completedCoreLifts.contains(lift.name);
               final weightCtrl = _getWeightController(lift.name);
               final repsCtrl = _getRepsController(lift.name);
+              final totalSets = lift.sets <= 0 ? 3 : lift.sets;
+              final doneSets = _setsForLift(lift.name);
+              final currentLift = coreLifts.cast<TemplateLift?>().firstWhere(
+                  (l) => !_completedCoreLifts.contains(l!.name),
+                  orElse: () => null);
+              final isCurrent = !isCompleted && currentLift?.name == lift.name;
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: isCurrent
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withValues(alpha: 0.5),
+                    width: isCurrent ? 2 : 1,
+                  ),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -605,6 +645,31 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                         ),
                                       ),
                                     ),
+                                    if (isCurrent) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.16),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          'NEXT',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                     const SizedBox(width: 6),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
@@ -645,17 +710,44 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                               ],
                             ),
                           ),
-                          Checkbox(
-                            value: isCompleted,
-                            onChanged: (val) {
-                              setState(() {
-                                if (val == true) {
-                                  _completedCoreLifts.add(lift.name);
-                                } else {
-                                  _completedCoreLifts.remove(lift.name);
-                                }
-                              });
-                            },
+                          if (isCompleted)
+                            Icon(Icons.check_circle,
+                                color: Theme.of(context).colorScheme.primary),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          ...List.generate(totalSets, (index) {
+                            final isAmrapSet =
+                                lift.isAmrap && index == totalSets - 1;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: _SetCircleButton(
+                                key: ValueKey('set-tap-${lift.name}-$index'),
+                                label: isAmrapSet ? '5+' : '${index + 1}',
+                                isAmrap: isAmrapSet,
+                                isDone: doneSets.contains(index),
+                                semanticsLabel: isAmrapSet
+                                    ? 'Mark AMRAP set done'
+                                    : 'Mark set ${index + 1} done',
+                                onTap: () =>
+                                    _toggleSet(lift.name, index, totalSets),
+                              ),
+                            );
+                          }),
+                          Expanded(
+                            child: Text(
+                              lift.isAmrap
+                                  ? 'Tap 1, 2, then 5+ (AMRAP) as you finish each set'
+                                  : 'Tap each circle as you finish a set',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -929,6 +1021,72 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Circular tap target used to mark a single set (5 / 5 / 5+ AMRAP) complete.
+///
+/// Mirrors the simple "tap the ring" flow of the official Greyskull reference
+/// apps and keeps the AMRAP set visually distinct.
+class _SetCircleButton extends StatelessWidget {
+  const _SetCircleButton({
+    super.key,
+    required this.label,
+    required this.isAmrap,
+    required this.isDone,
+    required this.semanticsLabel,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isAmrap;
+  final bool isDone;
+  final String semanticsLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    // AMRAP keeps the Greyskull amber accent so the top set reads differently
+    // from the straight sets on every skin.
+    const amrapAccent = Color(0xFFFFB300);
+    final ringColor = isAmrap ? amrapAccent : scheme.primary;
+    final textColor = isDone
+        ? (isAmrap ? Colors.black : scheme.onPrimary)
+        : (isAmrap ? amrapAccent : scheme.onSurface);
+
+    return Semantics(
+      button: true,
+      label: semanticsLabel,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 26,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 46,
+          height: 46,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isDone ? ringColor : Colors.transparent,
+            border: Border.all(
+              color: isDone
+                  ? ringColor
+                  : ringColor.withValues(alpha: isAmrap ? 1.0 : 0.45),
+              width: isAmrap ? 2.5 : 1.5,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: isAmrap ? 13 : 15,
+              color: textColor,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
