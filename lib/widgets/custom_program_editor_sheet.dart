@@ -295,7 +295,7 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<int>(
-                          value: sets,
+                          initialValue: sets,
                           decoration: const InputDecoration(
                             labelText: 'Sets',
                             border: OutlineInputBorder(),
@@ -316,7 +316,7 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: DropdownButtonFormField<int>(
-                          value: reps,
+                          initialValue: reps,
                           decoration: const InputDecoration(
                             labelText: 'Base Reps',
                             border: OutlineInputBorder(),
