@@ -49,7 +49,7 @@ void main() {
       );
 
       expect(
-          post, contains('[b]Greyskull LP — Workout Accountability Log[/b]'));
+          post, contains('[b]Greyskull LP - Workout Accountability Log[/b]'));
       expect(post, contains('📅 Date: 2026-11-11'));
       expect(post, contains('👤 Lifter: IronJohnny'));
       expect(post, contains('Bench Press: 200 lbs x 5, 5, 8'));
@@ -72,7 +72,7 @@ void main() {
       );
 
       expect(post,
-          contains('[b]Greyskull LP — Daily Calisthenics Accountability[/b]'));
+          contains('[b]Greyskull LP - Daily Calisthenics Accountability[/b]'));
       expect(post, contains('💪 Method: Frequency Method'));
       expect(post, contains('• Push-ups: 60 reps'));
       expect(post, contains('• Chin-ups: 25 reps (negatives used)'));
@@ -112,7 +112,7 @@ void main() {
       );
 
       expect(post,
-          contains('[b]Greyskull LP — End-of-Day Accountability Summary[/b]'));
+          contains('[b]Greyskull LP - End-of-Day Accountability Summary[/b]'));
       expect(post, contains('Overhead Press: 115 lbs x 5, 5, 8'));
       expect(post, contains('Push-ups: 50 / 50 reps target'));
       expect(post, contains('Chin-ups: 20 / 20 reps target'));
@@ -243,7 +243,7 @@ void main() {
         id: 'test-123',
         timestamp: DateTime.now(),
         title: 'Workout Log',
-        content: '[b]Greyskull LP — Test Log[/b]',
+        content: '[b]Greyskull LP - Test Log[/b]',
         category: 'weight',
       );
 
@@ -259,14 +259,14 @@ void main() {
       expect(find.text('Forum Accountability Post'), findsOneWidget);
       expect(find.text('REST API credentials pending founder setup'),
           findsOneWidget);
-      expect(find.text('[b]Greyskull LP — Test Log[/b]'), findsOneWidget);
+      expect(find.text('[b]Greyskull LP - Test Log[/b]'), findsOneWidget);
 
       // Tap Copy Draft button
       await tester.tap(find.text('Copy Draft'));
       await tester.pumpAndSettle();
 
       final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-      expect(clipboardData?.text, equals('[b]Greyskull LP — Test Log[/b]'));
+      expect(clipboardData?.text, equals('[b]Greyskull LP - Test Log[/b]'));
     });
   });
 }

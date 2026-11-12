@@ -55,7 +55,7 @@ void main() {
       );
     });
 
-    testWidgets('SettingsPage allows resetting store URL to default',
+    testWidgets('SettingsPage no longer exposes store URL editing',
         (tester) async {
       tester.view.physicalSize = const Size(800, 6000);
       tester.view.devicePixelRatio = 1.0;
@@ -70,16 +70,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final resetButton = find.text('Reset Store URL to Default');
-      expect(resetButton, findsOneWidget);
-
-      await tester.tap(resetButton);
-      await tester.pumpAndSettle();
-
-      expect(
-        trainingState.storeUrl,
-        equals(TrainingState.defaultStoreUrl),
-      );
+      // Issue #47: the store URL field and reset button are no longer shipped.
+      expect(find.text('Store Integration'), findsNothing);
+      expect(find.text('Reset Store URL to Default'), findsNothing);
+      expect(find.text('Store URL'), findsNothing);
     });
   });
 }

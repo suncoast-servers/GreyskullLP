@@ -17,11 +17,6 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _socialHashtagController;
-  late final TextEditingController _forumUrlController;
-  late final TextEditingController _forumLoginUrlController;
-  late final TextEditingController _forumNameController;
-  late final TextEditingController _storeUrlController;
-  late final TextEditingController _usdaApiKeyController;
   final TextEditingController _backupImportController = TextEditingController();
 
   @override
@@ -29,36 +24,19 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _socialHashtagController =
         TextEditingController(text: trainingState.socialShareHashtag);
-    _forumUrlController = TextEditingController(text: trainingState.forumUrl);
-    _forumLoginUrlController =
-        TextEditingController(text: trainingState.forumLoginUrl);
-    _forumNameController =
-        TextEditingController(text: trainingState.forumDisplayName);
-    _storeUrlController = TextEditingController(text: trainingState.storeUrl);
-    _usdaApiKeyController =
-        TextEditingController(text: trainingState.usdaApiKey);
   }
 
   @override
   void dispose() {
     _socialHashtagController.dispose();
-    _forumUrlController.dispose();
-    _forumLoginUrlController.dispose();
-    _forumNameController.dispose();
-    _storeUrlController.dispose();
-    _usdaApiKeyController.dispose();
     _backupImportController.dispose();
     super.dispose();
   }
 
-  void _saveUrlSettings() {
+  void _saveSocialSettings() {
     trainingState.setSocialShareHashtag(_socialHashtagController.text);
-    trainingState.setForumUrl(_forumUrlController.text);
-    trainingState.setForumLoginUrl(_forumLoginUrlController.text);
-    trainingState.setStoreUrl(_storeUrlController.text);
-    trainingState.setUsdaApiKey(_usdaApiKeyController.text);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Settings saved')),
+      const SnackBar(content: Text('Sharing settings saved')),
     );
   }
 
@@ -506,84 +484,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const Divider(height: 32),
               const Text(
-                'Forum Integration (WordPress)',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _forumNameController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Forum display name',
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        trainingState.setForumSignedIn(
-                          signedIn: true,
-                          displayName: _forumNameController.text,
-                        );
-                      },
-                      child: const Text('Mark Signed In'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        trainingState.setForumSignedIn(signedIn: false);
-                      },
-                      child: const Text('Sign Out'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                trainingState.forumSignedIn
-                    ? 'Forum status: signed in as ${trainingState.forumDisplayName.isEmpty ? 'user' : trainingState.forumDisplayName}'
-                    : 'Forum status: not signed in',
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _forumUrlController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Forum URL',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _forumLoginUrlController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Forum login URL',
-                ),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () {
-                  trainingState.resetForumUrlsToDefault();
-                  setState(() {
-                    _forumUrlController.text = TrainingState.defaultForumUrl;
-                    _forumLoginUrlController.text =
-                        TrainingState.defaultForumLoginUrl;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Forum URLs reset to default'),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.restart_alt, size: 16),
-                label: const Text('Reset Forum URLs to Default'),
-              ),
-              const Divider(height: 32),
-              const Text(
                 'Forum Accountability Posts',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
@@ -710,7 +610,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             style:
                                 const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(
-                          '${draft.timestamp.year}-${draft.timestamp.month.toString().padLeft(2, '0')}-${draft.timestamp.day.toString().padLeft(2, '0')} — ${draft.category}',
+                          '${draft.timestamp.year}-${draft.timestamp.month.toString().padLeft(2, '0')}-${draft.timestamp.day.toString().padLeft(2, '0')} - ${draft.category}',
                           style: const TextStyle(fontSize: 11),
                         ),
                         trailing: Row(
@@ -738,57 +638,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
               const Divider(height: 32),
               const Text(
-                'Store Integration',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _storeUrlController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Store URL',
-                ),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () {
-                  trainingState.resetStoreUrlToDefault();
-                  setState(() {
-                    _storeUrlController.text = TrainingState.defaultStoreUrl;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Store URL reset to default')),
-                  );
-                },
-                icon: const Icon(Icons.restart_alt, size: 16),
-                label: const Text('Reset Store URL to Default'),
-              ),
-              const Divider(height: 32),
-              const Text(
-                'Free Calorie Data API',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Open Food Facts is used by default. Add a free USDA API key to enable fallback.',
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _usdaApiKeyController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'USDA API key (optional)',
-                ),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: _saveUrlSettings,
-                icon: const Icon(Icons.save),
-                label: const Text('Save Settings'),
-              ),
-              const Divider(height: 32),
-              const Divider(height: 32),
-              const Text(
                 'Social Workout Sharing',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
@@ -812,6 +661,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   hintText: '#GreyskullLP #JohnnyPain',
                 ),
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _saveSocialSettings,
+                icon: const Icon(Icons.save, size: 16),
+                label: const Text('Save Sharing Settings'),
+              ),
+              const Divider(height: 32),
               const Text(
                 'Backups',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -903,7 +759,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     const SizedBox(height: 8),
                     const Text(
                       'The official Greyskull LP app is 100% local-first and open-source. '
-                      'Your workouts, lifts, body statistics, and nutrition logs belong to you—not our servers. '
+                      'Your workouts, lifts, body statistics, and nutrition logs belong to you, not our servers. '
                       'We do not track, profile, monetize, or harvest your personal health data.',
                       style: TextStyle(fontSize: 12, height: 1.4),
                     ),

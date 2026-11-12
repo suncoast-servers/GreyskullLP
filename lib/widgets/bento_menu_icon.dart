@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 2×3 bento grid — main menu affordance (not a back arrow).
+/// 2×3 bento grid: main menu affordance (not a back arrow).
 class BentoMenuIcon extends StatelessWidget {
   const BentoMenuIcon({super.key, this.size = 22, this.gap = 2.5});
 
