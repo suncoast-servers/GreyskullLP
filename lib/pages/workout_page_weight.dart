@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
@@ -24,6 +26,11 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   // Rest countdown (#75)
   bool _restTimerActive = false;
   int _restTimerToken = 0;
+
+  // Whole-session stopwatch (#75): starts with the first completed set.
+  int _sessionSeconds = 0;
+  bool _sessionRunning = false;
+  Timer? _sessionTicker;
   final Set<String> _completedAccessories = {};
   final Map<String, TextEditingController> _weightControllers = {};
   final Map<String, TextEditingController> _repsControllers = {};
@@ -31,6 +38,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
 
   @override
   void dispose() {
+    _sessionTicker?.cancel();
     _notesController.dispose();
     for (final controller in _weightControllers.values) {
       controller.dispose();
@@ -278,6 +286,9 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     // Advance rotation to next workout in cycle
     trainingState.advanceBarbellRotation();
 
+    _sessionTicker?.cancel();
+    _sessionRunning = false;
+    _sessionSeconds = 0;
     setState(() {
       _completedCoreLifts.clear();
       _completedSetsByLift.clear();
@@ -328,6 +339,12 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   Set<int> _setsForLift(String liftName) =>
       _completedSetsByLift.putIfAbsent(liftName, () => <int>{});
 
+  String _formatElapsed(Duration duration) {
+    final minutes = duration.inMinutes.toString().padLeft(2, '0');
+    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
   void _toggleSet(String liftName, int setIndex, int totalSets) {
     setState(() {
       final sets = _setsForLift(liftName);
@@ -339,6 +356,15 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
       if (!wasDone && trainingState.restTimerEnabled) {
         _restTimerActive = true;
         _restTimerToken++;
+      }
+      if (!wasDone && !_sessionRunning) {
+        _sessionRunning = true;
+        _sessionSeconds = 0;
+        _sessionTicker?.cancel();
+        _sessionTicker = Timer.periodic(
+          const Duration(seconds: 1),
+          (_) => setState(() => _sessionSeconds += 1),
+        );
       }
       if (sets.length >= totalSets) {
         _completedCoreLifts.add(liftName);
@@ -363,6 +389,26 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
         // visible while the user works through lifts further down the page.
         return Column(
           children: [
+            if (_sessionRunning)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Row(
+                  children: [
+                    Icon(Icons.av_timer,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Session ${_formatElapsed(Duration(seconds: _sessionSeconds))}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (_restTimerActive)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
