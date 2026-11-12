@@ -10,6 +10,7 @@ import 'package:greyskull_lp/pages/settings_page.dart';
 import 'package:greyskull_lp/pages/stats_page.dart';
 import 'package:greyskull_lp/pages/store_page.dart';
 import 'package:greyskull_lp/pages/workout_page.dart';
+import 'package:greyskull_lp/themes/app_icons.dart';
 import 'package:greyskull_lp/widgets/bento_menu_icon.dart';
 import 'themes/theme.dart';
 
@@ -137,7 +138,7 @@ class MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const exerciseIcon = Icon(IconData(0xf6e6, fontFamily: 'MaterialSymbols'));
+    const exerciseIcon = Icon(AppIcons.barbell);
 
     return Scaffold(
       appBar: AppBar(
