@@ -5,6 +5,7 @@ import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/services/social_share_service.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/custom_program_editor_sheet.dart';
+import 'package:greyskull_lp/widgets/rest_timer_bar.dart';
 
 class WorkoutPageWeight extends StatefulWidget {
   const WorkoutPageWeight({super.key});
@@ -19,6 +20,10 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   /// Completed set indexes per lift (0-based), so users can tap 5 / 5 / AMRAP
   /// individually instead of a single "done" checkbox.
   final Map<String, Set<int>> _completedSetsByLift = {};
+
+  // Rest countdown (#75)
+  bool _restTimerActive = false;
+  int _restTimerToken = 0;
   final Set<String> _completedAccessories = {};
   final Map<String, TextEditingController> _weightControllers = {};
   final Map<String, TextEditingController> _repsControllers = {};
@@ -326,8 +331,14 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   void _toggleSet(String liftName, int setIndex, int totalSets) {
     setState(() {
       final sets = _setsForLift(liftName);
+      final wasDone = sets.contains(setIndex);
       if (!sets.remove(setIndex)) {
         sets.add(setIndex);
+      }
+      // Start a rest countdown when a set is completed, not when un-done.
+      if (!wasDone && trainingState.restTimerEnabled) {
+        _restTimerActive = true;
+        _restTimerToken++;
       }
       if (sets.length >= totalSets) {
         _completedCoreLifts.add(liftName);
@@ -351,6 +362,13 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (_restTimerActive)
+              RestTimerBar(
+                key: ValueKey('rest-$_restTimerToken'),
+                seconds: trainingState.restTimerSeconds,
+                soundEnabled: trainingState.restTimerSoundEnabled,
+                onDismissed: () => setState(() => _restTimerActive = false),
+              ),
             if (trainingState.programLevel == ProgramLevel.foundation) ...[
               Container(
                 margin: const EdgeInsets.only(bottom: 12),
