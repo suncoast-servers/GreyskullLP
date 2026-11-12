@@ -757,9 +757,11 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                           }),
                           Expanded(
                             child: Text(
-                              lift.isAmrap
-                                  ? 'Tap 1, 2, then 5+ (AMRAP) as you finish each set'
-                                  : 'Tap each circle as you finish a set',
+                              totalSets == 1
+                                  ? 'Tap the circle when the AMRAP set is done'
+                                  : lift.isAmrap
+                                      ? 'Tap 1, 2, then 5+ (AMRAP) as you finish each set'
+                                      : 'Tap each circle as you finish a set',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Theme.of(context)
