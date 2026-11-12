@@ -11,11 +11,107 @@ class WorkoutPageFrequency extends StatefulWidget {
   State<WorkoutPageFrequency> createState() => _WorkoutPageFrequencyState();
 }
 
-class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
+class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
+    with WidgetsBindingObserver {
   int _pushUpsThisSet = 10;
   int _chinUpsThisSet = 3;
   bool _usedNegatives = false;
-  final Set<String> _completedAccessories = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Auto-save rollover: if the app was left open (or resumed) after
+    // midnight, close out yesterday before showing today's tally.
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => trainingState.ensureCurrentDay());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      trainingState.ensureCurrentDay();
+    }
+  }
+
+  Future<void> _logAccessory(String name) async {
+    final unit = TrainingState.measurementForAccessory(name);
+    final step = unit == AccessoryMeasurement.seconds ? 5 : 1;
+    final previous = trainingState.frequencyAccessoryLogFor(name);
+    var value = previous?.value ?? TrainingState.defaultAccessoryValue(name);
+
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: Text('Log $name'),
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                tooltip: 'Decrease',
+                onPressed: () =>
+                    setLocal(() => value = (value - step).clamp(1, 100000)),
+                icon: const Icon(Icons.remove_circle_outline),
+              ),
+              Expanded(
+                child: Text(
+                  '$value ${unit.suffix}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Increase',
+                onPressed: () =>
+                    setLocal(() => value = (value + step).clamp(1, 100000)),
+                icon: const Icon(Icons.add_circle_outline),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(value),
+              child: const Text('Log'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      trainingState.logFrequencyAccessory(name, value: result, unit: unit);
+    }
+  }
+
+  void _openAccessoryManager() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: SingleChildScrollView(
+          child: CalisthenicsAccessoriesSection(
+            method: DailyMethod.frequency,
+            completedAccessories: trainingState.completedFrequencyAccessories,
+            onCompletedChanged: (_) {},
+            showCompletion: false,
+          ),
+        ),
+      ),
+    );
+  }
 
   void _addSet() {
     if (_pushUpsThisSet == 0 && _chinUpsThisSet == 0) {
@@ -57,16 +153,11 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
     final totalChinUps = trainingState.todayFrequencyChinUps;
     final anyNegatives = sets.any((s) => s.usedNegatives);
 
-    final configuredAccessories =
-        trainingState.getCalisthenicsAccessories(DailyMethod.frequency);
-    final accessorySummaries = <String>[];
-    for (final acc in configuredAccessories) {
-      final done = _completedAccessories.contains(acc);
-      accessorySummaries.add('$acc [${done ? "Completed" : "Skipped"}]');
-    }
-    final optional = accessorySummaries.isEmpty
-        ? 'None configured'
-        : accessorySummaries.join(', ');
+    final accessoryLogs = trainingState.todayFrequencyAccessories;
+    final accessorySummaries = accessoryLogs
+        .map((log) => '${log.name} (${log.formattedValue})')
+        .toList();
+    final optional = trainingState.todayFrequencyAccessorySummary;
 
     final setBreakdown = sets
         .asMap()
@@ -99,6 +190,9 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
       },
     );
 
+    // Remember what was captured so the midnight auto-save does not duplicate.
+    trainingState.markFrequencyDaySavedToHistory();
+
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -115,9 +209,7 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
           ElevatedButton(
             onPressed: () {
               trainingState.clearTodayFrequencySets();
-              setState(() {
-                _completedAccessories.clear();
-              });
+              trainingState.clearTodayFrequencyAccessories();
               Navigator.of(ctx).pop();
             },
             child: const Text('Reset Today\'s Tally'),
@@ -157,6 +249,8 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
         final pushUpTarget = trainingState.dailyPushUpTarget;
         final chinUpTarget = trainingState.dailyChinUpTarget;
         final sets = trainingState.todayFrequencySets;
+        final accessories =
+            trainingState.getCalisthenicsAccessories(DailyMethod.frequency);
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -206,7 +300,46 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
                       target: chinUpTarget,
                       color: Colors.teal,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
+                    const Divider(height: 20),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Optional Accessories',
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _openAccessoryManager,
+                          icon: const Icon(Icons.tune, size: 16),
+                          label: const Text('Manage'),
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (accessories.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'No accessories configured. Tap Manage to add dips, planks, and more.',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      )
+                    else
+                      ...accessories.map(
+                        (name) => _AccessoryLogTile(
+                          name: name,
+                          log: trainingState.frequencyAccessoryLogFor(name),
+                          onLog: () => _logAccessory(name),
+                          onUndo: () =>
+                              trainingState.undoFrequencyAccessory(name),
+                        ),
+                      ),
+                    const SizedBox(height: 4),
                     Align(
                       alignment: Alignment.centerRight,
                       child: Text(
@@ -245,7 +378,7 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
                     _RepStepper(
                       label: 'Push-ups',
                       value: _pushUpsThisSet,
-                      step: 5,
+                      step: 1,
                       onChanged: (val) =>
                           setState(() => _pushUpsThisSet = val.clamp(0, 100)),
                     ),
@@ -266,6 +399,36 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
                       value: _usedNegatives,
                       onChanged: (val) => setState(() => _usedNegatives = val),
                     ),
+                    if (accessories.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Accessories (optional)',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: accessories.map((name) {
+                          final log =
+                              trainingState.frequencyAccessoryLogFor(name);
+                          return ActionChip(
+                            avatar: Icon(
+                              log == null ? Icons.add : Icons.check_circle,
+                              size: 18,
+                              color: log == null ? null : Colors.teal,
+                            ),
+                            label: Text(
+                              log == null
+                                  ? name
+                                  : '$name ${log.formattedValue}',
+                            ),
+                            onPressed: () => _logAccessory(name),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
@@ -327,19 +490,7 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency> {
               const SizedBox(height: 16),
             ],
 
-            // Optional Accessories Section
-            CalisthenicsAccessoriesSection(
-              method: DailyMethod.frequency,
-              completedAccessories: _completedAccessories,
-              onCompletedChanged: (updated) {
-                setState(() {
-                  _completedAccessories
-                    ..clear()
-                    ..addAll(updated);
-                });
-              },
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Save to History Action
             ElevatedButton.icon(
@@ -435,6 +586,50 @@ class _RepStepper extends StatelessWidget {
           icon: const Icon(Icons.add_circle_outline),
         ),
       ],
+    );
+  }
+}
+
+class _AccessoryLogTile extends StatelessWidget {
+  const _AccessoryLogTile({
+    required this.name,
+    required this.log,
+    required this.onLog,
+    required this.onUndo,
+  });
+
+  final String name;
+  final CalisthenicsAccessoryLog? log;
+  final VoidCallback onLog;
+  final VoidCallback onUndo;
+
+  @override
+  Widget build(BuildContext context) {
+    final unit = TrainingState.measurementForAccessory(name);
+    final measuredInSeconds = unit == AccessoryMeasurement.seconds;
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      onTap: onLog,
+      leading: Icon(
+        measuredInSeconds ? Icons.timer_outlined : Icons.repeat,
+        size: 20,
+      ),
+      title: Text(name, style: const TextStyle(fontSize: 14)),
+      subtitle: Text(
+        log == null
+            ? 'Tap to log ${measuredInSeconds ? 'seconds' : 'reps'}'
+            : 'Logged ${log!.formattedValue}',
+        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+      ),
+      trailing: log == null
+          ? const Icon(Icons.add_circle_outline, size: 20)
+          : IconButton(
+              tooltip: 'Undo last log',
+              icon: const Icon(Icons.undo, size: 18),
+              onPressed: onUndo,
+            ),
     );
   }
 }

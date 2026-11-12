@@ -155,9 +155,14 @@ void main() {
       await tester.tap(logSetBtn);
       await tester.pumpAndSettle();
 
-      // Check Dips accessory
-      final dipsCheckbox = find.byType(Checkbox).first;
-      await tester.tap(dipsCheckbox);
+      // Log the Dips accessory (tap-to-log with a value, issue #51)
+      final dipsTile = find.text('Dips').first;
+      await tester.ensureVisible(dipsTile);
+      await tester.tap(dipsTile);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Log Dips'), findsOneWidget);
+      await tester.tap(find.text('Log'));
       await tester.pumpAndSettle();
 
       // Tap Log Today's Frequency Day to History
@@ -175,8 +180,7 @@ void main() {
 
       // Verify in history
       final lastEntry = trainingState.history.first;
-      expect(lastEntry.details, contains('Dips [Completed]'));
-      expect(lastEntry.details, contains('Hanging Knee Raises [Skipped]'));
+      expect(lastEntry.details, contains('Dips (10 reps)'));
     });
 
     testWidgets('WorkoutPageLadder displays accessories and logs to history',

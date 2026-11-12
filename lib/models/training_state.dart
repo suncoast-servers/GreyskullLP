@@ -242,6 +242,57 @@ class FrequencySet {
   }
 }
 
+/// How an optional calisthenics accessory is measured.
+///
+/// Book fidelity: holds (planks, hanging, carries) are logged in **seconds**,
+/// while dynamic movements (dips, rows, sit-ups) are logged in **reps**.
+enum AccessoryMeasurement {
+  reps,
+  seconds;
+
+  String get suffix => this == AccessoryMeasurement.seconds ? 's' : 'reps';
+
+  String get label => this == AccessoryMeasurement.seconds ? 'Seconds' : 'Reps';
+}
+
+/// A single logged optional accessory for the active day.
+class CalisthenicsAccessoryLog {
+  CalisthenicsAccessoryLog({
+    required this.name,
+    required this.value,
+    required this.unit,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+
+  final String name;
+  final int value;
+  final AccessoryMeasurement unit;
+  final DateTime timestamp;
+
+  String get formattedValue =>
+      unit == AccessoryMeasurement.seconds ? '${value}s' : '$value reps';
+
+  Map<String, dynamic> toJsonMap() => {
+        'name': name,
+        'value': value,
+        'unit': unit.name,
+        'timestamp': timestamp.toIso8601String(),
+      };
+
+  factory CalisthenicsAccessoryLog.fromJsonMap(Map<String, dynamic> map) {
+    return CalisthenicsAccessoryLog(
+      name: map['name'] as String? ?? 'Accessory',
+      value: (map['value'] as int? ?? 0).clamp(0, 100000),
+      unit: AccessoryMeasurement.values.firstWhere(
+        (value) => value.name == (map['unit'] as String? ?? ''),
+        orElse: () => AccessoryMeasurement.reps,
+      ),
+      timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
+}
+
 class MethodTransitionMilestone {
   final String title;
   final String description;
@@ -425,7 +476,12 @@ class TrainingState extends ChangeNotifier {
 
   // In-progress Frequency Method state
   final List<FrequencySet> _todayFrequencySets = [];
+  final List<CalisthenicsAccessoryLog> _todayFrequencyAccessories = [];
   DateTime _frequencyTrackingDate = _normalizedDay(DateTime.now());
+
+  /// Number of today's frequency sets already written to history by the
+  /// explicit "log today" action, so the daily auto-save never duplicates them.
+  int _frequencyDaySavedSetCount = 0;
 
   // In-progress Ladder Method state (persisted across tab/method switching)
   String _activeLadderExercise = 'Chin-ups';
@@ -980,6 +1036,55 @@ class TrainingState extends ChangeNotifier {
   int get todayFrequencyChinUps =>
       _todayFrequencySets.fold(0, (sum, set) => sum + set.chinUps);
 
+  /// Accessories logged for the active calendar day (reps or seconds).
+  List<CalisthenicsAccessoryLog> get todayFrequencyAccessories =>
+      List<CalisthenicsAccessoryLog>.unmodifiable(_todayFrequencyAccessories);
+
+  /// Names of accessories already logged today.
+  Set<String> get completedFrequencyAccessories =>
+      _todayFrequencyAccessories.map((log) => log.name).toSet();
+
+  /// Total value logged today for [name], or null when it was not logged.
+  CalisthenicsAccessoryLog? frequencyAccessoryLogFor(String name) {
+    for (final log in _todayFrequencyAccessories.reversed) {
+      if (log.name == name) return log;
+    }
+    return null;
+  }
+
+  /// Human readable summary used in history details and forum posts.
+  String get todayFrequencyAccessorySummary {
+    if (_todayFrequencyAccessories.isEmpty) return 'None';
+    return _todayFrequencyAccessories
+        .map((log) => '${log.name} (${log.formattedValue})')
+        .join(', ');
+  }
+
+  /// Time-based holds (planks, hangs, carries...) log seconds; dynamic
+  /// movements log reps.
+  static const List<String> timeBasedAccessoryKeywords = [
+    'plank',
+    'hold',
+    'wall sit',
+    'l-sit',
+    'dead hang',
+    'hang hold',
+    'carry',
+  ];
+
+  static AccessoryMeasurement measurementForAccessory(String name) {
+    final normalized = name.toLowerCase();
+    final isTimeBased = timeBasedAccessoryKeywords
+        .any((keyword) => normalized.contains(keyword));
+    return isTimeBased
+        ? AccessoryMeasurement.seconds
+        : AccessoryMeasurement.reps;
+  }
+
+  /// Sensible starting value when an accessory is logged without a number.
+  static int defaultAccessoryValue(String name) =>
+      measurementForAccessory(name) == AccessoryMeasurement.seconds ? 30 : 10;
+
   // Ladder getters
   String get activeLadderExercise => _activeLadderExercise;
   bool get activeLadderUsedNegatives => _activeLadderUsedNegatives;
@@ -1051,8 +1156,71 @@ class TrainingState extends ChangeNotifier {
       _dailyCaloriesConsumed = 0;
     }
     if (_frequencyTrackingDate != today) {
+      _archiveFrequencyDayIfNeeded();
       _frequencyTrackingDate = today;
       _todayFrequencySets.clear();
+      _todayFrequencyAccessories.clear();
+      _frequencyDaySavedSetCount = 0;
+    }
+  }
+
+  /// Auto-save: when the calendar day rolls over, any frequency sets that were
+  /// never logged to history are captured so the day's work is not lost.
+  void _archiveFrequencyDayIfNeeded() {
+    final savedCount =
+        _frequencyDaySavedSetCount.clamp(0, _todayFrequencySets.length);
+    final unsavedSets = _todayFrequencySets.skip(savedCount).toList();
+    if (unsavedSets.isEmpty) return;
+
+    final totalPushUps = unsavedSets.fold(0, (sum, set) => sum + set.pushUps);
+    final totalChinUps = unsavedSets.fold(0, (sum, set) => sum + set.chinUps);
+    final anyNegatives = unsavedSets.any((set) => set.usedNegatives);
+    final continueTitle = savedCount > 0 ? ' (Continued)' : '';
+    final accessorySummary = todayFrequencyAccessorySummary;
+    final breakdown = unsavedSets
+        .asMap()
+        .entries
+        .map((entry) =>
+            'Set ${savedCount + entry.key + 1}: ${entry.value.pushUps} push-ups, ${entry.value.chinUps} chin-ups${entry.value.usedNegatives ? ' (negatives)' : ''}')
+        .join('\n');
+
+    _history.add(
+      HistoryEntry(
+        timestamp: unsavedSets.last.timestamp,
+        title: 'Frequency Method Day Summary$continueTitle',
+        category: HistoryCategory.daily,
+        method: DailyMethod.frequency,
+        pushUps: totalPushUps,
+        chinUps: totalChinUps,
+        details: 'Auto-saved at day rollover.\n'
+            'Total Push-ups: $totalPushUps / $_dailyPushUpTarget\n'
+            'Total Chin-ups: $totalChinUps / $_dailyChinUpTarget${anyNegatives ? ' (negatives used)' : ''}\n'
+            'Sets completed: ${unsavedSets.length}\n'
+            'Optional Accessories: $accessorySummary\n\n'
+            'Breakdown:\n$breakdown',
+        methodMetadata: {
+          'setsCount': unsavedSets.length,
+          'pushUpTarget': _dailyPushUpTarget,
+          'chinUpTarget': _dailyChinUpTarget,
+          'autoSaved': true,
+          'sets': unsavedSets.map((set) => set.toJsonMap()).toList(),
+          'accessories': _todayFrequencyAccessories
+              .map((log) => '${log.name} (${log.formattedValue})')
+              .toList(),
+        },
+      ),
+    );
+  }
+
+  /// Public hook for pages/app-lifecycle: rolls the calendar day and persists
+  /// when the active day changed (e.g. app resumed after midnight).
+  void ensureCurrentDay() {
+    final previousFrequencyDay = _frequencyTrackingDate;
+    final previousMacroDay = _macroTrackingDate;
+    _rollMacroDayIfNeeded();
+    if (previousFrequencyDay != _frequencyTrackingDate ||
+        previousMacroDay != _macroTrackingDate) {
+      _notifyAndPersist();
     }
   }
 
@@ -1095,6 +1263,9 @@ class TrainingState extends ChangeNotifier {
       'frequencyTrackingDate': _frequencyTrackingDate.toIso8601String(),
       'todayFrequencySets':
           _todayFrequencySets.map((s) => s.toJsonMap()).toList(),
+      'todayFrequencyAccessories':
+          _todayFrequencyAccessories.map((log) => log.toJsonMap()).toList(),
+      'frequencyDaySavedSetCount': _frequencyDaySavedSetCount,
       // Ladder in-progress state
       'activeLadderExercise': _activeLadderExercise,
       'activeLadderUsedNegatives': _activeLadderUsedNegatives,
@@ -1221,6 +1392,19 @@ class TrainingState extends ChangeNotifier {
                 item.map((key, value) => MapEntry(key.toString(), value)))
             .map(FrequencySet.fromJsonMap),
       );
+
+    _todayFrequencyAccessories
+      ..clear()
+      ..addAll(
+        (map['todayFrequencyAccessories'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<Map>()
+            .map((item) =>
+                item.map((key, value) => MapEntry(key.toString(), value)))
+            .map(CalisthenicsAccessoryLog.fromJsonMap),
+      );
+
+    _frequencyDaySavedSetCount = (map['frequencyDaySavedSetCount'] as int? ?? 0)
+        .clamp(0, _todayFrequencySets.length);
 
     // Restore Ladder in-progress state
     _activeLadderExercise =
@@ -1952,6 +2136,55 @@ class TrainingState extends ChangeNotifier {
 
   void clearTodayFrequencySets() {
     _todayFrequencySets.clear();
+    _frequencyDaySavedSetCount = 0;
+    _notifyAndPersist();
+  }
+
+  /// Logs an optional accessory for the active day using the correct unit
+  /// (seconds for holds/planks, reps otherwise).
+  CalisthenicsAccessoryLog logFrequencyAccessory(
+    String name, {
+    int? value,
+    AccessoryMeasurement? unit,
+  }) {
+    _rollMacroDayIfNeeded();
+    final resolvedUnit = unit ?? measurementForAccessory(name);
+    final resolvedValue =
+        (value ?? defaultAccessoryValue(name)).clamp(1, 100000);
+    final log = CalisthenicsAccessoryLog(
+      name: name,
+      value: resolvedValue,
+      unit: resolvedUnit,
+    );
+    _todayFrequencyAccessories.add(log);
+    _notifyAndPersist();
+    return log;
+  }
+
+  void removeFrequencyAccessoryLog(int index) {
+    if (index >= 0 && index < _todayFrequencyAccessories.length) {
+      _todayFrequencyAccessories.removeAt(index);
+      _notifyAndPersist();
+    }
+  }
+
+  /// Removes the most recently logged entry for [name], if any.
+  void undoFrequencyAccessory(String name) {
+    final index =
+        _todayFrequencyAccessories.lastIndexWhere((log) => log.name == name);
+    if (index != -1) removeFrequencyAccessoryLog(index);
+  }
+
+  void clearTodayFrequencyAccessories() {
+    if (_todayFrequencyAccessories.isEmpty) return;
+    _todayFrequencyAccessories.clear();
+    _notifyAndPersist();
+  }
+
+  /// Marks today's current sets as captured in history so the day-rollover
+  /// auto-save only records work that has not been saved yet.
+  void markFrequencyDaySavedToHistory() {
+    _frequencyDaySavedSetCount = _todayFrequencySets.length;
     _notifyAndPersist();
   }
 
