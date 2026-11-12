@@ -143,7 +143,7 @@ class _DietPageState extends State<DietPage> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Search Free Food Databases',
+              'Search Foods',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -174,7 +174,7 @@ class _DietPageState extends State<DietPage> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Uses Open Food Facts first, then USDA fallback when configured in Settings.',
+              'Search Open Food Facts for calories and protein, then add an item with one tap.',
             ),
             const SizedBox(height: 8),
             ..._results.take(8).map(
@@ -237,15 +237,6 @@ class _DietPageState extends State<DietPage> {
               onPressed: trainingState.resetTodaysMacros,
               icon: const Icon(Icons.refresh),
               label: const Text('Reset Today'),
-            ),
-            const Divider(height: 32),
-            const Text(
-              'Future Integration Idea',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'You can integrate a free open-food database later and keep this local tracker as an offline fallback.',
             ),
           ],
         );
