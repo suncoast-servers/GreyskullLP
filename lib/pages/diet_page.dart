@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/food_search_result.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/food_search_service.dart';
+import 'package:greyskull_lp/widgets/body_measurements_card.dart';
 
 class DietPage extends StatefulWidget {
   const DietPage({super.key});
@@ -148,6 +149,8 @@ class _DietPageState extends State<DietPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            const BodyMeasurementsCard(),
             const SizedBox(height: 16),
             const Text(
               'Search Foods',

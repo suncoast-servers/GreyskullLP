@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:greyskull_lp/models/body_measurement.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/services/accountability_template_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
@@ -472,6 +473,9 @@ class TrainingState extends ChangeNotifier {
   };
 
   final List<HistoryEntry> _history = [];
+
+  /// Optional body measurements (#57), newest first when read.
+  final List<BodyMeasurement> _bodyMeasurements = [];
 
   // In-progress Frequency Method state
   final List<FrequencySet> _todayFrequencySets = [];
@@ -1026,6 +1030,26 @@ class TrainingState extends ChangeNotifier {
   List<HistoryEntry> get history =>
       List<HistoryEntry>.unmodifiable(_history.reversed);
 
+  /// Body measurements sorted newest first.
+  List<BodyMeasurement> get bodyMeasurements {
+    final sorted = List<BodyMeasurement>.from(_bodyMeasurements)
+      ..sort((a, b) => b.date.compareTo(a.date));
+    return List<BodyMeasurement>.unmodifiable(sorted);
+  }
+
+  BodyMeasurement? get latestBodyMeasurement =>
+      bodyMeasurements.isEmpty ? null : bodyMeasurements.first;
+
+  /// Measurements inside the last [days] days, oldest first (chart order).
+  List<BodyMeasurement> bodyMeasurementsInRange(int days) {
+    final cutoff = DateTime.now().subtract(Duration(days: days));
+    return bodyMeasurements
+        .where((m) => m.date.isAfter(cutoff))
+        .toList()
+        .reversed
+        .toList();
+  }
+
   // Frequency getters
   List<FrequencySet> get todayFrequencySets =>
       List<FrequencySet>.unmodifiable(_todayFrequencySets);
@@ -1288,6 +1312,8 @@ class TrainingState extends ChangeNotifier {
       'selectedDailyOptionalExercises':
           _selectedDailyOptionalExercises.toList(),
       'history': _history.map((entry) => entry.toJsonMap()).toList(),
+      'bodyMeasurements':
+          _bodyMeasurements.map((entry) => entry.toJsonMap()).toList(),
     };
   }
 
@@ -1471,6 +1497,16 @@ class TrainingState extends ChangeNotifier {
       ..addAll((map['selectedDailyOptionalExercises'] as List<dynamic>? ??
               <dynamic>[])
           .whereType<String>());
+
+    _bodyMeasurements
+      ..clear()
+      ..addAll(
+        (map['bodyMeasurements'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<Map>()
+            .map((item) =>
+                item.map((key, value) => MapEntry(key.toString(), value)))
+            .map(BodyMeasurement.fromJsonMap),
+      );
 
     _history
       ..clear()
@@ -2273,6 +2309,29 @@ class TrainingState extends ChangeNotifier {
   }
 
   // --- History Mutation ---
+  // --- Body measurement mutators (#57) ---
+
+  /// Adds/updates a measurement; entries with no values are ignored.
+  BodyMeasurement? upsertBodyMeasurement(BodyMeasurement measurement) {
+    if (!measurement.hasAnyValue) return null;
+    final index = _bodyMeasurements.indexWhere((m) => m.id == measurement.id);
+    if (index == -1) {
+      _bodyMeasurements.add(measurement);
+    } else {
+      _bodyMeasurements[index] = measurement;
+    }
+    _notifyAndPersist();
+    return measurement;
+  }
+
+  void deleteBodyMeasurement(String id) {
+    final before = _bodyMeasurements.length;
+    _bodyMeasurements.removeWhere((m) => m.id == id);
+    if (_bodyMeasurements.length != before) {
+      _notifyAndPersist();
+    }
+  }
+
   void deleteHistoryEntry(String id) {
     final initialLen = _history.length;
     _history.removeWhere((entry) => entry.id == id);

@@ -349,6 +349,9 @@ class _StatsPageState extends State<StatsPage> {
         const SizedBox(height: 20),
 
         // Volume Progression Chart
+        _buildBodyTrendCard(),
+        const SizedBox(height: 16),
+
         Card(
           child: Padding(
             padding: const EdgeInsets.all(14),
@@ -495,6 +498,103 @@ class _StatsPageState extends State<StatsPage> {
   }
 
   // --- RESISTANCE TAB ---
+  /// Bodyweight / body-fat trend from optional measurements (#57).
+  Widget _buildBodyTrendCard() {
+    final days = _range == _StatsRange.all ? 3650 : _range.days;
+    final entries = trainingState.bodyMeasurementsInRange(days);
+    final weights =
+        entries.where((m) => m.weightKg != null).toList(growable: false);
+    final bodyFats =
+        entries.where((m) => m.bodyFatPct != null).toList(growable: false);
+
+    Widget empty() => Card(
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Body Measurements',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 6),
+                Text(
+                  'No measurements in this range. Log bodyweight or body fat from the Diet tab.',
+                  style: TextStyle(
+                      fontSize: 12, color: AppTheme.mutedText(context)),
+                ),
+              ],
+            ),
+          ),
+        );
+
+    if (weights.isEmpty && bodyFats.isEmpty) {
+      return empty();
+    }
+
+    final useWeight = weights.isNotEmpty;
+    final series = useWeight ? weights : bodyFats;
+    final unit = useWeight ? 'kg' : '%';
+    final first =
+        useWeight ? weights.first.weightKg! : bodyFats.first.bodyFatPct!;
+    final last = useWeight ? weights.last.weightKg! : bodyFats.last.bodyFatPct!;
+    final delta = last - first;
+    final deltaText =
+        '${delta >= 0 ? '+' : ''}${delta.toStringAsFixed(1)} $unit';
+
+    final chartData = series
+        .map((m) => _ChartDataPoint(
+              label: '${m.date.month}/${m.date.day}',
+              value: useWeight ? m.weightKg! : m.bodyFatPct!,
+            ))
+        .toList();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  useWeight ? 'Bodyweight Trend' : 'Body Fat Trend',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                Text(
+                  deltaText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: delta <= 0
+                        ? AppTheme.positiveAccent(context)
+                        : AppTheme.negativeAccent(context),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Latest: ${last.toStringAsFixed(1)} $unit '
+              '(${series.length} entr${series.length == 1 ? 'y' : 'ies'})',
+              style:
+                  TextStyle(fontSize: 11, color: AppTheme.mutedText(context)),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 130,
+              child: _TimeSeriesBarChart(
+                data: chartData,
+                barColor: AppTheme.resistanceAccent(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildResistanceTab({
     required List<HistoryEntry> weightEntries,
     required double totalVolume,
