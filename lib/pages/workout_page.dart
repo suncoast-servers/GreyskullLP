@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
+import 'interval_timer_page.dart';
 import 'workout_page_frequency.dart';
 import 'workout_page_ladder.dart';
 import 'workout_page_totalwork.dart';
@@ -293,6 +294,19 @@ class _WorkoutPageState extends State<WorkoutPage> {
               isActive:
                   trainingState.activeDailyMethod == DailyMethod.frequency,
               statusBadge: 'Level 1 Active',
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildWorkoutButton(
+              Icons.timer_outlined,
+              'Interval Timer',
+              onTap: () =>
+                  _openSubPage(const IntervalTimerPage(), 'Interval Timer'),
+              statusBadge: 'Work/Rest',
             ),
           ],
         ),
