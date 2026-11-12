@@ -81,14 +81,14 @@ Mark each after looking at it with demo data loaded.
 - [ ] **Empty states:** fresh install shows helpful copy, not blank cards
 - [ ] **Orientation:** portrait; landscape does not break layouts
 - [ ] **Text scale:** system font size 1.3× does not clip critical controls
-- [ ] **Overnight rollover:** log a frequency set, change device date forward one day, reopen → Today's tally resets and yesterday is auto-saved in History (covered by unit tests, needs one device proof)
+- [x] **Overnight rollover:** verified on device 2026-11-12 — a day-old tally (2 sets, Planks 60 s) auto-saved to History as "Frequency Method Day Summary" dated 11/11 with the rollover note, and Today's Frequency tally reset to 0 / 50 reps
 - [ ] **Backup round-trip:** export → clear data → import → history, measurements and settings return
 
 ## 4. Known limitations to accept or file
 
 | Item | Status |
 |---|---|
-| Midnight frequency rollover | unit-tested; one device proof outstanding |
+| Midnight frequency rollover | **verified on device** 2026-11-12 (auto-saved summary + tally reset) |
 | iOS pass | not run in this cycle (macOS simulator available) |
 | Flutter 3.50 `material_ui` migration | CI pinned to 3.41.2; file a follow-up issue |
 | Barcode scanning | not implemented; search only |
@@ -98,7 +98,7 @@ Mark each after looking at it with demo data loaded.
 
 | Reviewer | Date | Result | Notes |
 |---|---|---|---|
-| Umer | 2026-11-12 | pass with fix list | #46–#57 verified on Redmi; see PRs #59–#72 |
+| Umer | 2026-11-12 | pass with fix list | #46–#57 verified on Redmi (PRs #59–#72), rollover device proof included |
 | Ryan | | | |
 
 File any new findings as issues and link them here before merging
