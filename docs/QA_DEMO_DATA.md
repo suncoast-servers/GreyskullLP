@@ -50,7 +50,23 @@ transitions.
 The payload is a normal `schemaVersion: 2` backup, so
 **Settings → Backups → Restore from Pasted Backup** accepts it too.
 
-## Scenario B (issue #56)
+## Scenario B — 90-day cut (Frequency → Ladder → Total Work)
 
-Scenario B (overweight user cutting, Frequency → Ladder → Total Work) will reuse
-the same picker and import path; only the fixture generator changes.
+Issue: [#56](https://github.com/suncoast-servers/GreyskullLP/issues/56)
+
+| Days | Barbell | Calisthenics method |
+|------|---------|---------------------|
+| 1–40 | OG Base, 2x/week (Tue/Sat) | Frequency |
+| 41–70 | Villain, 2x/week | Ladder |
+| 71–90 | Two-Day Split, 2x/week | Total Work |
+
+- Overweight trainee in a **calorie deficit** (`nutritionMode: cutting`,
+  1,850 kcal target), with a **falling bodyweight note** on every diet entry
+  (≈118.0 kg → ≈111.6 kg).
+- Barbell loads **stall and take a 10% reset** every fifth session, which is
+  what cutting trainees actually see.
+- Calisthenics volume is ~80% of Scenario A so recovery-limited progress and
+  declining trends are visible on Stats.
+
+Use the same **Settings → QA / Demo Data** picker; both scenarios share one
+import path.
