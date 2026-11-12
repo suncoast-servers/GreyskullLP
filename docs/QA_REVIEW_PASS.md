@@ -89,7 +89,7 @@ Mark each after looking at it with demo data loaded.
 | Item | Status |
 |---|---|
 | Midnight frequency rollover | **verified on device** 2026-11-12 (auto-saved summary + tally reset) |
-| iOS pass | not run in this cycle (macOS simulator available) |
+| iOS pass | boot + main menu + Settings verified on iPhone 17 Pro Max simulator (`integration_test/app_smoke_test.dart`); deep route pass still manual |
 | Flutter 3.50 `material_ui` migration | CI pinned to 3.41.2; file a follow-up issue |
 | Barcode scanning | not implemented; search only |
 | Cloud sync | out of scope for v0.1 |
