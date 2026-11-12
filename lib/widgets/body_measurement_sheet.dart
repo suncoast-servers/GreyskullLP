@@ -1,0 +1,176 @@
+import 'package:flutter/material.dart';
+import 'package:greyskull_lp/models/body_measurement.dart';
+import 'package:greyskull_lp/models/training_state.dart';
+
+/// Bottom sheet used to add or edit an optional body measurement (#57).
+Future<void> showBodyMeasurementSheet(
+  BuildContext context, {
+  BodyMeasurement? existing,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (ctx) => Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+      child: _BodyMeasurementForm(existing: existing),
+    ),
+  );
+}
+
+class _BodyMeasurementForm extends StatefulWidget {
+  const _BodyMeasurementForm({this.existing});
+
+  final BodyMeasurement? existing;
+
+  @override
+  State<_BodyMeasurementForm> createState() => _BodyMeasurementFormState();
+}
+
+class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
+  late final TextEditingController _weight;
+  late final TextEditingController _bodyFat;
+  late final TextEditingController _waist;
+  late final TextEditingController _chest;
+  late final TextEditingController _arms;
+  late final TextEditingController _notes;
+
+  @override
+  void initState() {
+    super.initState();
+    final before = widget.existing;
+    String value(double? v) => v == null ? '' : v.toString();
+    _weight = TextEditingController(text: value(before?.weightKg));
+    _bodyFat = TextEditingController(text: value(before?.bodyFatPct));
+    _waist = TextEditingController(text: value(before?.waistCm));
+    _chest = TextEditingController(text: value(before?.chestCm));
+    _arms = TextEditingController(text: value(before?.armsCm));
+    _notes = TextEditingController(text: before?.notes ?? '');
+  }
+
+  @override
+  void dispose() {
+    _weight.dispose();
+    _bodyFat.dispose();
+    _waist.dispose();
+    _chest.dispose();
+    _arms.dispose();
+    _notes.dispose();
+    super.dispose();
+  }
+
+  double? _parse(TextEditingController controller) =>
+      double.tryParse(controller.text.trim().replaceAll(',', '.'));
+
+  void _save() {
+    final measurement = (widget.existing ?? BodyMeasurement()).copyWith(
+      weightKg: _parse(_weight),
+      bodyFatPct: _parse(_bodyFat),
+      waistCm: _parse(_waist),
+      chestCm: _parse(_chest),
+      armsCm: _parse(_arms),
+      notes: _notes.text.trim(),
+    );
+
+    if (!measurement.hasAnyValue) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter at least one measurement before saving.'),
+        ),
+      );
+      return;
+    }
+
+    trainingState.upsertBodyMeasurement(measurement);
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Measurement saved')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.existing == null
+                  ? 'Log Body Measurement'
+                  : 'Edit Body Measurement',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'All fields are optional. Log whatever you track.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _numberField(_weight, 'Bodyweight (kg)'),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _numberField(_bodyFat, 'Body fat (%)'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: _numberField(_waist, 'Waist (cm)')),
+                const SizedBox(width: 10),
+                Expanded(child: _numberField(_chest, 'Chest (cm)')),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: _numberField(_arms, 'Arms (cm)')),
+                const SizedBox(width: 10),
+                const Expanded(child: SizedBox()),
+              ],
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _notes,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Notes (optional)',
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _save,
+                icon: const Icon(Icons.save),
+                label: const Text('Save Measurement'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _numberField(TextEditingController controller, String label) {
+    return TextField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        border: const OutlineInputBorder(),
+        labelText: label,
+        isDense: true,
+      ),
+    );
+  }
+}
