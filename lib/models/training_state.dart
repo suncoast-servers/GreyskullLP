@@ -432,6 +432,10 @@ class TrainingState extends ChangeNotifier {
   bool _restTimerEnabled = true;
   int _restTimerSeconds = 90;
   bool _restTimerSoundEnabled = true;
+  bool _restTimerCountUp = true;
+  int _restTimerSize = 2;
+  int _restAfterExerciseSeconds = 60;
+  final Map<String, int> _perExerciseRestSeconds = {};
   String _socialShareHashtag = '#GreyskullLP #JohnnyPain';
   BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
   int _activeBarbellRotationIndex = 0;
@@ -919,6 +923,47 @@ class TrainingState extends ChangeNotifier {
   bool get restTimerSoundEnabled => _restTimerSoundEnabled;
 
   static const List<int> restTimerPresets = [60, 90, 120, 180];
+
+  /// Rest-timer parity options (#75): count-up display, arc size and
+  /// per-exercise overrides.
+  bool get restTimerCountUp => _restTimerCountUp;
+  int get restTimerSize => _restTimerSize;
+  int get restAfterExerciseSeconds => _restAfterExerciseSeconds;
+  Map<String, int> get perExerciseRestSeconds =>
+      Map<String, int>.unmodifiable(_perExerciseRestSeconds);
+
+  /// Rest seconds for a lift: explicit per-exercise override, else the global
+  /// default.
+  int restSecondsForLift(String liftName) =>
+      _perExerciseRestSeconds[liftName] ?? _restTimerSeconds;
+
+  void setRestTimerCountUp(bool value) {
+    if (_restTimerCountUp == value) return;
+    _restTimerCountUp = value;
+    _notifyAndPersist();
+  }
+
+  void setRestTimerSize(int size) {
+    final clamped = size.clamp(1, 3);
+    if (_restTimerSize == clamped) return;
+    _restTimerSize = clamped;
+    _notifyAndPersist();
+  }
+
+  void setRestAfterExerciseSeconds(int seconds) {
+    final clamped = seconds.clamp(0, 600);
+    if (_restAfterExerciseSeconds == clamped) return;
+    _restAfterExerciseSeconds = clamped;
+    _notifyAndPersist();
+  }
+
+  void setPerExerciseRestSeconds(String liftName, int seconds) {
+    final clamped = seconds.clamp(0, 600);
+    if (_perExerciseRestSeconds[liftName] == clamped) return;
+    _perExerciseRestSeconds[liftName] = clamped;
+    _notifyAndPersist();
+  }
+
   String get socialShareHashtag => _socialShareHashtag;
 
   BarbellTemplate get activeBarbellTemplate => _activeBarbellTemplate;
@@ -1272,6 +1317,10 @@ class TrainingState extends ChangeNotifier {
       'restTimerEnabled': _restTimerEnabled,
       'restTimerSeconds': _restTimerSeconds,
       'restTimerSoundEnabled': _restTimerSoundEnabled,
+      'restTimerCountUp': _restTimerCountUp,
+      'restTimerSize': _restTimerSize,
+      'restAfterExerciseSeconds': _restAfterExerciseSeconds,
+      'perExerciseRestSeconds': _perExerciseRestSeconds,
       'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
@@ -1344,6 +1393,18 @@ class TrainingState extends ChangeNotifier {
     _restTimerEnabled = map['restTimerEnabled'] as bool? ?? true;
     _restTimerSeconds = (map['restTimerSeconds'] as int? ?? 90).clamp(15, 600);
     _restTimerSoundEnabled = map['restTimerSoundEnabled'] as bool? ?? true;
+    _restTimerCountUp = map['restTimerCountUp'] as bool? ?? true;
+    _restTimerSize = (map['restTimerSize'] as int? ?? 2).clamp(1, 3);
+    _restAfterExerciseSeconds =
+        (map['restAfterExerciseSeconds'] as int? ?? 60).clamp(0, 600);
+    _perExerciseRestSeconds
+      ..clear()
+      ..addAll(
+        (map['perExerciseRestSeconds'] as Map<dynamic, dynamic>? ??
+                <dynamic, dynamic>{})
+            .map((key, value) =>
+                MapEntry(key.toString(), (value as num?)?.toInt() ?? 0)),
+      );
     _socialShareHashtag =
         map['socialShareHashtag'] as String? ?? '#GreyskullLP #JohnnyPain';
 

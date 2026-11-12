@@ -7,7 +7,7 @@ import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/services/social_share_service.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/custom_program_editor_sheet.dart';
-import 'package:greyskull_lp/widgets/rest_timer_bar.dart';
+import 'package:greyskull_lp/widgets/circular_rest_timer.dart';
 
 class WorkoutPageWeight extends StatefulWidget {
   const WorkoutPageWeight({super.key});
@@ -26,6 +26,14 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   // Rest countdown (#75)
   bool _restTimerActive = false;
   int _restTimerToken = 0;
+  int _restSeconds = 90;
+  String _restCoaching = '';
+
+  // AMRAP stopwatch (#75)
+  final Map<String, int> _amrapSeconds = {};
+  String? _amrapRunningLift;
+  int _amrapElapsed = 0;
+  Timer? _amrapTicker;
 
   // Whole-session stopwatch (#75): starts with the first completed set.
   int _sessionSeconds = 0;
@@ -39,6 +47,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   @override
   void dispose() {
     _sessionTicker?.cancel();
+    _amrapTicker?.cancel();
     _notesController.dispose();
     for (final controller in _weightControllers.values) {
       controller.dispose();
@@ -256,8 +265,10 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
       final weight = _fieldDouble(_getWeightController(lift.name));
       final reps = _fieldDouble(_getRepsController(lift.name));
       final status = isDone ? 'Done' : 'Not marked';
+      final amrapSeconds = _amrapSeconds[lift.name];
+      final amrapNote = amrapSeconds == null ? '' : ', AMRAP ${amrapSeconds}s';
       final details = weight > 0 && reps > 0
-          ? '${lift.name} ($status, ${weight.toStringAsFixed(1)} lbs x ${reps.toInt()} reps x ${lift.sets} sets)'
+          ? '${lift.name} ($status, ${weight.toStringAsFixed(1)} lbs x ${reps.toInt()} reps x ${lift.sets} sets$amrapNote)'
           : '${lift.name} ($status)';
       coreLiftSummaries.add(details);
     }
@@ -289,6 +300,9 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     _sessionTicker?.cancel();
     _sessionRunning = false;
     _sessionSeconds = 0;
+    _amrapTicker?.cancel();
+    _amrapRunningLift = null;
+    _amrapElapsed = 0;
     setState(() {
       _completedCoreLifts.clear();
       _completedSetsByLift.clear();
@@ -339,6 +353,69 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   Set<int> _setsForLift(String liftName) =>
       _completedSetsByLift.putIfAbsent(liftName, () => <int>{});
 
+  Future<void> _editRestSeconds(String liftName) async {
+    final current = trainingState.restSecondsForLift(liftName);
+    final choice = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text('Rest for $liftName'),
+        children: [
+          for (final seconds in const [30, 45, 60, 90, 120, 180, 300])
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(ctx).pop(seconds),
+              child: Row(
+                children: [
+                  Icon(
+                    seconds == current
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text('$seconds seconds'),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (choice != null) {
+      trainingState.setPerExerciseRestSeconds(liftName, choice);
+      setState(() {});
+    }
+  }
+
+  void _toggleAmrapStopwatch(String liftName) {
+    setState(() {
+      if (_amrapRunningLift == liftName) {
+        _amrapTicker?.cancel();
+        _amrapSeconds[liftName] = _amrapElapsed;
+        _amrapRunningLift = null;
+        _amrapElapsed = 0;
+        return;
+      }
+      _amrapTicker?.cancel();
+      _amrapRunningLift = liftName;
+      _amrapElapsed = 0;
+      _amrapTicker = Timer.periodic(
+        const Duration(seconds: 1),
+        (_) => setState(() => _amrapElapsed += 1),
+      );
+    });
+  }
+
+  String _amrapLabel(String liftName) {
+    if (_amrapRunningLift == liftName) {
+      final value = _amrapElapsed;
+      return 'Stop ${value ~/ 60}:${(value % 60).toString().padLeft(2, '0')}';
+    }
+    final saved = _amrapSeconds[liftName];
+    if (saved != null) {
+      return 'AMRAP ${saved ~/ 60}:${(saved % 60).toString().padLeft(2, '0')}';
+    }
+    return 'Time AMRAP';
+  }
+
   String _formatElapsed(Duration duration) {
     final minutes = duration.inMinutes.toString().padLeft(2, '0');
     final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
@@ -354,6 +431,13 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
       }
       // Start a rest countdown when a set is completed, not when un-done.
       if (!wasDone && trainingState.restTimerEnabled) {
+        final liftDone = sets.length >= totalSets;
+        _restSeconds = liftDone
+            ? trainingState.restAfterExerciseSeconds
+            : trainingState.restSecondsForLift(liftName);
+        _restCoaching = liftDone
+            ? 'Move to the next lift when this rest ends.'
+            : 'Rest, then $liftName set ${sets.length + 1}.';
         _restTimerActive = true;
         _restTimerToken++;
       }
@@ -412,10 +496,13 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
             if (_restTimerActive)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: RestTimerBar(
+                child: CircularRestTimer(
                   key: ValueKey('rest-$_restTimerToken'),
-                  seconds: trainingState.restTimerSeconds,
+                  seconds: _restSeconds,
                   soundEnabled: trainingState.restTimerSoundEnabled,
+                  countUp: trainingState.restTimerCountUp,
+                  size: trainingState.restTimerSize,
+                  coachingText: _restCoaching,
                   onDismissed: () => setState(() => _restTimerActive = false),
                 ),
               ),
@@ -817,6 +904,21 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                               .primary,
                                         ),
                                       ),
+                                      TextButton.icon(
+                                        onPressed: () =>
+                                            _editRestSeconds(lift.name),
+                                        icon: const Icon(Icons.alarm, size: 14),
+                                        label: Text(
+                                          'Rest ${trainingState.restSecondsForLift(lift.name)}s',
+                                          style: const TextStyle(fontSize: 11),
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: const Size(0, 24),
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -864,6 +966,21 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                     ),
                                   ),
                                 ),
+                                if (lift.isAmrap)
+                                  TextButton.icon(
+                                    onPressed: () =>
+                                        _toggleAmrapStopwatch(lift.name),
+                                    icon: Icon(
+                                      _amrapRunningLift == lift.name
+                                          ? Icons.stop_circle_outlined
+                                          : Icons.timer_outlined,
+                                      size: 16,
+                                    ),
+                                    label: Text(
+                                      _amrapLabel(lift.name),
+                                      style: const TextStyle(fontSize: 11),
+                                    ),
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 8),

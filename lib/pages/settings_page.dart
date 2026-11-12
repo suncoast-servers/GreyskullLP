@@ -766,6 +766,57 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (val) =>
                       trainingState.setRestTimerSoundEnabled(val),
                 ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Count up instead of down'),
+                  subtitle: const Text(
+                      'Matches the classic arc timer: elapsed rest time.'),
+                  value: trainingState.restTimerCountUp,
+                  onChanged: (val) => trainingState.setRestTimerCountUp(val),
+                ),
+                const SizedBox(height: 4),
+                DropdownButtonFormField<int>(
+                  key: ValueKey('size-${trainingState.restTimerSize}'),
+                  initialValue: trainingState.restTimerSize,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Timer size',
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 1, child: Text('Small')),
+                    DropdownMenuItem(value: 2, child: Text('Medium')),
+                    DropdownMenuItem(value: 3, child: Text('Large')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      trainingState.setRestTimerSize(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 4),
+                DropdownButtonFormField<int>(
+                  key: ValueKey(
+                      'after-${trainingState.restAfterExerciseSeconds}'),
+                  initialValue: trainingState.restAfterExerciseSeconds,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Rest after finishing a lift',
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 30, child: Text('30 seconds')),
+                    DropdownMenuItem(value: 60, child: Text('60 seconds')),
+                    DropdownMenuItem(value: 90, child: Text('90 seconds')),
+                    DropdownMenuItem(value: 120, child: Text('120 seconds')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      trainingState.setRestAfterExerciseSeconds(value);
+                    }
+                  },
+                ),
               ],
               const Divider(height: 32),
               const Text(

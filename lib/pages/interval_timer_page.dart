@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/services/timer_cue_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 
 /// Interval / METCON timer (issue #75).
@@ -111,7 +112,11 @@ class _IntervalTimerPageState extends State<IntervalTimerPage> {
 
   void _cue() {
     if (!trainingState.restTimerSoundEnabled) return;
-    SystemSound.play(SystemSoundType.alert);
+    if (_phase == _Phase.done) {
+      TimerCueService.instance.restFinished();
+    } else {
+      TimerCueService.instance.phaseChanged(working: _phase == _Phase.work);
+    }
     HapticFeedback.heavyImpact();
   }
 
