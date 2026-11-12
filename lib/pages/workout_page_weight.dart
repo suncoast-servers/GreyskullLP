@@ -90,7 +90,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                     const SizedBox(height: 8),
                     if (availablePresets.isNotEmpty) ...[
                       DropdownButtonFormField<String>(
-                        value: selectedPreset,
+                        initialValue: selectedPreset,
                         isExpanded: true,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
@@ -398,7 +398,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                     const SizedBox(height: 6),
                     DropdownButtonFormField<BarbellTemplate>(
                       key: ValueKey(trainingState.activeBarbellTemplate),
-                      value: trainingState.activeBarbellTemplate,
+                      initialValue: trainingState.activeBarbellTemplate,
                       isExpanded: true,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
