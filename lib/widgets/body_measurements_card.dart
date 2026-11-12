@@ -33,10 +33,8 @@ class BodyMeasurementsCard extends StatelessWidget {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     TextButton.icon(
-                      onPressed: () => showBodyMeasurementSheet(
-                        context,
-                        existing: latest,
-                      ),
+                      // Always a new entry; editing happens from the row pencil.
+                      onPressed: () => showBodyMeasurementSheet(context),
                       icon: const Icon(Icons.add, size: 18),
                       label: Text(latest == null ? 'Log' : 'Add'),
                     ),
