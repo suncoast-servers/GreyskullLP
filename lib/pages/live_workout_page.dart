@@ -1,9 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/workout_page_weight.dart';
+import 'package:greyskull_lp/services/screen_awake_service.dart';
 
 /// Fullscreen live workout shell (issue #80).
-class LiveWorkoutPage extends StatelessWidget {
+class LiveWorkoutPage extends StatefulWidget {
   const LiveWorkoutPage({super.key});
+
+  @override
+  State<LiveWorkoutPage> createState() => _LiveWorkoutPageState();
+}
+
+class _LiveWorkoutPageState extends State<LiveWorkoutPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Keep the display on for the duration of the live session (#82).
+    if (trainingState.keepScreenAwake) {
+      ScreenAwakeService.setAwake(true);
+    }
+  }
+
+  @override
+  void dispose() {
+    ScreenAwakeService.setAwake(false);
+    super.dispose();
+  }
 
   Future<bool> _confirmEnd(BuildContext context) async {
     final result = await showDialog<bool>(
