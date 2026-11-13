@@ -338,15 +338,6 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     // Advance rotation to next workout in cycle
     trainingState.advanceBarbellRotation();
 
-    if (bumpedLifts.isNotEmpty && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Next session: ${bumpedLifts.join(', ')}'),
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    }
-
     _sessionTicker?.cancel();
     _sessionRunning = false;
     _sessionSeconds = 0;
@@ -371,6 +362,13 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
       return;
     }
 
+    // Keep the AMRAP bump visible: one snackbar carries both facts so the
+    // progression advice is not replaced by the generic log toast.
+    final bumpSuffix =
+        bumpedLifts.isEmpty ? '' : '\nNext session: ${bumpedLifts.join(', ')}';
+    final loggedMessage = 'Workout logged! Advanced rotation to: '
+        '${trainingState.currentTemplateWorkout.title}$bumpSuffix';
+
     if (trainingState.accountabilityMode ==
             AccountabilityPostMode.onWorkoutComplete &&
         draft != null) {
@@ -380,9 +378,8 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
         draft != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Workout logged! Advanced rotation to: ${trainingState.currentTemplateWorkout.title}',
-          ),
+          content: Text(loggedMessage),
+          duration: const Duration(seconds: 5),
           action: SnackBarAction(
             label: 'Post to Forum',
             onPressed: () =>
@@ -393,9 +390,8 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Workout logged! Advanced rotation to: ${trainingState.currentTemplateWorkout.title}',
-          ),
+          content: Text(loggedMessage),
+          duration: Duration(seconds: bumpedLifts.isEmpty ? 4 : 6),
         ),
       );
     }

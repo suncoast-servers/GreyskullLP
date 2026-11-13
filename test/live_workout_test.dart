@@ -77,6 +77,28 @@ void main() {
       expect(find.text('Live Workout'), findsOneWidget);
     });
 
+    testWidgets('log toast carries the AMRAP bump in one snackbar',
+        (tester) async {
+      await pumpLive(tester);
+
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), '100');
+      await tester.enterText(fields.at(1), '10');
+
+      final logButton = find.text("Log Today's Barbell Workout to History");
+      await tester.scrollUntilVisible(
+        logButton,
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(logButton);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.textContaining('Next session:'), findsOneWidget);
+      expect(find.textContaining('Workout logged!'), findsOneWidget);
+    });
+
     test('AMRAP 10+ reps bumps next session weight by upper/lower rule', () {
       final state = TrainingState();
       // Simulate what the live page records after logging.
