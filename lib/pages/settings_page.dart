@@ -805,6 +805,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 4),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
+                  title: const Text('Keep screen awake in a live workout'),
+                  subtitle: const Text(
+                      'Prevents the display sleeping while a session is open.'),
+                  value: trainingState.keepScreenAwake,
+                  onChanged: (val) => trainingState.setKeepScreenAwake(val),
+                ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Count up instead of down'),
                   subtitle: const Text(
                       'Matches the classic arc timer: elapsed rest time.'),
