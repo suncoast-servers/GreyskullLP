@@ -772,6 +772,21 @@ class _HistoryPageState extends State<HistoryPage> {
                             '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
                             '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
 
+                        if (entry.category == HistoryCategory.weight) {
+                          return _ResistanceHistoryCard(
+                            entry: entry,
+                            stamp: stamp,
+                            onView: () => _showDetailsDialog(context, entry),
+                            onEdit: () => _showEditDialog(context, entry),
+                            onDelete: () => _showDeleteDialog(context, entry),
+                            onShare: () => SocialShareService.showShareModal(
+                              context: context,
+                              entry: entry,
+                              defaultHashtag: trainingState.socialShareHashtag,
+                            ),
+                          );
+                        }
+
                         return Card(
                           child: ListTile(
                             onTap: () => _showDetailsDialog(context, entry),
@@ -865,5 +880,186 @@ class _HistoryPageState extends State<HistoryPage> {
       case HistoryCategory.diet:
         return 'Diet';
     }
+  }
+}
+
+/// Structured card for barbell/resistance sessions (issue #88).
+class _ResistanceHistoryCard extends StatelessWidget {
+  const _ResistanceHistoryCard({
+    required this.entry,
+    required this.stamp,
+    required this.onView,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onShare,
+  });
+
+  final HistoryEntry entry;
+  final String stamp;
+  final VoidCallback onView;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onShare;
+
+  String _field(String label) {
+    for (final line in entry.details.split('\n')) {
+      if (line.toLowerCase().startsWith('${label.toLowerCase()}:')) {
+        return line.substring(label.length + 1).trim();
+      }
+    }
+    return '';
+  }
+
+  String get _volume {
+    final value = entry.weightVolume ?? 0;
+    if (value <= 0) return '';
+    final text = value >= 1000
+        ? (value / 1000).toStringAsFixed(1)
+        : value.toStringAsFixed(0);
+    return value >= 1000 ? '$text k lb' : '$text lb';
+  }
+
+  List<String> get _lifts {
+    final core = _field('Core Lifts');
+    if (core.isEmpty) return const [];
+    return core
+        .split(';')
+        .map((lift) => lift.trim())
+        .where((lift) => lift.isNotEmpty)
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final accessories = _field('Accessories');
+    final lifts = _lifts;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onView,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          entry.title,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                      if (_volume.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: scheme.secondary.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            _volume,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: scheme.secondary,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$stamp · ${lifts.length} lift${lifts.length == 1 ? '' : 's'}',
+                    style: TextStyle(
+                        fontSize: 11, color: AppTheme.mutedText(context)),
+                  ),
+                  if (lifts.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    ...lifts.map(
+                      (lift) => Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.fitness_center,
+                                size: 13, color: scheme.secondary),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                lift,
+                                style: const TextStyle(fontSize: 12.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (accessories.isNotEmpty &&
+                      accessories.toLowerCase() != 'none') ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Accessories: $accessories',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.mutedText(context),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  tooltip: 'Share session',
+                  icon: const Icon(Icons.share, size: 18),
+                  onPressed: onShare,
+                ),
+                IconButton(
+                  tooltip: 'Edit workout',
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  onPressed: onEdit,
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, size: 18),
+                  onSelected: (value) {
+                    if (value == 'view') {
+                      onView();
+                    } else if (value == 'edit') {
+                      onEdit();
+                    } else if (value == 'delete') {
+                      onDelete();
+                    }
+                  },
+                  itemBuilder: (ctx) => const [
+                    PopupMenuItem(value: 'view', child: Text('View Details')),
+                    PopupMenuItem(value: 'edit', child: Text('Edit Entry')),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child:
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
