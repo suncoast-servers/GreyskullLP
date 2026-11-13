@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/program/template_labels.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/services/social_share_service.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
@@ -551,63 +552,39 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Official Greyskull LP Template',
+                            'Program',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                                 color: AppTheme.mutedText(context)),
                           ),
                           const SizedBox(height: 6),
-                          DropdownButtonFormField<BarbellTemplate>(
-                            key: ValueKey(trainingState.activeBarbellTemplate),
-                            initialValue: trainingState.activeBarbellTemplate,
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 10),
-                            ),
-                            items: BarbellTemplate.values.map((template) {
-                              final details =
-                                  trainingState.getTemplateDetails(template);
-                              return DropdownMenuItem(
-                                value: template,
+                          Row(
+                            children: [
+                              Expanded(
                                 child: Text(
-                                  details.name,
+                                  TemplateLabels.nameFor(
+                                      trainingState.activeBarbellTemplate),
                                   style: const TextStyle(
+                                      fontSize: 16,
                                       fontWeight: FontWeight.bold),
                                 ),
-                              );
-                            }).toList(),
-                            onChanged: (newTemplate) {
-                              if (newTemplate != null) {
-                                setState(() {
-                                  _completedCoreLifts.clear();
-                                  _completedAccessories.clear();
-                                });
-                                trainingState.setBarbellTemplate(newTemplate);
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            templateDetails.subtitle,
-                            style: const TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w500),
+                              ),
+                              Text(
+                                'Change in Setup',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.mutedText(context)),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Book ref: ${templateDetails.bookReference}',
+                            TemplateLabels.lineFor(
+                                trainingState.activeBarbellTemplate),
                             style: TextStyle(
                                 fontSize: 12,
-                                color: AppTheme.resistanceAccent(context),
-                                fontStyle: FontStyle.italic),
-                          ),
-                          Text(
-                            'Cadence: ${templateDetails.scheduleDescription}',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.onSurface),
+                                color: AppTheme.mutedText(context)),
                           ),
                           if (trainingState.isCustomTemplateActive) ...[
                             const SizedBox(height: 10),

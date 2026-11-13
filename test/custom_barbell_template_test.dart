@@ -192,8 +192,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify custom program is selected
-      expect(find.text('Custom Program (Build from Zero)'), findsOneWidget);
+      // Verify custom program is selected (plain-language label)
+      expect(find.text('Custom'), findsOneWidget);
       expect(find.byKey(const Key('customize_program_btn')), findsOneWidget);
       expect(find.byKey(const Key('duplicate_preset_btn')), findsOneWidget);
 
