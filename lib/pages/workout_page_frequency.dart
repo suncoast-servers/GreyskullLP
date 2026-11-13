@@ -3,6 +3,7 @@ import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
+import 'package:greyskull_lp/widgets/tutorial_overlay.dart';
 
 class WorkoutPageFrequency extends StatefulWidget {
   const WorkoutPageFrequency({super.key});
@@ -23,8 +24,12 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
     WidgetsBinding.instance.addObserver(this);
     // Auto-save rollover: if the app was left open (or resumed) after
     // midnight, close out yesterday before showing today's tally.
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => trainingState.ensureCurrentDay());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      trainingState.ensureCurrentDay();
+      if (mounted) {
+        Tutorials.showIfNeeded(context, 'frequency');
+      }
+    });
   }
 
   @override

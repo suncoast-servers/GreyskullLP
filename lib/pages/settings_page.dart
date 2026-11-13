@@ -802,6 +802,20 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (val) =>
                       trainingState.setRestTimerSoundEnabled(val),
                 ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    trainingState.replayTutorials();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Tutorials reset — they show again on each screen.'),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.school_outlined, size: 16),
+                  label: const Text('Replay section tutorials'),
+                ),
                 const SizedBox(height: 4),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,

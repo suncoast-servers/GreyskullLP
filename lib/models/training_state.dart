@@ -446,6 +446,9 @@ class TrainingState extends ChangeNotifier {
   /// Show the ongoing live-workout notification and rest alerts (#82).
   bool _workoutNotifications = true;
 
+  /// Sections whose first-run tutorial has been seen (#83).
+  final Set<String> _seenTutorials = {};
+
   /// Next working weight per lift, carried between sessions (#80).
   final Map<String, double> _nextSessionWeights = {};
   String _socialShareHashtag = '#GreyskullLP #JohnnyPain';
@@ -950,6 +953,20 @@ class TrainingState extends ChangeNotifier {
 
   bool get workoutNotifications => _workoutNotifications;
 
+  bool hasSeenTutorial(String section) => _seenTutorials.contains(section);
+
+  void markTutorialSeen(String section) {
+    if (_seenTutorials.add(section)) {
+      _notifyAndPersist();
+    }
+  }
+
+  void replayTutorials() {
+    if (_seenTutorials.isEmpty) return;
+    _seenTutorials.clear();
+    _notifyAndPersist();
+  }
+
   void setWorkoutNotifications(bool value) {
     if (_workoutNotifications == value) return;
     _workoutNotifications = value;
@@ -1376,6 +1393,7 @@ class TrainingState extends ChangeNotifier {
       'nextSessionWeights': _nextSessionWeights,
       'keepScreenAwake': _keepScreenAwake,
       'workoutNotifications': _workoutNotifications,
+      'seenTutorials': _seenTutorials.toList(),
       'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
@@ -1456,6 +1474,12 @@ class TrainingState extends ChangeNotifier {
         map['tapeMeasurementsInInches'] as bool? ?? false;
     _keepScreenAwake = map['keepScreenAwake'] as bool? ?? true;
     _workoutNotifications = map['workoutNotifications'] as bool? ?? true;
+    _seenTutorials
+      ..clear()
+      ..addAll(
+        (map['seenTutorials'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<String>(),
+      );
     _nextSessionWeights
       ..clear()
       ..addAll(

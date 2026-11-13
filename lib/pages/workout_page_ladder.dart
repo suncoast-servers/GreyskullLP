@@ -4,6 +4,7 @@ import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/accessory_checklist.dart';
+import 'package:greyskull_lp/widgets/tutorial_overlay.dart';
 
 class WorkoutPageLadder extends StatefulWidget {
   const WorkoutPageLadder({super.key});
@@ -13,6 +14,16 @@ class WorkoutPageLadder extends StatefulWidget {
 }
 
 class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Tutorials.showIfNeeded(context, 'ladder');
+      }
+    });
+  }
+
   final Set<String> _completedAccessories = {};
   void _completeRung() {
     trainingState.recordLadderRung();

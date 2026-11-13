@@ -167,11 +167,13 @@ void main() {
       await tester.pumpAndSettle();
 
       final scenarioTile = find.text(DemoSeedService.scenarioATitle);
-      await tester.scrollUntilVisible(
+      await tester.dragUntilVisible(
         scenarioTile,
-        300,
-        scrollable: find.byType(Scrollable).first,
+        find.byType(Scrollable).first,
+        const Offset(0, -300),
       );
+      await tester.ensureVisible(scenarioTile);
+      await tester.pumpAndSettle();
       expect(find.text('QA / Demo Data'), findsOneWidget);
       expect(scenarioTile, findsOneWidget);
 
