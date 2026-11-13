@@ -3,6 +3,15 @@
 Debug-only fixtures so **Stats** and **History** can be reviewed at real-world
 scale without waiting months for real logs.
 
+## Product policy (owner)
+
+**Scenario A** (newbie) and **Scenario B** (cutting) must **stay in the app for
+all future builds** so Ryan can **switch between the two trainees** and compare
+Stats/History side by side over time. Do not remove `DemoSeedService`, the
+Settings picker, or either fixture without explicit owner approval. Store
+releases may hide the picker; owner QA builds must keep both scenarios
+(debug/profile, or release with `--dart-define=ENABLE_DEMO_DATA=true`).
+
 > These fixtures never ship enabled in store builds. The entry point is hidden
 > unless the app is built in debug/profile (`kDebugMode`) or compiled with
 > `--dart-define=ENABLE_DEMO_DATA=true`.

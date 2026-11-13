@@ -4,12 +4,12 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 
-/// QA-only demo data fixtures (issue #55 / #56).
+/// QA demo data fixtures (issues #55 / #56) — **permanent** owner comparison set.
 ///
-/// These scenarios exist so the owner and contractor can review **Stats** and
-/// **History** at real-world scale (90 days of training) without waiting three
-/// months. They are never enabled in store builds unless the app is compiled
-/// with `--dart-define=ENABLE_DEMO_DATA=true`.
+/// Scenario A (newbie) and Scenario B (cutting) must remain available on owner
+/// QA builds so Stats/History can be compared between the two synthetic users.
+/// Hidden on public store builds unless compiled with
+/// `--dart-define=ENABLE_DEMO_DATA=true`.
 class DemoSeedService {
   const DemoSeedService._();
 
