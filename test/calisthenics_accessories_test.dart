@@ -207,12 +207,11 @@ void main() {
       await tester.tap(find.text('Finish Ladder'));
       await tester.pumpAndSettle();
 
-      // Check Inverted Rows
+      // Mark Inverted Rows accessory (configured in Settings)
       final rowsTile = find.text('Inverted Rows');
       expect(rowsTile, findsOneWidget);
       await tester.ensureVisible(rowsTile);
-      final checkboxes = find.byType(Checkbox);
-      await tester.tap(checkboxes.at(1));
+      await tester.tap(rowsTile);
       await tester.pumpAndSettle();
 
       // Save to history
@@ -252,12 +251,11 @@ void main() {
       await tester.tap(recordSetBtn);
       await tester.pumpAndSettle();
 
-      // Check Planks
+      // Mark Planks accessory (configured in Settings)
       final planksTile = find.text('Planks');
       expect(planksTile, findsOneWidget);
       await tester.ensureVisible(planksTile);
-      final checkboxes = find.byType(Checkbox);
-      await tester.tap(checkboxes.at(1));
+      await tester.tap(planksTile);
       await tester.pumpAndSettle();
 
       // Save to history
