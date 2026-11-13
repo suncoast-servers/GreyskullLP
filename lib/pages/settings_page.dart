@@ -761,7 +761,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 4),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Sound and vibration when rest ends'),
+                  title: const Text('Bell and vibration when rest ends'),
                   value: trainingState.restTimerSoundEnabled,
                   onChanged: (val) =>
                       trainingState.setRestTimerSoundEnabled(val),

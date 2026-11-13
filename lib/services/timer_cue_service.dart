@@ -11,6 +11,9 @@ class TimerCueService {
 
   static final TimerCueService instance = TimerCueService._();
 
+  /// Classic bell used by default for timer/rest-end cues (#86).
+  static const String bell = 'sounds/bell.wav';
+
   static const String restEnd = 'sounds/rest_end.wav';
   static const String countdownTick = 'sounds/countdown_tick.wav';
   static const String workStart = 'sounds/work_start.wav';
@@ -31,10 +34,9 @@ class TimerCueService {
     }
   }
 
-  Future<void> restFinished() => play(restEnd);
+  Future<void> restFinished() => play(bell);
 
   Future<void> countdownTickCue() => play(countdownTick);
 
-  Future<void> phaseChanged({required bool working}) =>
-      play(working ? workStart : restStart);
+  Future<void> phaseChanged({required bool working}) => play(bell);
 }
