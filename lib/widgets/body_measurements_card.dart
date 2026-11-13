@@ -10,6 +10,13 @@ class BodyMeasurementsCard extends StatelessWidget {
   String _value(double? value, String unit) =>
       value == null ? '—' : '${value.toStringAsFixed(1)} $unit';
 
+  String _tape(double? cm) {
+    if (cm == null) return '—';
+    final value = trainingState.tapeFromCm(cm);
+    final unit = trainingState.tapeMeasurementsInInches ? 'in' : 'cm';
+    return '${value.toStringAsFixed(1)} $unit';
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -55,9 +62,9 @@ class BodyMeasurementsCard extends StatelessWidget {
                     children: [
                       _metric('Weight', _value(latest.weightKg, 'kg')),
                       _metric('Body fat', _value(latest.bodyFatPct, '%')),
-                      _metric('Waist', _value(latest.waistCm, 'cm')),
-                      _metric('Chest', _value(latest.chestCm, 'cm')),
-                      _metric('Arms', _value(latest.armsCm, 'cm')),
+                      _metric('Waist', _tape(latest.waistCm)),
+                      _metric('Chest', _tape(latest.chestCm)),
+                      _metric('Arms', _tape(latest.armsCm)),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -99,14 +106,18 @@ class _MeasurementRow extends StatelessWidget {
     if (entry.bodyFatPct != null) {
       parts.add('${entry.bodyFatPct!.toStringAsFixed(1)}%');
     }
+    final unit = trainingState.tapeMeasurementsInInches ? 'in' : 'cm';
     if (entry.waistCm != null) {
-      parts.add('waist ${entry.waistCm!.toStringAsFixed(0)} cm');
+      parts.add(
+          'waist ${trainingState.tapeFromCm(entry.waistCm!).toStringAsFixed(1)} $unit');
     }
     if (entry.chestCm != null) {
-      parts.add('chest ${entry.chestCm!.toStringAsFixed(0)} cm');
+      parts.add(
+          'chest ${trainingState.tapeFromCm(entry.chestCm!).toStringAsFixed(1)} $unit');
     }
     if (entry.armsCm != null) {
-      parts.add('arms ${entry.armsCm!.toStringAsFixed(0)} cm');
+      parts.add(
+          'arms ${trainingState.tapeFromCm(entry.armsCm!).toStringAsFixed(1)} $unit');
     }
     return parts.isEmpty ? entry.notes : parts.join(' · ');
   }
