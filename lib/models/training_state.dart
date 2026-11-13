@@ -439,6 +439,9 @@ class TrainingState extends ChangeNotifier {
 
   /// Tape measurements use inches when true (#85).
   bool _tapeMeasurementsInInches = false;
+
+  /// Next working weight per lift, carried between sessions (#80).
+  final Map<String, double> _nextSessionWeights = {};
   String _socialShareHashtag = '#GreyskullLP #JohnnyPain';
   BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
   int _activeBarbellRotationIndex = 0;
@@ -937,6 +940,14 @@ class TrainingState extends ChangeNotifier {
 
   bool get tapeMeasurementsInInches => _tapeMeasurementsInInches;
 
+  double? nextSessionWeight(String liftName) => _nextSessionWeights[liftName];
+
+  void setNextSessionWeight(String liftName, double weight) {
+    if (_nextSessionWeights[liftName] == weight) return;
+    _nextSessionWeights[liftName] = weight;
+    _notifyAndPersist();
+  }
+
   void setTapeMeasurementsInInches(bool value) {
     if (_tapeMeasurementsInInches == value) return;
     _tapeMeasurementsInInches = value;
@@ -1340,6 +1351,7 @@ class TrainingState extends ChangeNotifier {
       'restAfterExerciseSeconds': _restAfterExerciseSeconds,
       'perExerciseRestSeconds': _perExerciseRestSeconds,
       'tapeMeasurementsInInches': _tapeMeasurementsInInches,
+      'nextSessionWeights': _nextSessionWeights,
       'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
@@ -1418,6 +1430,14 @@ class TrainingState extends ChangeNotifier {
         (map['restAfterExerciseSeconds'] as int? ?? 60).clamp(0, 600);
     _tapeMeasurementsInInches =
         map['tapeMeasurementsInInches'] as bool? ?? false;
+    _nextSessionWeights
+      ..clear()
+      ..addAll(
+        (map['nextSessionWeights'] as Map<dynamic, dynamic>? ??
+                <dynamic, dynamic>{})
+            .map((key, value) =>
+                MapEntry(key.toString(), (value as num?)?.toDouble() ?? 0)),
+      );
     _perExerciseRestSeconds
       ..clear()
       ..addAll(

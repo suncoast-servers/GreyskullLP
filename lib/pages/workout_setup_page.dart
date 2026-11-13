@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/program/template_labels.dart';
-import 'package:greyskull_lp/pages/workout_page_weight.dart';
+import 'package:greyskull_lp/pages/live_workout_page.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/custom_program_editor_sheet.dart';
 
@@ -153,12 +153,7 @@ class WorkoutSetupPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => Scaffold(
-                      appBar: AppBar(title: const Text('Weight Program')),
-                      body: const WorkoutPageWeight(),
-                    ),
-                  ),
+                  MaterialPageRoute(builder: (_) => const LiveWorkoutPage()),
                 ),
                 icon: const Icon(Icons.play_arrow),
                 label: const Text(
