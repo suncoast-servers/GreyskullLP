@@ -39,11 +39,13 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
     super.initState();
     final before = widget.existing;
     String value(double? v) => v == null ? '' : v.toString();
+    String tape(double? cm) =>
+        cm == null ? '' : trainingState.tapeFromCm(cm).toStringAsFixed(1);
     _weight = TextEditingController(text: value(before?.weightKg));
     _bodyFat = TextEditingController(text: value(before?.bodyFatPct));
-    _waist = TextEditingController(text: value(before?.waistCm));
-    _chest = TextEditingController(text: value(before?.chestCm));
-    _arms = TextEditingController(text: value(before?.armsCm));
+    _waist = TextEditingController(text: tape(before?.waistCm));
+    _chest = TextEditingController(text: tape(before?.chestCm));
+    _arms = TextEditingController(text: tape(before?.armsCm));
     _notes = TextEditingController(text: before?.notes ?? '');
   }
 
@@ -61,13 +63,16 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
   double? _parse(TextEditingController controller) =>
       double.tryParse(controller.text.trim().replaceAll(',', '.'));
 
+  double? _toCm(double? value) =>
+      value == null ? null : trainingState.tapeToCm(value);
+
   void _save() {
     final measurement = (widget.existing ?? BodyMeasurement()).copyWith(
       weightKg: _parse(_weight),
       bodyFatPct: _parse(_bodyFat),
-      waistCm: _parse(_waist),
-      chestCm: _parse(_chest),
-      armsCm: _parse(_arms),
+      waistCm: _toCm(_parse(_waist)),
+      chestCm: _toCm(_parse(_chest)),
+      armsCm: _toCm(_parse(_arms)),
       notes: _notes.text.trim(),
     );
 
@@ -110,7 +115,20 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text('cm')),
+                ButtonSegment(value: true, label: Text('in')),
+              ],
+              selected: {trainingState.tapeMeasurementsInInches},
+              onSelectionChanged: (selection) {
+                setState(() {
+                  trainingState.setTapeMeasurementsInInches(selection.first);
+                });
+              },
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -125,15 +143,15 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: _numberField(_waist, 'Waist (cm)')),
+                Expanded(child: _numberField(_waist, _tapeLabel('Waist'))),
                 const SizedBox(width: 10),
-                Expanded(child: _numberField(_chest, 'Chest (cm)')),
+                Expanded(child: _numberField(_chest, _tapeLabel('Chest'))),
               ],
             ),
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: _numberField(_arms, 'Arms (cm)')),
+                Expanded(child: _numberField(_arms, _tapeLabel('Arms'))),
                 const SizedBox(width: 10),
                 const Expanded(child: SizedBox()),
               ],
@@ -161,6 +179,9 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
       ),
     );
   }
+
+  String _tapeLabel(String part) =>
+      trainingState.tapeMeasurementsInInches ? '$part (in)' : '$part (cm)';
 
   Widget _numberField(TextEditingController controller, String label) {
     return TextField(

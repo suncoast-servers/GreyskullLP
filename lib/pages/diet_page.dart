@@ -128,13 +128,35 @@ class _DietPageState extends State<DietPage> {
                       'Protein: ${trainingState.dailyProteinConsumed}g / ${trainingState.dailyProteinTarget}g',
                     ),
                     const SizedBox(height: 6),
-                    LinearProgressIndicator(value: proteinProgress),
+                    LinearProgressIndicator(
+                      value: proteinProgress,
+                      minHeight: 8,
+                      borderRadius: BorderRadius.circular(4),
+                      backgroundColor:
+                          Theme.of(context).colorScheme.onSurface.withValues(
+                                alpha: 0.12,
+                              ),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.secondary,
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     Text(
                       'Calories: ${trainingState.dailyCaloriesConsumed} / ${trainingState.dailyCalorieTarget} kcal',
                     ),
                     const SizedBox(height: 6),
-                    LinearProgressIndicator(value: calorieProgress),
+                    LinearProgressIndicator(
+                      value: calorieProgress,
+                      minHeight: 8,
+                      borderRadius: BorderRadius.circular(4),
+                      backgroundColor:
+                          Theme.of(context).colorScheme.onSurface.withValues(
+                                alpha: 0.12,
+                              ),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.secondary,
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     Text(
                       trainingState.nutritionMode == NutritionMode.cutting

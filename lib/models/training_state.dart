@@ -436,6 +436,9 @@ class TrainingState extends ChangeNotifier {
   int _restTimerSize = 2;
   int _restAfterExerciseSeconds = 60;
   final Map<String, int> _perExerciseRestSeconds = {};
+
+  /// Tape measurements use inches when true (#85).
+  bool _tapeMeasurementsInInches = false;
   String _socialShareHashtag = '#GreyskullLP #JohnnyPain';
   BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
   int _activeBarbellRotationIndex = 0;
@@ -932,6 +935,21 @@ class TrainingState extends ChangeNotifier {
   Map<String, int> get perExerciseRestSeconds =>
       Map<String, int>.unmodifiable(_perExerciseRestSeconds);
 
+  bool get tapeMeasurementsInInches => _tapeMeasurementsInInches;
+
+  void setTapeMeasurementsInInches(bool value) {
+    if (_tapeMeasurementsInInches == value) return;
+    _tapeMeasurementsInInches = value;
+    _notifyAndPersist();
+  }
+
+  /// Converts a stored centimetre value for display in the chosen unit.
+  double tapeFromCm(double cm) => _tapeMeasurementsInInches ? cm / 2.54 : cm;
+
+  /// Converts a value entered in the chosen unit back to centimetres.
+  double tapeToCm(double value) =>
+      _tapeMeasurementsInInches ? value * 2.54 : value;
+
   /// Rest seconds for a lift: explicit per-exercise override, else the global
   /// default.
   int restSecondsForLift(String liftName) =>
@@ -1321,6 +1339,7 @@ class TrainingState extends ChangeNotifier {
       'restTimerSize': _restTimerSize,
       'restAfterExerciseSeconds': _restAfterExerciseSeconds,
       'perExerciseRestSeconds': _perExerciseRestSeconds,
+      'tapeMeasurementsInInches': _tapeMeasurementsInInches,
       'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
@@ -1397,6 +1416,8 @@ class TrainingState extends ChangeNotifier {
     _restTimerSize = (map['restTimerSize'] as int? ?? 2).clamp(1, 3);
     _restAfterExerciseSeconds =
         (map['restAfterExerciseSeconds'] as int? ?? 60).clamp(0, 600);
+    _tapeMeasurementsInInches =
+        map['tapeMeasurementsInInches'] as bool? ?? false;
     _perExerciseRestSeconds
       ..clear()
       ..addAll(
