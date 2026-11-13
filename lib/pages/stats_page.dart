@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/services/lift_progress_service.dart';
 import 'package:greyskull_lp/themes/app_icons.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 
@@ -305,7 +306,7 @@ class _StatsPageState extends State<StatsPage> {
                     : '${totalVolume.toStringAsFixed(0)} lbs',
                 caption: '${weightEntries.length} weight sessions',
                 icon: AppIcons.barbell,
-                color: AppTheme.resistanceAccent(context),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             const SizedBox(width: 10),
@@ -315,7 +316,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '${totalPushUps + totalChinUps} reps',
                 caption: '$totalPushUps push, $totalChinUps chins',
                 icon: Icons.accessibility_new,
-                color: AppTheme.calisthenicsAccent(context),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
           ],
@@ -331,7 +332,7 @@ class _StatsPageState extends State<StatsPage> {
                     ? 'Consistency on track!'
                     : 'Log today to start',
                 icon: Icons.local_fire_department,
-                color: AppTheme.negativeAccent(context),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             const SizedBox(width: 10),
@@ -341,7 +342,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '${rangedEntries.length}',
                 caption: 'Across all categories',
                 icon: Icons.done_all,
-                color: AppTheme.positiveAccent(context),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
           ],
@@ -349,6 +350,8 @@ class _StatsPageState extends State<StatsPage> {
         const SizedBox(height: 20),
 
         // Volume Progression Chart
+        _buildLiftProgressionCard(rangedEntries),
+        const SizedBox(height: 16),
         _buildBodyTrendCard(),
         const SizedBox(height: 16),
 
@@ -362,7 +365,7 @@ class _StatsPageState extends State<StatsPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Resistance Volume Time Series',
+                      'Volume (secondary)',
                       style:
                           TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
@@ -378,7 +381,7 @@ class _StatsPageState extends State<StatsPage> {
                   height: 140,
                   child: _TimeSeriesBarChart(
                       data: volumeData,
-                      barColor: AppTheme.resistanceAccent(context)),
+                      barColor: Theme.of(context).colorScheme.secondary),
                 ),
               ],
             ),
@@ -498,6 +501,95 @@ class _StatsPageState extends State<StatsPage> {
   }
 
   // --- RESISTANCE TAB ---
+  /// Per-lift estimated-1RM progression (issue #87).
+  Widget _buildLiftProgressionCard(List<HistoryEntry> entries) {
+    final series = LiftProgressService.seriesFor(entries);
+    final scheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Lift Progression (est. 1RM)',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Strength first: each lift tracked from its logged sets.',
+              style:
+                  TextStyle(fontSize: 11, color: AppTheme.mutedText(context)),
+            ),
+            const SizedBox(height: 10),
+            if (series.isEmpty)
+              Text(
+                'Log at least two sessions of the same lift to see a trend.',
+                style:
+                    TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
+              )
+            else
+              ...series.map((lift) {
+                final positive = lift.change >= 0;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              lift.lift,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                          ),
+                          Text(
+                            '${lift.latest.toStringAsFixed(0)} lb',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: scheme.secondary,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${positive ? '+' : ''}${lift.change.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: positive
+                                  ? AppTheme.positiveAccent(context)
+                                  : AppTheme.negativeAccent(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        height: 54,
+                        child: CustomPaint(
+                          size: const Size(double.infinity, 54),
+                          painter: _LineChartPainter(
+                            values: lift.points
+                                .map((p) => p.estimatedOneRm)
+                                .toList(),
+                            color: scheme.secondary,
+                            gridColor: scheme.onSurface.withValues(alpha: 0.12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Bodyweight / body-fat trend from optional measurements (#57).
   Widget _buildBodyTrendCard() {
     final days = _range == _StatsRange.all ? 3650 : _range.days;
@@ -586,7 +678,7 @@ class _StatsPageState extends State<StatsPage> {
               height: 130,
               child: _TimeSeriesBarChart(
                 data: chartData,
-                barColor: AppTheme.resistanceAccent(context),
+                barColor: Theme.of(context).colorScheme.secondary,
               ),
             ),
           ],
@@ -628,7 +720,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '${totalVolume.toStringAsFixed(1)} lbs',
                 caption: '${weightEntries.length} sessions logged',
                 icon: Icons.line_weight,
-                color: AppTheme.resistanceAccent(context),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             const SizedBox(width: 10),
@@ -638,7 +730,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '${avgVolume.toStringAsFixed(1)} lbs',
                 caption: 'Mean load per session',
                 icon: Icons.functions,
-                color: AppTheme.resistanceAccent(context),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
           ],
@@ -659,7 +751,7 @@ class _StatsPageState extends State<StatsPage> {
                   height: 150,
                   child: _TimeSeriesBarChart(
                       data: volumeData,
-                      barColor: AppTheme.resistanceAccent(context)),
+                      barColor: Theme.of(context).colorScheme.secondary),
                 ),
               ],
             ),
@@ -726,7 +818,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '$totalPushUps',
                 caption: 'Bodyweight volume',
                 icon: Icons.horizontal_rule,
-                color: AppTheme.calisthenicsAccent(context),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             const SizedBox(width: 10),
@@ -736,7 +828,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '$totalChinUps',
                 caption: 'Upper body pulling volume',
                 icon: Icons.vertical_align_top,
-                color: AppTheme.calisthenicsAccent(context),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
           ],
@@ -757,7 +849,7 @@ class _StatsPageState extends State<StatsPage> {
                   height: 150,
                   child: _TimeSeriesBarChart(
                       data: repData,
-                      barColor: AppTheme.calisthenicsAccent(context)),
+                      barColor: Theme.of(context).colorScheme.secondary),
                 ),
               ],
             ),
@@ -851,7 +943,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '${avgProtein}g / day',
                 caption: 'Target: ${trainingState.dailyProteinTarget}g',
                 icon: Icons.egg_alt_outlined,
-                color: AppTheme.positiveAccent(context),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             const SizedBox(width: 10),
@@ -861,7 +953,7 @@ class _StatsPageState extends State<StatsPage> {
                 value: '$avgCalories kcal',
                 caption: 'Target: ${trainingState.dailyCalorieTarget} kcal',
                 icon: Icons.local_fire_department_outlined,
-                color: AppTheme.calisthenicsAccent(context),
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
           ],
@@ -1134,4 +1226,60 @@ class _MetricKpiCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Minimal polyline chart for per-lift progression (#87).
+class _LineChartPainter extends CustomPainter {
+  const _LineChartPainter({
+    required this.values,
+    required this.color,
+    required this.gridColor,
+  });
+
+  final List<double> values;
+  final Color color;
+  final Color gridColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2) return;
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
+    final range =
+        (maxValue - minValue).abs() < 0.001 ? 1.0 : maxValue - minValue;
+
+    final grid = Paint()
+      ..color = gridColor
+      ..strokeWidth = 1;
+    canvas.drawLine(
+        Offset(0, size.height - 1), Offset(size.width, size.height - 1), grid);
+
+    final path = Path();
+    final dot = Paint()..color = color;
+    for (var i = 0; i < values.length; i++) {
+      final x = size.width * (i / (values.length - 1));
+      final normalized = (values[i] - minValue) / range;
+      final y = size.height - 6 - normalized * (size.height - 12);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+      canvas.drawCircle(Offset(x, y), 2.6, dot);
+    }
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_LineChartPainter oldDelegate) =>
+      oldDelegate.values != values || oldDelegate.color != color;
 }
