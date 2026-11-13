@@ -1,24 +1,33 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/food_search_result.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/services/food_search_service.dart';
 import 'package:greyskull_lp/widgets/body_measurements_card.dart';
 
 class DietPage extends StatefulWidget {
-  const DietPage({super.key});
+  const DietPage({super.key, this.searchService});
+
+  /// Injectable for tests; production uses the Open Food Facts client.
+  final FoodSearchService? searchService;
 
   @override
   State<DietPage> createState() => _DietPageState();
 }
 
 class _DietPageState extends State<DietPage> {
-  final FoodSearchService _foodSearchService = FoodSearchService();
+  late final FoodSearchService _foodSearchService =
+      widget.searchService ?? FoodSearchService();
   final TextEditingController _proteinController = TextEditingController();
   final TextEditingController _calorieController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
   List<FoodSearchResult> _results = <FoodSearchResult>[];
+  Timer? _searchDebounce;
+  String _query = '';
 
   @override
   void dispose() {
@@ -26,7 +35,22 @@ class _DietPageState extends State<DietPage> {
     _calorieController.dispose();
     _noteController.dispose();
     _searchController.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
+  }
+
+  void _onQueryChanged(String value) {
+    final query = value.trim();
+    _searchDebounce?.cancel();
+    setState(() => _query = query);
+    if (query.length < 3) {
+      setState(() => _results = <FoodSearchResult>[]);
+      return;
+    }
+    // Typeahead: search as the user types, debounced to protect the API.
+    _searchDebounce = Timer(const Duration(milliseconds: 450), () {
+      _searchFoods();
+    });
   }
 
   Future<void> _searchFoods() async {
@@ -48,14 +72,6 @@ class _DietPageState extends State<DietPage> {
       setState(() {
         _results = items;
       });
-      if (items.isEmpty && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No matches for "${query.trim()}"'),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
     } finally {
       if (mounted) {
         setState(() {
@@ -179,31 +195,32 @@ class _DietPageState extends State<DietPage> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Search foods',
-                    ),
-                    onSubmitted: (_) => _searchFoods(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: _isSearching ? null : _searchFoods,
-                  child: _isSearching
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
+            TextField(
+              controller: _searchController,
+              onChanged: _onQueryChanged,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: 'Search foods',
+                suffixIcon: _isSearching
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          height: 16,
+                          width: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Find'),
-                ),
-              ],
+                        ),
+                      )
+                    : null,
+              ),
             ),
+            const SizedBox(height: 6),
+            if (!_isSearching && _query.length >= 3 && _results.isEmpty)
+              Text(
+                'No matches for "$_query"',
+                style:
+                    TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
+              ),
             const SizedBox(height: 8),
             const Text(
               'Search Open Food Facts for calories and protein, then add an item with one tap.',

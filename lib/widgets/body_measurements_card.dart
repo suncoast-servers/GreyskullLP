@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/body_measurement.dart';
 import 'package:greyskull_lp/models/training_state.dart';
@@ -129,6 +131,17 @@ class _MeasurementRow extends StatelessWidget {
     return ListTile(
       dense: true,
       contentPadding: EdgeInsets.zero,
+      leading: entry.photoBase64 == null
+          ? null
+          : ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.memory(
+                base64Decode(entry.photoBase64!),
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+              ),
+            ),
       title: Text(date, style: const TextStyle(fontSize: 12)),
       subtitle: Text(_summary(), style: const TextStyle(fontSize: 11)),
       trailing: Row(
