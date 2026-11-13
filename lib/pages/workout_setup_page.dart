@@ -4,14 +4,30 @@ import 'package:greyskull_lp/program/template_labels.dart';
 import 'package:greyskull_lp/pages/live_workout_page.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/custom_program_editor_sheet.dart';
+import 'package:greyskull_lp/widgets/tutorial_overlay.dart';
 
 /// Workout **setup** surface (issue #79).
 ///
 /// Keep this screen about choosing how to train: pick a program, customise it,
 /// tune timing. The live session lives in [WorkoutPageWeight] behind
 /// "Start Workout".
-class WorkoutSetupPage extends StatelessWidget {
+class WorkoutSetupPage extends StatefulWidget {
   const WorkoutSetupPage({super.key});
+
+  @override
+  State<WorkoutSetupPage> createState() => _WorkoutSetupPageState();
+}
+
+class _WorkoutSetupPageState extends State<WorkoutSetupPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Tutorials.showIfNeeded(context, 'weight_setup');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

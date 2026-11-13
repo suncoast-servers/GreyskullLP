@@ -5,6 +5,7 @@ import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/workout_page_weight.dart';
 import 'package:greyskull_lp/services/screen_awake_service.dart';
 import 'package:greyskull_lp/services/workout_notification_service.dart';
+import 'package:greyskull_lp/widgets/tutorial_overlay.dart';
 
 /// Fullscreen live workout shell (issue #80).
 class LiveWorkoutPage extends StatefulWidget {
@@ -35,6 +36,11 @@ class _LiveWorkoutPageState extends State<LiveWorkoutPage> {
     if (trainingState.keepScreenAwake) {
       ScreenAwakeService.setAwake(true);
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Tutorials.showIfNeeded(context, 'live_workout');
+      }
+    });
     if (trainingState.workoutNotifications) {
       WorkoutNotificationService.instance.requestPermission();
       _publishNotification();
