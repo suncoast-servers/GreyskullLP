@@ -3,7 +3,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/timer_cue_service.dart';
+import 'package:greyskull_lp/services/workout_notification_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 
 /// Circular arc rest timer (parity with the old app's round countdown).
@@ -69,6 +71,10 @@ class _CircularRestTimerState extends State<CircularRestTimer> {
   }
 
   void _fireEndCue() {
+    // The notification is independent of the audible cue.
+    if (trainingState.workoutNotifications) {
+      WorkoutNotificationService.instance.showRestComplete();
+    }
     if (!widget.soundEnabled) return;
     // Original generated tone + haptic (no third-party audio).
     TimerCueService.instance.restFinished();

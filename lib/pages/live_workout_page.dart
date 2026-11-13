@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/workout_page_weight.dart';
 import 'package:greyskull_lp/services/screen_awake_service.dart';
+import 'package:greyskull_lp/services/workout_notification_service.dart';
 
 /// Fullscreen live workout shell (issue #80).
 class LiveWorkoutPage extends StatefulWidget {
@@ -12,6 +15,19 @@ class LiveWorkoutPage extends StatefulWidget {
 }
 
 class _LiveWorkoutPageState extends State<LiveWorkoutPage> {
+  Timer? _notificationTimer;
+  int _elapsedSeconds = 0;
+
+  void _publishNotification() {
+    if (!trainingState.workoutNotifications) return;
+    WorkoutNotificationService.instance.showLive(
+      title: 'Workout in progress',
+      body: 'Session ${_elapsedSeconds ~/ 60}:'
+          '${(_elapsedSeconds % 60).toString().padLeft(2, '0')} — '
+          'keep the app open to log sets.',
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -19,10 +35,23 @@ class _LiveWorkoutPageState extends State<LiveWorkoutPage> {
     if (trainingState.keepScreenAwake) {
       ScreenAwakeService.setAwake(true);
     }
+    if (trainingState.workoutNotifications) {
+      WorkoutNotificationService.instance.requestPermission();
+      _publishNotification();
+      _notificationTimer = Timer.periodic(
+        const Duration(seconds: 15),
+        (_) {
+          _elapsedSeconds += 15;
+          _publishNotification();
+        },
+      );
+    }
   }
 
   @override
   void dispose() {
+    _notificationTimer?.cancel();
+    WorkoutNotificationService.instance.cancelLive();
     ScreenAwakeService.setAwake(false);
     super.dispose();
   }

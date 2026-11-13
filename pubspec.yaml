@@ -38,6 +38,7 @@ dependencies:
   url_launcher: ^6.3.2
   webview_flutter: ^4.13.0
   image_picker: ^1.2.1
+  flutter_local_notifications: ^22.3.3
 
 
 dev_dependencies:

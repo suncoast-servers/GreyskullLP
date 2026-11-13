@@ -805,6 +805,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 4),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
+                  title: const Text('Live workout notifications'),
+                  subtitle: const Text(
+                      'Ongoing session notification and rest-complete alerts.'),
+                  value: trainingState.workoutNotifications,
+                  onChanged: (val) =>
+                      trainingState.setWorkoutNotifications(val),
+                ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: const Text('Keep screen awake in a live workout'),
                   subtitle: const Text(
                       'Prevents the display sleeping while a session is open.'),

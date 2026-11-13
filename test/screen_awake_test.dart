@@ -42,6 +42,16 @@ void main() {
       expect(restored.keepScreenAwake, isFalse);
     });
 
+    test('notification toggle persists through backups', () async {
+      final state = TrainingState();
+      expect(state.workoutNotifications, isTrue);
+      state.setWorkoutNotifications(false);
+
+      final restored = TrainingState();
+      expect(await restored.importBackupJson(state.exportBackupJson()), isTrue);
+      expect(restored.workoutNotifications, isFalse);
+    });
+
     testWidgets('live workout turns the flag on and releases it on exit',
         (tester) async {
       tester.view.physicalSize = const Size(900, 2400);

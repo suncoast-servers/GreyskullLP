@@ -443,6 +443,9 @@ class TrainingState extends ChangeNotifier {
   /// Keep the screen awake while a live workout is running (#82).
   bool _keepScreenAwake = true;
 
+  /// Show the ongoing live-workout notification and rest alerts (#82).
+  bool _workoutNotifications = true;
+
   /// Next working weight per lift, carried between sessions (#80).
   final Map<String, double> _nextSessionWeights = {};
   String _socialShareHashtag = '#GreyskullLP #JohnnyPain';
@@ -945,6 +948,14 @@ class TrainingState extends ChangeNotifier {
 
   bool get keepScreenAwake => _keepScreenAwake;
 
+  bool get workoutNotifications => _workoutNotifications;
+
+  void setWorkoutNotifications(bool value) {
+    if (_workoutNotifications == value) return;
+    _workoutNotifications = value;
+    _notifyAndPersist();
+  }
+
   void setKeepScreenAwake(bool value) {
     if (_keepScreenAwake == value) return;
     _keepScreenAwake = value;
@@ -1364,6 +1375,7 @@ class TrainingState extends ChangeNotifier {
       'tapeMeasurementsInInches': _tapeMeasurementsInInches,
       'nextSessionWeights': _nextSessionWeights,
       'keepScreenAwake': _keepScreenAwake,
+      'workoutNotifications': _workoutNotifications,
       'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
@@ -1443,6 +1455,7 @@ class TrainingState extends ChangeNotifier {
     _tapeMeasurementsInInches =
         map['tapeMeasurementsInInches'] as bool? ?? false;
     _keepScreenAwake = map['keepScreenAwake'] as bool? ?? true;
+    _workoutNotifications = map['workoutNotifications'] as bool? ?? true;
     _nextSessionWeights
       ..clear()
       ..addAll(
