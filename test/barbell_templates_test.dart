@@ -185,7 +185,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Check template dropdown and initial core lifts
-      expect(find.text('Official Greyskull LP Template'), findsOneWidget);
+      expect(find.text('Program'), findsOneWidget);
       expect(find.text('Core Barbell Lifts'), findsOneWidget);
       expect(find.text('Overhead Press'), findsOneWidget);
       expect(find.text('Squat'), findsOneWidget);
