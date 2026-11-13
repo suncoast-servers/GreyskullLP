@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/live_workout_page.dart';
-import 'package:greyskull_lp/pages/workout_page_weight.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Finder _setCircle(String lift, int index) =>
