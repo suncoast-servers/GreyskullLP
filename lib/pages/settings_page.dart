@@ -732,18 +732,21 @@ class _SettingsPageState extends State<SettingsPage> {
                 completedAccessories: const <String>{},
                 onCompletedChanged: (_) {},
                 showCompletion: false,
+                title: 'Frequency Method',
               ),
               CalisthenicsAccessoriesSection(
                 method: DailyMethod.ladder,
                 completedAccessories: const <String>{},
                 onCompletedChanged: (_) {},
                 showCompletion: false,
+                title: 'Ladder Method',
               ),
               CalisthenicsAccessoriesSection(
                 method: DailyMethod.totalWork,
                 completedAccessories: const <String>{},
                 onCompletedChanged: (_) {},
                 showCompletion: false,
+                title: 'Total Work Method',
               ),
               const Divider(height: 32),
               const Text(
