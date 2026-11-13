@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/food_search_result.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/food_search_service.dart';
+import 'package:greyskull_lp/widgets/body_measurements_card.dart';
 
 class DietPage extends StatefulWidget {
   const DietPage({super.key});
@@ -40,7 +41,6 @@ class _DietPageState extends State<DietPage> {
     try {
       final items = await _foodSearchService.searchFoods(
         query,
-        usdaApiKey: trainingState.usdaApiKey,
       );
       if (!mounted) {
         return;
@@ -48,6 +48,14 @@ class _DietPageState extends State<DietPage> {
       setState(() {
         _results = items;
       });
+      if (items.isEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No matches for "${query.trim()}"'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -142,8 +150,10 @@ class _DietPageState extends State<DietPage> {
               ),
             ),
             const SizedBox(height: 16),
+            const BodyMeasurementsCard(),
+            const SizedBox(height: 16),
             const Text(
-              'Search Free Food Databases',
+              'Search Foods',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -174,7 +184,7 @@ class _DietPageState extends State<DietPage> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Uses Open Food Facts first, then USDA fallback when configured in Settings.',
+              'Search Open Food Facts for calories and protein, then add an item with one tap.',
             ),
             const SizedBox(height: 8),
             ..._results.take(8).map(
@@ -237,15 +247,6 @@ class _DietPageState extends State<DietPage> {
               onPressed: trainingState.resetTodaysMacros,
               icon: const Icon(Icons.refresh),
               label: const Text('Reset Today'),
-            ),
-            const Divider(height: 32),
-            const Text(
-              'Future Integration Idea',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'You can integrate a free open-food database later and keep this local tracker as an offline fallback.',
             ),
           ],
         );

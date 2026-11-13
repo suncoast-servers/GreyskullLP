@@ -20,6 +20,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
+          # Pinned: Flutter 3.50 deprecates package:flutter/material.dart in
+          # favour of package:material_ui, which is a separate migration.
+          flutter-version: 3.41.2
           channel: stable
           cache: true
       - run: flutter pub get

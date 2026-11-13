@@ -15,7 +15,7 @@ void main() {
   group('Barbell Templates - Official 3rd Edition Fidelity', () {
     test('All 5 official templates are defined with accurate book references',
         () {
-      expect(TrainingState.templateDefinitions.length, 5);
+      expect(TrainingState.officialBookTemplates.length, 5);
 
       final og = TrainingState.templateDefinitions[BarbellTemplate.ogBase]!;
       expect(og.name, contains('"OG" Base Program'));
@@ -158,7 +158,7 @@ void main() {
       expect(state.history.length, 1);
       final entry = state.history.first;
       expect(entry.category, HistoryCategory.weight);
-      expect(entry.title, '"OG" Base Program — Workout A (Press & Squat)');
+      expect(entry.title, '"OG" Base Program - Workout A (Press & Squat)');
       expect(entry.weightVolume, 8235.0);
       expect(entry.details, contains('Great AMRAP push'));
     });

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
+import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
 
 class WorkoutPageTotalWork extends StatefulWidget {
   const WorkoutPageTotalWork({super.key});
@@ -12,6 +14,7 @@ class WorkoutPageTotalWork extends StatefulWidget {
 
 class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
   int _repsThisSet = 15;
+  final Set<String> _completedAccessories = {};
 
   void _addSet() {
     if (_repsThisSet <= 0) {
@@ -52,9 +55,17 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
     final target = trainingState.activeTotalWorkTargetReps;
     final model = trainingState.activeTotalWorkModel;
     final totalReps = trainingState.activeTotalWorkCompletedReps;
-    final optional = trainingState.selectedDailyOptionalExercises.isEmpty
-        ? 'None selected'
-        : trainingState.selectedDailyOptionalExercises.join(', ');
+
+    final configuredAccessories =
+        trainingState.getCalisthenicsAccessories(DailyMethod.totalWork);
+    final accessorySummaries = <String>[];
+    for (final acc in configuredAccessories) {
+      final done = _completedAccessories.contains(acc);
+      accessorySummaries.add('$acc [${done ? "Completed" : "Skipped"}]');
+    }
+    final optional = accessorySummaries.isEmpty
+        ? 'None configured'
+        : accessorySummaries.join(', ');
 
     final setBreakdown = sets
         .asMap()
@@ -73,7 +84,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
         'Model: ${model == 'daily' ? 'Daily Work Target' : 'Weekly Work Target'}\n'
         'Target: $target reps\n'
         'Completed: $totalReps reps in ${sets.length} set${sets.length == 1 ? '' : 's'}\n'
-        'Optional: $optional\n\n'
+        'Optional Accessories: $optional\n\n'
         'Sets Breakdown:\n$setBreakdown';
 
     final draft = trainingState.logDailyMethodSession(
@@ -92,6 +103,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
         'totalReps': totalReps,
         'setsCount': sets.length,
         'sets': List<int>.from(sets),
+        'accessories': accessorySummaries,
       },
     );
 
@@ -111,6 +123,9 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
           ElevatedButton(
             onPressed: () {
               trainingState.resetActiveTotalWorkSession();
+              setState(() {
+                _completedAccessories.clear();
+              });
               Navigator.of(ctx).pop();
             },
             child: const Text('Clear Session'),
@@ -170,17 +185,17 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Total Work Method',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Hit daily or weekly volume targets per movement. Chip away in manageable sets.',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AppTheme.mutedText(context)),
                 ),
               ],
             ),
@@ -322,8 +337,8 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: remaining == 0
-                                ? Colors.green
-                                : Colors.grey[700],
+                                ? AppTheme.positiveAccent(context)
+                                : AppTheme.mutedText(context),
                           ),
                         ),
                       ],
@@ -411,8 +426,9 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                   TextButton(
                     onPressed: () =>
                         trainingState.resetActiveTotalWorkSession(),
-                    child: const Text('Reset',
-                        style: TextStyle(color: Colors.red)),
+                    child: Text('Reset',
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
                   ),
                 ],
               ),
@@ -425,13 +441,13 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Colors.black12,
+                      backgroundColor: AppTheme.subtleFill(context),
                       child: Text('#${idx + 1}'),
                     ),
                     title: Text('Set ${idx + 1}: $reps reps'),
                     trailing: IconButton(
-                      icon:
-                          const Icon(Icons.delete_outline, color: Colors.grey),
+                      icon: Icon(Icons.delete_outline,
+                          color: AppTheme.mutedText(context)),
                       onPressed: () => trainingState.removeTotalWorkSet(idx),
                     ),
                   ),
@@ -440,29 +456,17 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
               const SizedBox(height: 16),
             ],
 
-            // Optional Add-ons Section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Optional Accessories (from Settings):',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children:
-                          trainingState.selectedDailyOptionalExercises.isEmpty
-                              ? [const Chip(label: Text('None selected yet'))]
-                              : trainingState.selectedDailyOptionalExercises
-                                  .map((e) => Chip(label: Text(e)))
-                                  .toList(),
-                    ),
-                  ],
-                ),
-              ),
+            // Optional Accessories Section
+            CalisthenicsAccessoriesSection(
+              method: DailyMethod.totalWork,
+              completedAccessories: _completedAccessories,
+              onCompletedChanged: (updated) {
+                setState(() {
+                  _completedAccessories
+                    ..clear()
+                    ..addAll(updated);
+                });
+              },
             ),
             const SizedBox(height: 20),
 

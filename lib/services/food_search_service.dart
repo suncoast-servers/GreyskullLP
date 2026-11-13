@@ -3,21 +3,47 @@ import 'dart:convert';
 import 'package:greyskull_lp/models/food_search_result.dart';
 import 'package:http/http.dart' as http;
 
+/// Food lookups for the Diet page.
+///
+/// Open Food Facts is the keyless default. Building with
+/// `--dart-define=USDA_API_KEY=...` enables the USDA FoodData Central fallback
+/// for US/branded coverage without ever asking users for a key (issue #48).
 class FoodSearchService {
+  const FoodSearchService();
+
+  /// Empty in the public build, so the app stays keyless by default.
+  static const String buildTimeUsdaKey = String.fromEnvironment('USDA_API_KEY');
+
+  /// Open Food Facts rejects requests without a descriptive User-Agent.
+  static const String userAgent =
+      'GreyskullLP/1.0 (+https://github.com/suncoast-servers/GreyskullLP)';
+
+  /// USDA is only queried when a build-time key exists and Open Food Facts
+  /// returned too few matches.
+  static bool shouldQueryUsda({
+    required int openFoodFactsCount,
+    required String apiKey,
+  }) =>
+      apiKey.trim().isNotEmpty && openFoodFactsCount < 8;
+
   Future<List<FoodSearchResult>> searchFoods(
     String query, {
-    required String usdaApiKey,
+    String? usdaApiKeyOverride,
   }) async {
     if (query.trim().isEmpty) {
       return <FoodSearchResult>[];
     }
 
+    final apiKey = (usdaApiKeyOverride ?? buildTimeUsdaKey).trim();
     final offResults = await _searchOpenFoodFacts(query);
-    if (usdaApiKey.trim().isEmpty || offResults.length >= 8) {
+    if (!shouldQueryUsda(
+      openFoodFactsCount: offResults.length,
+      apiKey: apiKey,
+    )) {
       return offResults;
     }
 
-    final usdaResults = await _searchUsda(query, usdaApiKey.trim());
+    final usdaResults = await _searchUsda(query, apiKey);
     final merged = <FoodSearchResult>[...offResults];
     for (final item in usdaResults) {
       final exists = merged.any(
@@ -43,8 +69,8 @@ class FoodSearchService {
       'page_size': '12',
     });
 
-    final response = await http.get(uri);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+    final response = await _get(uri);
+    if (response == null) {
       return <FoodSearchResult>[];
     }
 
@@ -95,6 +121,22 @@ class FoodSearchService {
     return output;
   }
 
+  /// GET with the required User-Agent and a short timeout; returns null on any
+  /// transport/HTTP failure so the UI can fall back to "no results".
+  Future<http.Response?> _get(Uri uri) async {
+    try {
+      final response = await http.get(uri, headers: {
+        'User-Agent': userAgent
+      }).timeout(const Duration(seconds: 12));
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return null;
+      }
+      return response;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<FoodSearchResult>> _searchUsda(
       String query, String apiKey) async {
     final uri =
@@ -104,8 +146,8 @@ class FoodSearchService {
       'pageSize': '10',
     });
 
-    final response = await http.get(uri);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+    final response = await _get(uri);
+    if (response == null) {
       return <FoodSearchResult>[];
     }
 

@@ -1,6 +1,7 @@
 import '../services/social_share_service.dart';
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -41,7 +42,9 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   void _showEditDialog(BuildContext context, HistoryEntry entry) {
-    if (entry.method == DailyMethod.frequency) {
+    if (entry.category == HistoryCategory.weight) {
+      _showWeightEditDialog(context, entry);
+    } else if (entry.method == DailyMethod.frequency) {
       _showFrequencyEditDialog(context, entry);
     } else if (entry.method == DailyMethod.ladder) {
       _showLadderEditDialog(context, entry);
@@ -463,6 +466,138 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
+  /// Barbell session editor: rewrite the lift summary, accessories, volume and
+  /// notes while keeping the original timestamp/id so Stats stays consistent.
+  void _showWeightEditDialog(BuildContext context, HistoryEntry entry) {
+    String readField(String label) {
+      for (final line in entry.details.split('\n')) {
+        if (line.startsWith('$label:')) {
+          return line.substring(label.length + 1).trim();
+        }
+      }
+      return '';
+    }
+
+    final titleController = TextEditingController(text: entry.title);
+    final coreLiftsController =
+        TextEditingController(text: readField('Core Lifts'));
+    final accessoriesController =
+        TextEditingController(text: readField('Accessories'));
+    final notesController = TextEditingController(text: readField('Notes'));
+    final volumeController = TextEditingController(
+      text: (entry.weightVolume ?? 0) > 0
+          ? entry.weightVolume!.toStringAsFixed(1)
+          : '',
+    );
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Barbell Session'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Session title',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: coreLiftsController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Core lifts (weights x reps)',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: accessoriesController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Accessories',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: volumeController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Total volume (lbs)',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: notesController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newVolume = double.tryParse(volumeController.text.trim());
+              if (newVolume != null && newVolume < 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Volume cannot be negative.')),
+                );
+                return;
+              }
+
+              final detailsBuffer = StringBuffer()
+                ..writeln(
+                    'Core Lifts: ${coreLiftsController.text.trim().isEmpty ? 'None' : coreLiftsController.text.trim()}')
+                ..writeln(
+                    'Accessories: ${accessoriesController.text.trim().isEmpty ? 'None' : accessoriesController.text.trim()}')
+                ..writeln(
+                    'Total Volume: ${(newVolume ?? entry.weightVolume ?? 0).toStringAsFixed(1)} lbs');
+              final notes = notesController.text.trim();
+              if (notes.isNotEmpty) {
+                detailsBuffer.writeln('Notes: $notes');
+              }
+
+              trainingState.updateHistoryEntry(
+                entry.copyWith(
+                  title: titleController.text.trim().isEmpty
+                      ? entry.title
+                      : titleController.text.trim(),
+                  details: detailsBuffer.toString().trim(),
+                  weightVolume: newVolume ?? entry.weightVolume,
+                ),
+              );
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Barbell session updated.')),
+              );
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showGenericEditDialog(BuildContext context, HistoryEntry entry) {
     final titleController = TextEditingController(text: entry.title);
     final detailsController = TextEditingController(text: entry.details);
@@ -540,7 +675,8 @@ class _HistoryPageState extends State<HistoryPage> {
             children: [
               Text(
                 'Logged: ${entry.timestamp.toLocal()}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style:
+                    TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
               ),
               const SizedBox(height: 8),
               Text('Category: ${_labelForCategory(entry.category)}',
@@ -650,7 +786,7 @@ class _HistoryPageState extends State<HistoryPage> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: Colors.black12,
+                                      color: AppTheme.subtleFill(context),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(

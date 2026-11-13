@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
+import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
 
 class WorkoutPageLadder extends StatefulWidget {
   const WorkoutPageLadder({super.key});
@@ -11,6 +13,7 @@ class WorkoutPageLadder extends StatefulWidget {
 }
 
 class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
+  final Set<String> _completedAccessories = {};
   void _completeRung() {
     trainingState.recordLadderRung();
   }
@@ -64,9 +67,17 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
     final usedNegatives = trainingState.activeLadderUsedNegatives;
     final totalReps = trainingState.activeLadderTotalReps;
     final peak = trainingState.activeLadderPeakRung;
-    final optional = trainingState.selectedDailyOptionalExercises.isEmpty
-        ? 'None selected'
-        : trainingState.selectedDailyOptionalExercises.join(', ');
+
+    final configuredAccessories =
+        trainingState.getCalisthenicsAccessories(DailyMethod.ladder);
+    final accessorySummaries = <String>[];
+    for (final acc in configuredAccessories) {
+      final done = _completedAccessories.contains(acc);
+      accessorySummaries.add('$acc [${done ? "Completed" : "Skipped"}]');
+    }
+    final optional = accessorySummaries.isEmpty
+        ? 'None configured'
+        : accessorySummaries.join(', ');
 
     final ladderBreakdown = allLadders
         .asMap()
@@ -84,7 +95,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
         'Total Reps: $totalReps\n'
         'Ladders completed: ${allLadders.length}\n'
         'Peak Rung: $peak\n'
-        'Optional: $optional\n\n'
+        'Optional Accessories: $optional\n\n'
         'Ladders Breakdown:\n$ladderBreakdown';
 
     final draft = trainingState.logDailyMethodSession(
@@ -101,6 +112,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
         'peakRung': peak,
         'laddersCount': allLadders.length,
         'ladders': allLadders,
+        'accessories': accessorySummaries,
       },
     );
 
@@ -120,6 +132,9 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
           ElevatedButton(
             onPressed: () {
               trainingState.resetActiveLadderSession();
+              setState(() {
+                _completedAccessories.clear();
+              });
               Navigator.of(ctx).pop();
             },
             child: const Text('Clear Session'),
@@ -167,17 +182,17 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Ladder Method',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Ascend rungs (1, 2, 3…) per ladder. Rest in a partner-paced rhythm.',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: AppTheme.mutedText(context)),
                 ),
               ],
             ),
@@ -323,8 +338,9 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                           fontSize: 16, fontWeight: FontWeight.bold)),
                   TextButton(
                     onPressed: () => trainingState.resetActiveLadderSession(),
-                    child: const Text('Reset',
-                        style: TextStyle(color: Colors.red)),
+                    child: Text('Reset',
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
                   ),
                 ],
               ),
@@ -338,14 +354,14 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Colors.black12,
+                      backgroundColor: AppTheme.subtleFill(context),
                       child: Text('#${idx + 1}'),
                     ),
                     title: Text('Rungs: ${rungs.join(" - ")}'),
                     subtitle: Text('Volume: $reps reps (Peak: ${rungs.last})'),
                     trailing: IconButton(
-                      icon:
-                          const Icon(Icons.delete_outline, color: Colors.grey),
+                      icon: Icon(Icons.delete_outline,
+                          color: AppTheme.mutedText(context)),
                       onPressed: () => trainingState.removeCompletedLadder(idx),
                     ),
                   ),
@@ -354,29 +370,17 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
               const SizedBox(height: 16),
             ],
 
-            // Optional Add-ons Section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Optional Accessories (from Settings):',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children:
-                          trainingState.selectedDailyOptionalExercises.isEmpty
-                              ? [const Chip(label: Text('None selected yet'))]
-                              : trainingState.selectedDailyOptionalExercises
-                                  .map((e) => Chip(label: Text(e)))
-                                  .toList(),
-                    ),
-                  ],
-                ),
-              ),
+            // Optional Accessories Section
+            CalisthenicsAccessoriesSection(
+              method: DailyMethod.ladder,
+              completedAccessories: _completedAccessories,
+              onCompletedChanged: (updated) {
+                setState(() {
+                  _completedAccessories
+                    ..clear()
+                    ..addAll(updated);
+                });
+              },
             ),
             const SizedBox(height: 20),
 
@@ -417,7 +421,8 @@ class _StatColumn extends StatelessWidget {
         Text(value,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label,
+            style: TextStyle(fontSize: 12, color: AppTheme.mutedText(context))),
       ],
     );
   }

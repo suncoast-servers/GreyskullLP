@@ -17,6 +17,10 @@ android/*.iml
 android/app/*.iml
 android/build/
 android/app/build/
+.cxx/
+.kotlin/
+android/app/.cxx/
+.kotlin/
 
 # iOS build files
 ios/.generated/

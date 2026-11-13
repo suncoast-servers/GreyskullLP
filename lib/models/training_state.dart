@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:greyskull_lp/models/body_measurement.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/services/accountability_template_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
@@ -19,6 +20,7 @@ enum BarbellTemplate {
   gladiator,
   twoDaySplit,
   fourDaySplit,
+  custom,
 }
 
 class TemplateLift {
@@ -37,6 +39,41 @@ class TemplateLift {
     this.isAmrap = true,
     this.isUpperBody = false,
   });
+
+  TemplateLift copyWith({
+    String? name,
+    String? prescription,
+    int? sets,
+    int? defaultReps,
+    bool? isAmrap,
+    bool? isUpperBody,
+  }) =>
+      TemplateLift(
+        name: name ?? this.name,
+        prescription: prescription ?? this.prescription,
+        sets: sets ?? this.sets,
+        defaultReps: defaultReps ?? this.defaultReps,
+        isAmrap: isAmrap ?? this.isAmrap,
+        isUpperBody: isUpperBody ?? this.isUpperBody,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'prescription': prescription,
+        'sets': sets,
+        'defaultReps': defaultReps,
+        'isAmrap': isAmrap,
+        'isUpperBody': isUpperBody,
+      };
+
+  factory TemplateLift.fromJson(Map<String, dynamic> json) => TemplateLift(
+        name: json['name'] as String? ?? 'Lift',
+        prescription: json['prescription'] as String? ?? '3 x 5+',
+        sets: json['sets'] as int? ?? 3,
+        defaultReps: json['defaultReps'] as int? ?? 5,
+        isAmrap: json['isAmrap'] as bool? ?? true,
+        isUpperBody: json['isUpperBody'] as bool? ?? false,
+      );
 }
 
 class TemplateWorkoutDay {
@@ -53,6 +90,45 @@ class TemplateWorkoutDay {
     required this.coreLifts,
     this.defaultAccessories = const [],
   });
+
+  TemplateWorkoutDay copyWith({
+    String? code,
+    String? title,
+    String? subtitle,
+    List<TemplateLift>? coreLifts,
+    List<String>? defaultAccessories,
+  }) =>
+      TemplateWorkoutDay(
+        code: code ?? this.code,
+        title: title ?? this.title,
+        subtitle: subtitle ?? this.subtitle,
+        coreLifts: coreLifts ?? this.coreLifts,
+        defaultAccessories: defaultAccessories ?? this.defaultAccessories,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'code': code,
+        'title': title,
+        'subtitle': subtitle,
+        'coreLifts': coreLifts.map((l) => l.toJson()).toList(),
+        'defaultAccessories': defaultAccessories,
+      };
+
+  factory TemplateWorkoutDay.fromJson(Map<String, dynamic> json) =>
+      TemplateWorkoutDay(
+        code: json['code'] as String? ?? 'A',
+        title: json['title'] as String? ?? 'Workout A',
+        subtitle: json['subtitle'] as String? ?? '',
+        coreLifts: (json['coreLifts'] as List<dynamic>?)
+                ?.map((e) =>
+                    TemplateLift.fromJson(Map<String, dynamic>.from(e as Map)))
+                .toList() ??
+            const [],
+        defaultAccessories: (json['defaultAccessories'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            const [],
+      );
 }
 
 class BarbellTemplateDetails {
@@ -161,6 +237,57 @@ class FrequencySet {
       pushUps: map['pushUps'] as int? ?? 0,
       chinUps: map['chinUps'] as int? ?? 0,
       usedNegatives: map['usedNegatives'] as bool? ?? false,
+      timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
+}
+
+/// How an optional calisthenics accessory is measured.
+///
+/// Book fidelity: holds (planks, hanging, carries) are logged in **seconds**,
+/// while dynamic movements (dips, rows, sit-ups) are logged in **reps**.
+enum AccessoryMeasurement {
+  reps,
+  seconds;
+
+  String get suffix => this == AccessoryMeasurement.seconds ? 's' : 'reps';
+
+  String get label => this == AccessoryMeasurement.seconds ? 'Seconds' : 'Reps';
+}
+
+/// A single logged optional accessory for the active day.
+class CalisthenicsAccessoryLog {
+  CalisthenicsAccessoryLog({
+    required this.name,
+    required this.value,
+    required this.unit,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+
+  final String name;
+  final int value;
+  final AccessoryMeasurement unit;
+  final DateTime timestamp;
+
+  String get formattedValue =>
+      unit == AccessoryMeasurement.seconds ? '${value}s' : '$value reps';
+
+  Map<String, dynamic> toJsonMap() => {
+        'name': name,
+        'value': value,
+        'unit': unit.name,
+        'timestamp': timestamp.toIso8601String(),
+      };
+
+  factory CalisthenicsAccessoryLog.fromJsonMap(Map<String, dynamic> map) {
+    return CalisthenicsAccessoryLog(
+      name: map['name'] as String? ?? 'Accessory',
+      value: (map['value'] as int? ?? 0).clamp(0, 100000),
+      unit: AccessoryMeasurement.values.firstWhere(
+        (value) => value.name == (map['unit'] as String? ?? ''),
+        orElse: () => AccessoryMeasurement.reps,
+      ),
       timestamp: DateTime.tryParse(map['timestamp'] as String? ?? '') ??
           DateTime.now(),
     );
@@ -300,10 +427,23 @@ class TrainingState extends ChangeNotifier {
   ProgramLevel _programLevel = ProgramLevel.foundation;
   bool _hasCompletedOnboarding = false;
   bool _socialSharePromptEnabled = true;
+
+  // Workout timing (#75)
+  bool _restTimerEnabled = true;
+  int _restTimerSeconds = 90;
+  bool _restTimerSoundEnabled = true;
+  bool _restTimerCountUp = true;
+  int _restTimerSize = 2;
+  int _restAfterExerciseSeconds = 60;
+  final Map<String, int> _perExerciseRestSeconds = {};
   String _socialShareHashtag = '#GreyskullLP #JohnnyPain';
   BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
   int _activeBarbellRotationIndex = 0;
   final Map<String, List<String>> _customAccessoriesByWorkout = {};
+  final Map<String, List<String>> _customCalisthenicsAccessoriesByMethod = {};
+  String _customTemplateName = 'Custom Program (Build from Zero)';
+  String _customTemplateSubtitle = 'User-designed linear progression template';
+  final List<TemplateWorkoutDay> _customTemplateWorkouts = [];
 
   GreyskullSkin _activeSkin = GreyskullSkin.ironAndBone;
   DailyMethod _activeDailyMethod = DailyMethod.frequency;
@@ -316,7 +456,6 @@ class TrainingState extends ChangeNotifier {
   int _dailyProteinConsumed = 0;
   int _dailyCaloriesConsumed = 0;
   DateTime _macroTrackingDate = _normalizedDay(DateTime.now());
-  String _usdaApiKey = '';
 
   static const String defaultForumUrl = 'https://forum.greyskullnation.com/';
   static const String defaultForumLoginUrl =
@@ -344,9 +483,17 @@ class TrainingState extends ChangeNotifier {
 
   final List<HistoryEntry> _history = [];
 
+  /// Optional body measurements (#57), newest first when read.
+  final List<BodyMeasurement> _bodyMeasurements = [];
+
   // In-progress Frequency Method state
   final List<FrequencySet> _todayFrequencySets = [];
+  final List<CalisthenicsAccessoryLog> _todayFrequencyAccessories = [];
   DateTime _frequencyTrackingDate = _normalizedDay(DateTime.now());
+
+  /// Number of today's frequency sets already written to history by the
+  /// explicit "log today" action, so the daily auto-save never duplicates them.
+  int _frequencyDaySavedSetCount = 0;
 
   // In-progress Ladder Method state (persisted across tab/method switching)
   String _activeLadderExercise = 'Chin-ups';
@@ -376,11 +523,79 @@ class TrainingState extends ChangeNotifier {
     'Dumbbell Pullovers (2 sets)',
   ];
 
+  static const List<BarbellTemplate> officialBookTemplates = [
+    BarbellTemplate.ogBase,
+    BarbellTemplate.villain,
+    BarbellTemplate.gladiator,
+    BarbellTemplate.twoDaySplit,
+    BarbellTemplate.fourDaySplit,
+  ];
+
+  static const BarbellTemplateDetails defaultCustomTemplateDetails =
+      BarbellTemplateDetails(
+    template: BarbellTemplate.custom,
+    name: 'Custom Program (Build from Zero)',
+    subtitle: 'User-designed linear progression template',
+    bookReference: 'User Customized (GSLP Principles)',
+    scheduleDescription: 'Customizable rotation and workout days',
+    workouts: [
+      TemplateWorkoutDay(
+        code: 'A',
+        title: 'Workout A',
+        subtitle: 'Custom Day 1',
+        coreLifts: [
+          TemplateLift(
+            name: 'Bench Press',
+            prescription: '2 x 5, 1 x 5+',
+            sets: 3,
+            defaultReps: 5,
+            isAmrap: true,
+            isUpperBody: true,
+          ),
+          TemplateLift(
+            name: 'Squat',
+            prescription: '2 x 5, 1 x 5+',
+            sets: 3,
+            defaultReps: 5,
+            isAmrap: true,
+            isUpperBody: false,
+          ),
+        ],
+        defaultAccessories: [],
+      ),
+      TemplateWorkoutDay(
+        code: 'B',
+        title: 'Workout B',
+        subtitle: 'Custom Day 2',
+        coreLifts: [
+          TemplateLift(
+            name: 'Overhead Press',
+            prescription: '2 x 5, 1 x 5+',
+            sets: 3,
+            defaultReps: 5,
+            isAmrap: true,
+            isUpperBody: true,
+          ),
+          TemplateLift(
+            name: 'Deadlift',
+            prescription: '1 x 5+',
+            sets: 1,
+            defaultReps: 5,
+            isAmrap: true,
+            isUpperBody: false,
+          ),
+        ],
+        defaultAccessories: [],
+      ),
+    ],
+  );
+
   static const List<String> weightOptionalExerciseOptions =
       officialBookAccessories;
 
   static const Map<BarbellTemplate, BarbellTemplateDetails>
       templateDefinitions = {
+    BarbellTemplate.custom: defaultCustomTemplateDetails,
     BarbellTemplate.ogBase: BarbellTemplateDetails(
       template: BarbellTemplate.ogBase,
       name: '"OG" Base Program',
@@ -659,6 +874,39 @@ class TrainingState extends ChangeNotifier {
     'Conditioning Finisher (placeholder)',
   ];
 
+  static const Map<DailyMethod, List<String>>
+      defaultCalisthenicsAccessoriesByMethod = {
+    DailyMethod.frequency: [
+      'Dips',
+      'Hanging Knee Raises',
+      'Bodyweight Squats',
+    ],
+    DailyMethod.ladder: [
+      'Dips',
+      'Inverted Rows',
+      'Push-up Variations',
+    ],
+    DailyMethod.totalWork: [
+      'Dips',
+      'Planks',
+      'Walking Lunges',
+    ],
+  };
+
+  static const List<String> officialCalisthenicsAccessories = [
+    'Dips',
+    'Hanging Knee Raises',
+    'Inverted Rows',
+    'Bodyweight Squats',
+    'Planks',
+    'Walking Lunges',
+    'Sit-ups',
+    'Burpees',
+    'Diamond Push-ups',
+    'Band Pull-Aparts',
+    'Hollow Body Hold',
+  ];
+
   GreyskullSkin get activeSkin => _activeSkin;
   ProgramLevel get programLevel => _programLevel;
   bool get hasCompletedOnboarding => _hasCompletedOnboarding;
@@ -668,13 +916,98 @@ class TrainingState extends ChangeNotifier {
   bool get isAdvancedSplitsUnlocked => _programLevel.levelNumber >= 3;
 
   bool get socialSharePromptEnabled => _socialSharePromptEnabled;
+
+  /// Workout timing settings (#75).
+  bool get restTimerEnabled => _restTimerEnabled;
+  int get restTimerSeconds => _restTimerSeconds;
+  bool get restTimerSoundEnabled => _restTimerSoundEnabled;
+
+  static const List<int> restTimerPresets = [60, 90, 120, 180];
+
+  /// Rest-timer parity options (#75): count-up display, arc size and
+  /// per-exercise overrides.
+  bool get restTimerCountUp => _restTimerCountUp;
+  int get restTimerSize => _restTimerSize;
+  int get restAfterExerciseSeconds => _restAfterExerciseSeconds;
+  Map<String, int> get perExerciseRestSeconds =>
+      Map<String, int>.unmodifiable(_perExerciseRestSeconds);
+
+  /// Rest seconds for a lift: explicit per-exercise override, else the global
+  /// default.
+  int restSecondsForLift(String liftName) =>
+      _perExerciseRestSeconds[liftName] ?? _restTimerSeconds;
+
+  void setRestTimerCountUp(bool value) {
+    if (_restTimerCountUp == value) return;
+    _restTimerCountUp = value;
+    _notifyAndPersist();
+  }
+
+  void setRestTimerSize(int size) {
+    final clamped = size.clamp(1, 3);
+    if (_restTimerSize == clamped) return;
+    _restTimerSize = clamped;
+    _notifyAndPersist();
+  }
+
+  void setRestAfterExerciseSeconds(int seconds) {
+    final clamped = seconds.clamp(0, 600);
+    if (_restAfterExerciseSeconds == clamped) return;
+    _restAfterExerciseSeconds = clamped;
+    _notifyAndPersist();
+  }
+
+  void setPerExerciseRestSeconds(String liftName, int seconds) {
+    final clamped = seconds.clamp(0, 600);
+    if (_perExerciseRestSeconds[liftName] == clamped) return;
+    _perExerciseRestSeconds[liftName] = clamped;
+    _notifyAndPersist();
+  }
+
   String get socialShareHashtag => _socialShareHashtag;
 
   BarbellTemplate get activeBarbellTemplate => _activeBarbellTemplate;
   int get activeBarbellRotationIndex => _activeBarbellRotationIndex;
 
+  String get customTemplateName => _customTemplateName;
+  String get customTemplateSubtitle => _customTemplateSubtitle;
+
+  List<TemplateWorkoutDay> get customTemplateWorkouts {
+    if (_customTemplateWorkouts.isEmpty) {
+      return List<TemplateWorkoutDay>.unmodifiable(
+          defaultCustomTemplateDetails.workouts);
+    }
+    return List<TemplateWorkoutDay>.unmodifiable(_customTemplateWorkouts);
+  }
+
+  bool get isCustomTemplateActive =>
+      _activeBarbellTemplate == BarbellTemplate.custom;
+
+  bool get isCustomTemplateModified =>
+      _customTemplateWorkouts.isNotEmpty ||
+      _customTemplateName != defaultCustomTemplateDetails.name ||
+      _customTemplateSubtitle != defaultCustomTemplateDetails.subtitle;
+
   BarbellTemplateDetails get activeBarbellTemplateDetails =>
-      templateDefinitions[_activeBarbellTemplate]!;
+      getTemplateDetails(_activeBarbellTemplate);
+
+  BarbellTemplateDetails getTemplateDetails(BarbellTemplate template) {
+    if (template == BarbellTemplate.custom) {
+      final workouts = _customTemplateWorkouts.isNotEmpty
+          ? _customTemplateWorkouts
+          : defaultCustomTemplateDetails.workouts;
+      return BarbellTemplateDetails(
+        template: BarbellTemplate.custom,
+        name: _customTemplateName,
+        subtitle: _customTemplateSubtitle,
+        bookReference: 'User Customized (GSLP Principles)',
+        scheduleDescription:
+            '${workouts.length} workout day${workouts.length == 1 ? '' : 's'} in rotation',
+        workouts: workouts,
+      );
+    }
+    return templateDefinitions[template]!;
+  }
 
   TemplateWorkoutDay get currentTemplateWorkout {
     final workouts = activeBarbellTemplateDetails.workouts;
@@ -691,7 +1024,7 @@ class TrainingState extends ChangeNotifier {
     if (_customAccessoriesByWorkout.containsKey(key)) {
       return List<String>.unmodifiable(_customAccessoriesByWorkout[key]!);
     }
-    final workouts = templateDefinitions[template]?.workouts ?? [];
+    final workouts = getTemplateDetails(template).workouts;
     final match = workouts.where((w) => w.code == workoutCode);
     if (match.isNotEmpty) {
       return List<String>.unmodifiable(match.first.defaultAccessories);
@@ -707,6 +1040,23 @@ class TrainingState extends ChangeNotifier {
     return _customAccessoriesByWorkout.containsKey(key);
   }
 
+  List<String> getCalisthenicsAccessories(DailyMethod method) {
+    final key = method.name;
+    if (_customCalisthenicsAccessoriesByMethod.containsKey(key)) {
+      return List<String>.unmodifiable(
+          _customCalisthenicsAccessoriesByMethod[key]!);
+    }
+    final defaults = defaultCalisthenicsAccessoriesByMethod[method];
+    if (defaults != null) {
+      return List<String>.unmodifiable(defaults);
+    }
+    return const ['Dips'];
+  }
+
+  bool isCalisthenicsMethodCustomized(DailyMethod method) {
+    return _customCalisthenicsAccessoriesByMethod.containsKey(method.name);
+  }
+
   DailyMethod get activeDailyMethod => _activeDailyMethod;
   NutritionMode get nutritionMode => _nutritionMode;
   BackupPreference get backupPreference => _backupPreference;
@@ -717,7 +1067,6 @@ class TrainingState extends ChangeNotifier {
   int get dailyProteinConsumed => _dailyProteinConsumed;
   int get dailyCaloriesConsumed => _dailyCaloriesConsumed;
   DateTime get macroTrackingDate => _macroTrackingDate;
-  String get usdaApiKey => _usdaApiKey;
   bool get forumSignedIn => _forumSignedIn;
   String get forumDisplayName => _forumDisplayName;
   String get forumUrl => _forumUrl;
@@ -738,6 +1087,26 @@ class TrainingState extends ChangeNotifier {
   List<HistoryEntry> get history =>
       List<HistoryEntry>.unmodifiable(_history.reversed);
 
+  /// Body measurements sorted newest first.
+  List<BodyMeasurement> get bodyMeasurements {
+    final sorted = List<BodyMeasurement>.from(_bodyMeasurements)
+      ..sort((a, b) => b.date.compareTo(a.date));
+    return List<BodyMeasurement>.unmodifiable(sorted);
+  }
+
+  BodyMeasurement? get latestBodyMeasurement =>
+      bodyMeasurements.isEmpty ? null : bodyMeasurements.first;
+
+  /// Measurements inside the last [days] days, oldest first (chart order).
+  List<BodyMeasurement> bodyMeasurementsInRange(int days) {
+    final cutoff = DateTime.now().subtract(Duration(days: days));
+    return bodyMeasurements
+        .where((m) => m.date.isAfter(cutoff))
+        .toList()
+        .reversed
+        .toList();
+  }
+
   // Frequency getters
   List<FrequencySet> get todayFrequencySets =>
       List<FrequencySet>.unmodifiable(_todayFrequencySets);
@@ -745,6 +1114,55 @@ class TrainingState extends ChangeNotifier {
       _todayFrequencySets.fold(0, (sum, set) => sum + set.pushUps);
   int get todayFrequencyChinUps =>
       _todayFrequencySets.fold(0, (sum, set) => sum + set.chinUps);
+
+  /// Accessories logged for the active calendar day (reps or seconds).
+  List<CalisthenicsAccessoryLog> get todayFrequencyAccessories =>
+      List<CalisthenicsAccessoryLog>.unmodifiable(_todayFrequencyAccessories);
+
+  /// Names of accessories already logged today.
+  Set<String> get completedFrequencyAccessories =>
+      _todayFrequencyAccessories.map((log) => log.name).toSet();
+
+  /// Total value logged today for [name], or null when it was not logged.
+  CalisthenicsAccessoryLog? frequencyAccessoryLogFor(String name) {
+    for (final log in _todayFrequencyAccessories.reversed) {
+      if (log.name == name) return log;
+    }
+    return null;
+  }
+
+  /// Human readable summary used in history details and forum posts.
+  String get todayFrequencyAccessorySummary {
+    if (_todayFrequencyAccessories.isEmpty) return 'None';
+    return _todayFrequencyAccessories
+        .map((log) => '${log.name} (${log.formattedValue})')
+        .join(', ');
+  }
+
+  /// Time-based holds (planks, hangs, carries...) log seconds; dynamic
+  /// movements log reps.
+  static const List<String> timeBasedAccessoryKeywords = [
+    'plank',
+    'hold',
+    'wall sit',
+    'l-sit',
+    'dead hang',
+    'hang hold',
+    'carry',
+  ];
+
+  static AccessoryMeasurement measurementForAccessory(String name) {
+    final normalized = name.toLowerCase();
+    final isTimeBased = timeBasedAccessoryKeywords
+        .any((keyword) => normalized.contains(keyword));
+    return isTimeBased
+        ? AccessoryMeasurement.seconds
+        : AccessoryMeasurement.reps;
+  }
+
+  /// Sensible starting value when an accessory is logged without a number.
+  static int defaultAccessoryValue(String name) =>
+      measurementForAccessory(name) == AccessoryMeasurement.seconds ? 30 : 10;
 
   // Ladder getters
   String get activeLadderExercise => _activeLadderExercise;
@@ -817,8 +1235,71 @@ class TrainingState extends ChangeNotifier {
       _dailyCaloriesConsumed = 0;
     }
     if (_frequencyTrackingDate != today) {
+      _archiveFrequencyDayIfNeeded();
       _frequencyTrackingDate = today;
       _todayFrequencySets.clear();
+      _todayFrequencyAccessories.clear();
+      _frequencyDaySavedSetCount = 0;
+    }
+  }
+
+  /// Auto-save: when the calendar day rolls over, any frequency sets that were
+  /// never logged to history are captured so the day's work is not lost.
+  void _archiveFrequencyDayIfNeeded() {
+    final savedCount =
+        _frequencyDaySavedSetCount.clamp(0, _todayFrequencySets.length);
+    final unsavedSets = _todayFrequencySets.skip(savedCount).toList();
+    if (unsavedSets.isEmpty) return;
+
+    final totalPushUps = unsavedSets.fold(0, (sum, set) => sum + set.pushUps);
+    final totalChinUps = unsavedSets.fold(0, (sum, set) => sum + set.chinUps);
+    final anyNegatives = unsavedSets.any((set) => set.usedNegatives);
+    final continueTitle = savedCount > 0 ? ' (Continued)' : '';
+    final accessorySummary = todayFrequencyAccessorySummary;
+    final breakdown = unsavedSets
+        .asMap()
+        .entries
+        .map((entry) =>
+            'Set ${savedCount + entry.key + 1}: ${entry.value.pushUps} push-ups, ${entry.value.chinUps} chin-ups${entry.value.usedNegatives ? ' (negatives)' : ''}')
+        .join('\n');
+
+    _history.add(
+      HistoryEntry(
+        timestamp: unsavedSets.last.timestamp,
+        title: 'Frequency Method Day Summary$continueTitle',
+        category: HistoryCategory.daily,
+        method: DailyMethod.frequency,
+        pushUps: totalPushUps,
+        chinUps: totalChinUps,
+        details: 'Auto-saved at day rollover.\n'
+            'Total Push-ups: $totalPushUps / $_dailyPushUpTarget\n'
+            'Total Chin-ups: $totalChinUps / $_dailyChinUpTarget${anyNegatives ? ' (negatives used)' : ''}\n'
+            'Sets completed: ${unsavedSets.length}\n'
+            'Optional Accessories: $accessorySummary\n\n'
+            'Breakdown:\n$breakdown',
+        methodMetadata: {
+          'setsCount': unsavedSets.length,
+          'pushUpTarget': _dailyPushUpTarget,
+          'chinUpTarget': _dailyChinUpTarget,
+          'autoSaved': true,
+          'sets': unsavedSets.map((set) => set.toJsonMap()).toList(),
+          'accessories': _todayFrequencyAccessories
+              .map((log) => '${log.name} (${log.formattedValue})')
+              .toList(),
+        },
+      ),
+    );
+  }
+
+  /// Public hook for pages/app-lifecycle: rolls the calendar day and persists
+  /// when the active day changed (e.g. app resumed after midnight).
+  void ensureCurrentDay() {
+    final previousFrequencyDay = _frequencyTrackingDate;
+    final previousMacroDay = _macroTrackingDate;
+    _rollMacroDayIfNeeded();
+    if (previousFrequencyDay != _frequencyTrackingDate ||
+        previousMacroDay != _macroTrackingDate) {
+      _notifyAndPersist();
     }
   }
 
@@ -833,10 +1314,25 @@ class TrainingState extends ChangeNotifier {
       'programLevel': _programLevel.name,
       'hasCompletedOnboarding': _hasCompletedOnboarding,
       'socialSharePromptEnabled': _socialSharePromptEnabled,
+      'restTimerEnabled': _restTimerEnabled,
+      'restTimerSeconds': _restTimerSeconds,
+      'restTimerSoundEnabled': _restTimerSoundEnabled,
+      'restTimerCountUp': _restTimerCountUp,
+      'restTimerSize': _restTimerSize,
+      'restAfterExerciseSeconds': _restAfterExerciseSeconds,
+      'perExerciseRestSeconds': _perExerciseRestSeconds,
       'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
+      'customTemplateName': _customTemplateName,
+      'customTemplateSubtitle': _customTemplateSubtitle,
+      'customTemplateWorkouts':
+          _customTemplateWorkouts.map((w) => w.toJson()).toList(),
       'customAccessoriesByWorkout': _customAccessoriesByWorkout.map(
+        (key, list) => MapEntry(key, List<dynamic>.from(list)),
+      ),
+      'customCalisthenicsAccessoriesByMethod':
+          _customCalisthenicsAccessoriesByMethod.map(
         (key, list) => MapEntry(key, List<dynamic>.from(list)),
       ),
       'activeSkin': _activeSkin.name,
@@ -853,6 +1349,9 @@ class TrainingState extends ChangeNotifier {
       'frequencyTrackingDate': _frequencyTrackingDate.toIso8601String(),
       'todayFrequencySets':
           _todayFrequencySets.map((s) => s.toJsonMap()).toList(),
+      'todayFrequencyAccessories':
+          _todayFrequencyAccessories.map((log) => log.toJsonMap()).toList(),
+      'frequencyDaySavedSetCount': _frequencyDaySavedSetCount,
       // Ladder in-progress state
       'activeLadderExercise': _activeLadderExercise,
       'activeLadderUsedNegatives': _activeLadderUsedNegatives,
@@ -864,7 +1363,6 @@ class TrainingState extends ChangeNotifier {
       'activeTotalWorkModel': _activeTotalWorkModel,
       'activeTotalWorkTargetReps': _activeTotalWorkTargetReps,
       'activeTotalWorkSets': _activeTotalWorkSets,
-      'usdaApiKey': _usdaApiKey,
       'forumSignedIn': _forumSignedIn,
       'forumDisplayName': _forumDisplayName,
       'forumUrl': _forumUrl,
@@ -878,6 +1376,8 @@ class TrainingState extends ChangeNotifier {
       'selectedDailyOptionalExercises':
           _selectedDailyOptionalExercises.toList(),
       'history': _history.map((entry) => entry.toJsonMap()).toList(),
+      'bodyMeasurements':
+          _bodyMeasurements.map((entry) => entry.toJsonMap()).toList(),
     };
   }
 
@@ -890,8 +1390,37 @@ class TrainingState extends ChangeNotifier {
 
     _socialSharePromptEnabled =
         map['socialSharePromptEnabled'] as bool? ?? true;
+    _restTimerEnabled = map['restTimerEnabled'] as bool? ?? true;
+    _restTimerSeconds = (map['restTimerSeconds'] as int? ?? 90).clamp(15, 600);
+    _restTimerSoundEnabled = map['restTimerSoundEnabled'] as bool? ?? true;
+    _restTimerCountUp = map['restTimerCountUp'] as bool? ?? true;
+    _restTimerSize = (map['restTimerSize'] as int? ?? 2).clamp(1, 3);
+    _restAfterExerciseSeconds =
+        (map['restAfterExerciseSeconds'] as int? ?? 60).clamp(0, 600);
+    _perExerciseRestSeconds
+      ..clear()
+      ..addAll(
+        (map['perExerciseRestSeconds'] as Map<dynamic, dynamic>? ??
+                <dynamic, dynamic>{})
+            .map((key, value) =>
+                MapEntry(key.toString(), (value as num?)?.toInt() ?? 0)),
+      );
     _socialShareHashtag =
         map['socialShareHashtag'] as String? ?? '#GreyskullLP #JohnnyPain';
+
+    _customTemplateName = map['customTemplateName'] as String? ??
+        defaultCustomTemplateDetails.name;
+    _customTemplateSubtitle = map['customTemplateSubtitle'] as String? ??
+        defaultCustomTemplateDetails.subtitle;
+    _customTemplateWorkouts.clear();
+    if (map['customTemplateWorkouts'] is List) {
+      for (final item in map['customTemplateWorkouts'] as List) {
+        if (item is Map) {
+          _customTemplateWorkouts.add(
+              TemplateWorkoutDay.fromJson(Map<String, dynamic>.from(item)));
+        }
+      }
+    }
 
     _activeBarbellTemplate = BarbellTemplate.values.firstWhere(
       (value) => value.name == (map['activeBarbellTemplate'] as String? ?? ''),
@@ -907,6 +1436,17 @@ class TrainingState extends ChangeNotifier {
       for (final entry in rawMap.entries) {
         if (entry.value is List) {
           _customAccessoriesByWorkout[entry.key.toString()] =
+              (entry.value as List).whereType<String>().toList();
+        }
+      }
+    }
+
+    _customCalisthenicsAccessoriesByMethod.clear();
+    if (map['customCalisthenicsAccessoriesByMethod'] is Map) {
+      final rawMap = map['customCalisthenicsAccessoriesByMethod'] as Map;
+      for (final entry in rawMap.entries) {
+        if (entry.value is List) {
+          _customCalisthenicsAccessoriesByMethod[entry.key.toString()] =
               (entry.value as List).whereType<String>().toList();
         }
       }
@@ -955,6 +1495,19 @@ class TrainingState extends ChangeNotifier {
             .map(FrequencySet.fromJsonMap),
       );
 
+    _todayFrequencyAccessories
+      ..clear()
+      ..addAll(
+        (map['todayFrequencyAccessories'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<Map>()
+            .map((item) =>
+                item.map((key, value) => MapEntry(key.toString(), value)))
+            .map(CalisthenicsAccessoryLog.fromJsonMap),
+      );
+
+    _frequencyDaySavedSetCount = (map['frequencyDaySavedSetCount'] as int? ?? 0)
+        .clamp(0, _todayFrequencySets.length);
+
     // Restore Ladder in-progress state
     _activeLadderExercise =
         map['activeLadderExercise'] as String? ?? 'Chin-ups';
@@ -989,7 +1542,6 @@ class TrainingState extends ChangeNotifier {
             .whereType<int>(),
       );
 
-    _usdaApiKey = map['usdaApiKey'] as String? ?? '';
     _forumSignedIn = map['forumSignedIn'] as bool? ?? false;
     _forumDisplayName = map['forumDisplayName'] as String? ?? '';
     final savedForumUrl = map['forumUrl'] as String? ?? _forumUrl;
@@ -1024,6 +1576,16 @@ class TrainingState extends ChangeNotifier {
       ..addAll((map['selectedDailyOptionalExercises'] as List<dynamic>? ??
               <dynamic>[])
           .whereType<String>());
+
+    _bodyMeasurements
+      ..clear()
+      ..addAll(
+        (map['bodyMeasurements'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<Map>()
+            .map((item) =>
+                item.map((key, value) => MapEntry(key.toString(), value)))
+            .map(BodyMeasurement.fromJsonMap),
+      );
 
     _history
       ..clear()
@@ -1093,6 +1655,25 @@ class TrainingState extends ChangeNotifier {
       return;
     }
     _socialSharePromptEnabled = enabled;
+    _notifyAndPersist();
+  }
+
+  void setRestTimerEnabled(bool enabled) {
+    if (_restTimerEnabled == enabled) return;
+    _restTimerEnabled = enabled;
+    _notifyAndPersist();
+  }
+
+  void setRestTimerSeconds(int seconds) {
+    final clamped = seconds.clamp(15, 600);
+    if (_restTimerSeconds == clamped) return;
+    _restTimerSeconds = clamped;
+    _notifyAndPersist();
+  }
+
+  void setRestTimerSoundEnabled(bool enabled) {
+    if (_restTimerSoundEnabled == enabled) return;
+    _restTimerSoundEnabled = enabled;
     _notifyAndPersist();
   }
 
@@ -1181,6 +1762,200 @@ class TrainingState extends ChangeNotifier {
     }
   }
 
+  void addCalisthenicsAccessory(DailyMethod method, String accessory) {
+    final trimmed = accessory.trim();
+    if (trimmed.isEmpty) return;
+    final currentList = List<String>.from(getCalisthenicsAccessories(method));
+    if (!currentList.contains(trimmed)) {
+      currentList.add(trimmed);
+      _customCalisthenicsAccessoriesByMethod[method.name] = currentList;
+      _notifyAndPersist();
+    }
+  }
+
+  void removeCalisthenicsAccessory(DailyMethod method, int index) {
+    final currentList = List<String>.from(getCalisthenicsAccessories(method));
+    if (index >= 0 && index < currentList.length) {
+      currentList.removeAt(index);
+      _customCalisthenicsAccessoriesByMethod[method.name] = currentList;
+      _notifyAndPersist();
+    }
+  }
+
+  void reorderCalisthenicsAccessories(
+      DailyMethod method, int oldIndex, int newIndex) {
+    final currentList = List<String>.from(getCalisthenicsAccessories(method));
+    if (oldIndex < 0 || oldIndex >= currentList.length) return;
+    if (newIndex < 0 || newIndex >= currentList.length) return;
+    final item = currentList.removeAt(oldIndex);
+    currentList.insert(newIndex, item);
+    _customCalisthenicsAccessoriesByMethod[method.name] = currentList;
+    _notifyAndPersist();
+  }
+
+  void resetCalisthenicsAccessoriesToDefault(DailyMethod method) {
+    if (_customCalisthenicsAccessoriesByMethod.containsKey(method.name)) {
+      _customCalisthenicsAccessoriesByMethod.remove(method.name);
+      _notifyAndPersist();
+    }
+  }
+
+  void setCustomTemplateName(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isNotEmpty && trimmed != _customTemplateName) {
+      _customTemplateName = trimmed;
+      _notifyAndPersist();
+    }
+  }
+
+  void setCustomTemplateSubtitle(String subtitle) {
+    final trimmed = subtitle.trim();
+    if (trimmed != _customTemplateSubtitle) {
+      _customTemplateSubtitle = trimmed;
+      _notifyAndPersist();
+    }
+  }
+
+  void duplicateTemplateFromPreset(BarbellTemplate sourceTemplate) {
+    final source = templateDefinitions[sourceTemplate];
+    if (source == null) return;
+
+    _customTemplateWorkouts.clear();
+    for (final day in source.workouts) {
+      _customTemplateWorkouts.add(
+        TemplateWorkoutDay(
+          code: day.code,
+          title: day.title,
+          subtitle: day.subtitle,
+          coreLifts: day.coreLifts
+              .map((lift) => TemplateLift(
+                    name: lift.name,
+                    prescription: lift.prescription,
+                    sets: lift.sets,
+                    defaultReps: lift.defaultReps,
+                    isAmrap: lift.isAmrap,
+                    isUpperBody: lift.isUpperBody,
+                  ))
+              .toList(),
+          defaultAccessories: List<String>.from(day.defaultAccessories),
+        ),
+      );
+    }
+    _customTemplateName = 'Custom (${source.name})';
+    _customTemplateSubtitle = 'Duplicated from ${source.name}';
+    _activeBarbellRotationIndex = 0;
+    _notifyAndPersist();
+  }
+
+  void resetCustomTemplateToDefault() {
+    _customTemplateWorkouts.clear();
+    _customTemplateName = defaultCustomTemplateDetails.name;
+    _customTemplateSubtitle = defaultCustomTemplateDetails.subtitle;
+    _activeBarbellRotationIndex = 0;
+    _notifyAndPersist();
+  }
+
+  void addCustomWorkoutDay({
+    required String code,
+    required String title,
+    String subtitle = '',
+    List<TemplateLift>? coreLifts,
+    List<String>? defaultAccessories,
+  }) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    final nextNum = _customTemplateWorkouts.length + 1;
+    _customTemplateWorkouts.add(
+      TemplateWorkoutDay(
+        code: code.trim().isEmpty ? 'Day $nextNum' : code.trim(),
+        title: title.trim().isEmpty ? 'Workout Day $nextNum' : title.trim(),
+        subtitle: subtitle.trim(),
+        coreLifts: coreLifts ?? const [],
+        defaultAccessories: defaultAccessories ?? const [],
+      ),
+    );
+    _notifyAndPersist();
+  }
+
+  void removeCustomWorkoutDay(int index) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    if (index >= 0 && index < _customTemplateWorkouts.length) {
+      _customTemplateWorkouts.removeAt(index);
+      if (_customTemplateWorkouts.isEmpty) {
+        _customTemplateWorkouts
+            .add(defaultCustomTemplateDetails.workouts.first);
+      }
+      final maxIndex = _customTemplateWorkouts.length - 1;
+      if (_activeBarbellRotationIndex > maxIndex) {
+        _activeBarbellRotationIndex = 0;
+      }
+      _notifyAndPersist();
+    }
+  }
+
+  void updateCustomWorkoutDay(int index, TemplateWorkoutDay updatedDay) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    if (index >= 0 && index < _customTemplateWorkouts.length) {
+      _customTemplateWorkouts[index] = updatedDay;
+      _notifyAndPersist();
+    }
+  }
+
+  void addCoreLiftToCustomWorkout(int dayIndex, TemplateLift lift) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    if (dayIndex >= 0 && dayIndex < _customTemplateWorkouts.length) {
+      final day = _customTemplateWorkouts[dayIndex];
+      final newLifts = List<TemplateLift>.from(day.coreLifts)..add(lift);
+      _customTemplateWorkouts[dayIndex] = day.copyWith(coreLifts: newLifts);
+      _notifyAndPersist();
+    }
+  }
+
+  void removeCoreLiftFromCustomWorkout(int dayIndex, int liftIndex) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    if (dayIndex >= 0 && dayIndex < _customTemplateWorkouts.length) {
+      final day = _customTemplateWorkouts[dayIndex];
+      if (liftIndex >= 0 && liftIndex < day.coreLifts.length) {
+        final newLifts = List<TemplateLift>.from(day.coreLifts)
+          ..removeAt(liftIndex);
+        _customTemplateWorkouts[dayIndex] = day.copyWith(coreLifts: newLifts);
+        _notifyAndPersist();
+      }
+    }
+  }
+
+  void reorderCoreLiftsInCustomWorkout(
+      int dayIndex, int oldIndex, int newIndex) {
+    if (_customTemplateWorkouts.isEmpty) {
+      _customTemplateWorkouts.addAll(defaultCustomTemplateDetails.workouts);
+    }
+    if (dayIndex >= 0 && dayIndex < _customTemplateWorkouts.length) {
+      final day = _customTemplateWorkouts[dayIndex];
+      final newLifts = List<TemplateLift>.from(day.coreLifts);
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+      if (oldIndex >= 0 &&
+          oldIndex < newLifts.length &&
+          newIndex >= 0 &&
+          newIndex <= newLifts.length) {
+        final item = newLifts.removeAt(oldIndex);
+        newLifts.insert(newIndex, item);
+        _customTemplateWorkouts[dayIndex] = day.copyWith(coreLifts: newLifts);
+        _notifyAndPersist();
+      }
+    }
+  }
+
   void setActiveDailyMethod(DailyMethod method) {
     if (_activeDailyMethod == method) {
       return;
@@ -1238,15 +2013,6 @@ class TrainingState extends ChangeNotifier {
       return;
     }
     _backupPreference = preference;
-    _notifyAndPersist();
-  }
-
-  void setUsdaApiKey(String value) {
-    final trimmed = value.trim();
-    if (_usdaApiKey == trimmed) {
-      return;
-    }
-    _usdaApiKey = trimmed;
     _notifyAndPersist();
   }
 
@@ -1431,7 +2197,7 @@ class TrainingState extends ChangeNotifier {
   }) {
     // TODO(ForumSync): Sync food/workout summaries to forum for accountability posts.
     final effectiveTitle = (templateName.isNotEmpty && workoutName.isNotEmpty)
-        ? '$templateName — $workoutName'
+        ? '$templateName - $workoutName'
         : 'Weight Program Session';
     final detailsBuffer = StringBuffer()
       ..writeln('Core Lifts: $coreLiftSummary')
@@ -1491,6 +2257,55 @@ class TrainingState extends ChangeNotifier {
 
   void clearTodayFrequencySets() {
     _todayFrequencySets.clear();
+    _frequencyDaySavedSetCount = 0;
+    _notifyAndPersist();
+  }
+
+  /// Logs an optional accessory for the active day using the correct unit
+  /// (seconds for holds/planks, reps otherwise).
+  CalisthenicsAccessoryLog logFrequencyAccessory(
+    String name, {
+    int? value,
+    AccessoryMeasurement? unit,
+  }) {
+    _rollMacroDayIfNeeded();
+    final resolvedUnit = unit ?? measurementForAccessory(name);
+    final resolvedValue =
+        (value ?? defaultAccessoryValue(name)).clamp(1, 100000);
+    final log = CalisthenicsAccessoryLog(
+      name: name,
+      value: resolvedValue,
+      unit: resolvedUnit,
+    );
+    _todayFrequencyAccessories.add(log);
+    _notifyAndPersist();
+    return log;
+  }
+
+  void removeFrequencyAccessoryLog(int index) {
+    if (index >= 0 && index < _todayFrequencyAccessories.length) {
+      _todayFrequencyAccessories.removeAt(index);
+      _notifyAndPersist();
+    }
+  }
+
+  /// Removes the most recently logged entry for [name], if any.
+  void undoFrequencyAccessory(String name) {
+    final index =
+        _todayFrequencyAccessories.lastIndexWhere((log) => log.name == name);
+    if (index != -1) removeFrequencyAccessoryLog(index);
+  }
+
+  void clearTodayFrequencyAccessories() {
+    if (_todayFrequencyAccessories.isEmpty) return;
+    _todayFrequencyAccessories.clear();
+    _notifyAndPersist();
+  }
+
+  /// Marks today's current sets as captured in history so the day-rollover
+  /// auto-save only records work that has not been saved yet.
+  void markFrequencyDaySavedToHistory() {
+    _frequencyDaySavedSetCount = _todayFrequencySets.length;
     _notifyAndPersist();
   }
 
@@ -1592,6 +2407,29 @@ class TrainingState extends ChangeNotifier {
   }
 
   // --- History Mutation ---
+  // --- Body measurement mutators (#57) ---
+
+  /// Adds/updates a measurement; entries with no values are ignored.
+  BodyMeasurement? upsertBodyMeasurement(BodyMeasurement measurement) {
+    if (!measurement.hasAnyValue) return null;
+    final index = _bodyMeasurements.indexWhere((m) => m.id == measurement.id);
+    if (index == -1) {
+      _bodyMeasurements.add(measurement);
+    } else {
+      _bodyMeasurements[index] = measurement;
+    }
+    _notifyAndPersist();
+    return measurement;
+  }
+
+  void deleteBodyMeasurement(String id) {
+    final before = _bodyMeasurements.length;
+    _bodyMeasurements.removeWhere((m) => m.id == id);
+    if (_bodyMeasurements.length != before) {
+      _notifyAndPersist();
+    }
+  }
+
   void deleteHistoryEntry(String id) {
     final initialLen = _history.length;
     _history.removeWhere((entry) => entry.id == id);

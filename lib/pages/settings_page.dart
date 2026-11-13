@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/services/demo_seed_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:share_plus/share_plus.dart';
@@ -17,11 +18,6 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _socialHashtagController;
-  late final TextEditingController _forumUrlController;
-  late final TextEditingController _forumLoginUrlController;
-  late final TextEditingController _forumNameController;
-  late final TextEditingController _storeUrlController;
-  late final TextEditingController _usdaApiKeyController;
   final TextEditingController _backupImportController = TextEditingController();
 
   @override
@@ -29,36 +25,19 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _socialHashtagController =
         TextEditingController(text: trainingState.socialShareHashtag);
-    _forumUrlController = TextEditingController(text: trainingState.forumUrl);
-    _forumLoginUrlController =
-        TextEditingController(text: trainingState.forumLoginUrl);
-    _forumNameController =
-        TextEditingController(text: trainingState.forumDisplayName);
-    _storeUrlController = TextEditingController(text: trainingState.storeUrl);
-    _usdaApiKeyController =
-        TextEditingController(text: trainingState.usdaApiKey);
   }
 
   @override
   void dispose() {
     _socialHashtagController.dispose();
-    _forumUrlController.dispose();
-    _forumLoginUrlController.dispose();
-    _forumNameController.dispose();
-    _storeUrlController.dispose();
-    _usdaApiKeyController.dispose();
     _backupImportController.dispose();
     super.dispose();
   }
 
-  void _saveUrlSettings() {
+  void _saveSocialSettings() {
     trainingState.setSocialShareHashtag(_socialHashtagController.text);
-    trainingState.setForumUrl(_forumUrlController.text);
-    trainingState.setForumLoginUrl(_forumLoginUrlController.text);
-    trainingState.setStoreUrl(_storeUrlController.text);
-    trainingState.setUsdaApiKey(_usdaApiKeyController.text);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Settings saved')),
+      const SnackBar(content: Text('Sharing settings saved')),
     );
   }
 
@@ -112,6 +91,45 @@ class _SettingsPageState extends State<SettingsPage> {
       SnackBar(
         content:
             Text(ok ? 'Backup restored successfully' : 'Backup restore failed'),
+      ),
+    );
+  }
+
+  Future<void> _importDemoScenario(DemoScenario scenario) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Load ${scenario.title}?'),
+        content: Text(
+          '${scenario.description}\n\n'
+          'This REPLACES the app\'s current workouts, history, and settings with '
+          '90 days of demo data. Export a backup first if you have real data '
+          'you want to keep.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Import demo data'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final ok = await trainingState
+        .importBackupJson(DemoSeedService.buildScenarioJson(scenario.id));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Demo data loaded — check the Stats and History tabs'
+              : 'Demo data import failed',
+        ),
       ),
     );
   }
@@ -239,7 +257,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       ],
                     ),
                     trailing: isSelected
-                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        ? Icon(Icons.check_circle,
+                            color: AppTheme.positiveAccent(context))
                         : null,
                   ),
                 );
@@ -250,9 +269,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Johnny Pain progressive UX: start simple with the base barbell program and frequency method, then graduate to accessories and higher density methods.',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+                style:
+                    TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
               ),
               const SizedBox(height: 8),
               ...ProgramLevel.values.map((lvl) {
@@ -264,7 +284,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     side: BorderSide(
                       color: isSelected
                           ? Theme.of(context).primaryColor
-                          : Colors.grey.shade300,
+                          : Theme.of(context).colorScheme.outline,
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -296,7 +316,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ? Theme.of(context)
                                     .primaryColor
                                     .withValues(alpha: 0.15)
-                                : Colors.grey.shade200,
+                                : AppTheme.mutedText(context)
+                                    .withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -306,7 +327,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               fontWeight: FontWeight.bold,
                               color: isSelected
                                   ? Theme.of(context).primaryColor
-                                  : Colors.black54,
+                                  : AppTheme.mutedText(context),
                             ),
                           ),
                         ),
@@ -323,8 +344,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         Text(
                           lvl.description,
-                          style: const TextStyle(
-                              fontSize: 11, color: Colors.black87),
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: Theme.of(context).colorScheme.onSurface),
                         ),
                       ],
                     ),
@@ -334,15 +356,15 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.shield_outlined,
-                      size: 16, color: Colors.green),
+                  Icon(Icons.shield_outlined,
+                      size: 16, color: AppTheme.positiveAccent(context)),
                   const SizedBox(width: 6),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Zero data loss: changing your level changes UI complexity without deleting or modifying any prior workout history or PRs.',
                       style: TextStyle(
                           fontSize: 11,
-                          color: Colors.green,
+                          color: AppTheme.positiveAccent(context),
                           fontStyle: FontStyle.italic),
                     ),
                   ),
@@ -442,9 +464,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Official Greyskull LP progression structures (Johnny Pain 3rd Edition):',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+                style:
+                    TextStyle(fontSize: 13, color: AppTheme.mutedText(context)),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<BarbellTemplate>(
@@ -457,7 +480,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
                 items: BarbellTemplate.values.map((template) {
-                  final details = TrainingState.templateDefinitions[template]!;
+                  final details = trainingState.getTemplateDetails(template);
                   return DropdownMenuItem(
                     value: template,
                     child: Text(
@@ -503,84 +526,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   onChanged: (_) =>
                       trainingState.toggleDailyOptionalExercise(exercise),
                 ),
-              ),
-              const Divider(height: 32),
-              const Text(
-                'Forum Integration (WordPress)',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _forumNameController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Forum display name',
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        trainingState.setForumSignedIn(
-                          signedIn: true,
-                          displayName: _forumNameController.text,
-                        );
-                      },
-                      child: const Text('Mark Signed In'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        trainingState.setForumSignedIn(signedIn: false);
-                      },
-                      child: const Text('Sign Out'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                trainingState.forumSignedIn
-                    ? 'Forum status: signed in as ${trainingState.forumDisplayName.isEmpty ? 'user' : trainingState.forumDisplayName}'
-                    : 'Forum status: not signed in',
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _forumUrlController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Forum URL',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _forumLoginUrlController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Forum login URL',
-                ),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () {
-                  trainingState.resetForumUrlsToDefault();
-                  setState(() {
-                    _forumUrlController.text = TrainingState.defaultForumUrl;
-                    _forumLoginUrlController.text =
-                        TrainingState.defaultForumLoginUrl;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Forum URLs reset to default'),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.restart_alt, size: 16),
-                label: const Text('Reset Forum URLs to Default'),
               ),
               const Divider(height: 32),
               const Text(
@@ -710,7 +655,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             style:
                                 const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(
-                          '${draft.timestamp.year}-${draft.timestamp.month.toString().padLeft(2, '0')}-${draft.timestamp.day.toString().padLeft(2, '0')} — ${draft.category}',
+                          '${draft.timestamp.year}-${draft.timestamp.month.toString().padLeft(2, '0')}-${draft.timestamp.day.toString().padLeft(2, '0')} - ${draft.category}',
                           style: const TextStyle(fontSize: 11),
                         ),
                         trailing: Row(
@@ -738,57 +683,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
               const Divider(height: 32),
               const Text(
-                'Store Integration',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _storeUrlController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Store URL',
-                ),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () {
-                  trainingState.resetStoreUrlToDefault();
-                  setState(() {
-                    _storeUrlController.text = TrainingState.defaultStoreUrl;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Store URL reset to default')),
-                  );
-                },
-                icon: const Icon(Icons.restart_alt, size: 16),
-                label: const Text('Reset Store URL to Default'),
-              ),
-              const Divider(height: 32),
-              const Text(
-                'Free Calorie Data API',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Open Food Facts is used by default. Add a free USDA API key to enable fallback.',
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _usdaApiKeyController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'USDA API key (optional)',
-                ),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: _saveUrlSettings,
-                icon: const Icon(Icons.save),
-                label: const Text('Save Settings'),
-              ),
-              const Divider(height: 32),
-              const Divider(height: 32),
-              const Text(
                 'Social Workout Sharing',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
@@ -812,6 +706,119 @@ class _SettingsPageState extends State<SettingsPage> {
                   hintText: '#GreyskullLP #JohnnyPain',
                 ),
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _saveSocialSettings,
+                icon: const Icon(Icons.save, size: 16),
+                label: const Text('Save Sharing Settings'),
+              ),
+              const Divider(height: 32),
+              const Text(
+                'Workout Timing',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Countdown between sets during barbell sessions.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Rest timer between sets'),
+                subtitle: const Text(
+                  'Starts automatically when a set is marked complete.',
+                ),
+                value: trainingState.restTimerEnabled,
+                onChanged: (val) => trainingState.setRestTimerEnabled(val),
+              ),
+              if (trainingState.restTimerEnabled) ...[
+                const SizedBox(height: 4),
+                DropdownButtonFormField<int>(
+                  key: ValueKey(trainingState.restTimerSeconds),
+                  initialValue: trainingState.restTimerSeconds,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Default rest',
+                  ),
+                  items: TrainingState.restTimerPresets
+                      .map(
+                        (seconds) => DropdownMenuItem<int>(
+                          value: seconds,
+                          child: Text('$seconds seconds'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      trainingState.setRestTimerSeconds(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Sound and vibration when rest ends'),
+                  value: trainingState.restTimerSoundEnabled,
+                  onChanged: (val) =>
+                      trainingState.setRestTimerSoundEnabled(val),
+                ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Count up instead of down'),
+                  subtitle: const Text(
+                      'Matches the classic arc timer: elapsed rest time.'),
+                  value: trainingState.restTimerCountUp,
+                  onChanged: (val) => trainingState.setRestTimerCountUp(val),
+                ),
+                const SizedBox(height: 4),
+                DropdownButtonFormField<int>(
+                  key: ValueKey('size-${trainingState.restTimerSize}'),
+                  initialValue: trainingState.restTimerSize,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Timer size',
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 1, child: Text('Small')),
+                    DropdownMenuItem(value: 2, child: Text('Medium')),
+                    DropdownMenuItem(value: 3, child: Text('Large')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      trainingState.setRestTimerSize(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 4),
+                DropdownButtonFormField<int>(
+                  key: ValueKey(
+                      'after-${trainingState.restAfterExerciseSeconds}'),
+                  initialValue: trainingState.restAfterExerciseSeconds,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Rest after finishing a lift',
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 30, child: Text('30 seconds')),
+                    DropdownMenuItem(value: 60, child: Text('60 seconds')),
+                    DropdownMenuItem(value: 90, child: Text('90 seconds')),
+                    DropdownMenuItem(value: 120, child: Text('120 seconds')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      trainingState.setRestAfterExerciseSeconds(value);
+                    }
+                  },
+                ),
+              ],
+              const Divider(height: 32),
               const Text(
                 'Backups',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -903,7 +910,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     const SizedBox(height: 8),
                     const Text(
                       'The official Greyskull LP app is 100% local-first and open-source. '
-                      'Your workouts, lifts, body statistics, and nutrition logs belong to you—not our servers. '
+                      'Your workouts, lifts, body statistics, and nutrition logs belong to you, not our servers. '
                       'We do not track, profile, monetize, or harvest your personal health data.',
                       style: TextStyle(fontSize: 12, height: 1.4),
                     ),
@@ -932,6 +939,45 @@ class _SettingsPageState extends State<SettingsPage> {
                 'This app currently stores workouts, history, and settings locally on-device using SharedPreferences JSON. '
                 'Cloud sync is not enabled yet; export/share backup is available.',
               ),
+              if (DemoSeedService.isAvailable) ...[
+                const Divider(height: 32),
+                const Text(
+                  'QA / Demo Data',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Debug builds only. Loads a realistic dataset so Stats and History can be reviewed at 90-day scale. '
+                  'Replaceable anytime with a backup restore.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.65),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ...DemoSeedService.scenarios.map(
+                  (scenario) => Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: ListTile(
+                      leading: const Icon(Icons.science_outlined),
+                      title: Text(
+                        scenario.title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      subtitle: Text(
+                        scenario.description,
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      trailing: const Icon(Icons.download_outlined, size: 20),
+                      onTap: () => _importDemoScenario(scenario),
+                    ),
+                  ),
+                ),
+              ],
             ],
           );
         },

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
+import 'interval_timer_page.dart';
 import 'workout_page_frequency.dart';
 import 'workout_page_ladder.dart';
 import 'workout_page_totalwork.dart';
@@ -68,11 +70,11 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 style: const TextStyle(fontSize: 13, height: 1.3),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Note: Graduating never alters or deletes any prior workout logs or history.',
                 style: TextStyle(
                     fontSize: 12,
-                    color: Colors.black54,
+                    color: AppTheme.mutedText(context),
                     fontStyle: FontStyle.italic),
               ),
               const SizedBox(height: 18),
@@ -125,9 +127,10 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Switch your program level anytime without losing prior data:',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+                style:
+                    TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
               ),
               const SizedBox(height: 12),
               ...ProgramLevel.values.map((lvl) {
@@ -143,7 +146,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
                               : Icons.looks_3,
                       color: isCurrent
                           ? Theme.of(context).colorScheme.primary
-                          : Colors.grey,
+                          : AppTheme.mutedText(context),
                     ),
                     title: Text(lvl.displayName,
                         style: const TextStyle(
@@ -261,8 +264,10 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 const SizedBox(height: 4),
                 Text(
                   level.description,
-                  style: const TextStyle(
-                      fontSize: 12, color: Colors.black87, height: 1.3),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      height: 1.3),
                 ),
               ],
             ),
@@ -275,7 +280,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             _buildWorkoutButton(
-              IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
+              const IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
               'Weight Program',
               onTap: () =>
                   _openSubPage(const WorkoutPageWeight(), 'Weight Program'),
@@ -289,6 +294,19 @@ class _WorkoutPageState extends State<WorkoutPage> {
               isActive:
                   trainingState.activeDailyMethod == DailyMethod.frequency,
               statusBadge: 'Level 1 Active',
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildWorkoutButton(
+              Icons.timer_outlined,
+              'Interval Timer',
+              onTap: () =>
+                  _openSubPage(const IntervalTimerPage(), 'Interval Timer'),
+              statusBadge: 'Work/Rest',
             ),
           ],
         ),
@@ -367,7 +385,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
                   icon,
                   size: 46,
                   color: isLocked
-                      ? Colors.grey.shade400
+                      ? AppTheme.mutedText(context)
                       : Theme.of(context).primaryColor,
                 ),
                 if (isLocked)
@@ -393,7 +411,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isLocked ? Colors.grey.shade600 : null,
+                color: isLocked ? AppTheme.mutedText(context) : null,
               ),
             ),
             if (statusBadge != null) ...[
@@ -402,10 +420,11 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? Colors.green.withValues(alpha: 0.15)
+                      ? AppTheme.positiveAccent(context).withValues(alpha: 0.16)
                       : isLocked
-                          ? Colors.grey.withValues(alpha: 0.15)
-                          : Colors.blue.withValues(alpha: 0.15),
+                          ? AppTheme.mutedText(context).withValues(alpha: 0.16)
+                          : AppTheme.resistanceAccent(context)
+                              .withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -414,10 +433,10 @@ class _WorkoutPageState extends State<WorkoutPage> {
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     color: isActive
-                        ? Colors.green.shade800
+                        ? AppTheme.positiveAccent(context)
                         : isLocked
-                            ? Colors.grey.shade700
-                            : Colors.blue.shade800,
+                            ? AppTheme.mutedText(context)
+                            : AppTheme.resistanceAccent(context),
                   ),
                 ),
               ),
@@ -461,19 +480,20 @@ void showStarterOnboardingDialog(BuildContext context,
                       child: const Icon(Icons.fitness_center, size: 24),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Welcome to Greyskull LP',
                             style: TextStyle(
                                 fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           Text(
                             'Select your initial programming level:',
-                            style:
-                                TextStyle(fontSize: 13, color: Colors.black54),
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.mutedText(context)),
                           ),
                         ],
                       ),
@@ -497,7 +517,7 @@ void showStarterOnboardingDialog(BuildContext context,
                       side: BorderSide(
                         color: isChosen
                             ? Theme.of(context).colorScheme.primary
-                            : Colors.grey.shade300,
+                            : Theme.of(context).colorScheme.outline,
                         width: isChosen ? 2 : 1,
                       ),
                     ),
@@ -518,7 +538,8 @@ void showStarterOnboardingDialog(BuildContext context,
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.green.shade100,
+                                color: AppTheme.positiveAccent(context)
+                                    .withValues(alpha: 0.18),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -526,7 +547,7 @@ void showStarterOnboardingDialog(BuildContext context,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.green.shade800,
+                                  color: AppTheme.positiveAccent(context),
                                 ),
                               ),
                             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AccountabilityPostSheet extends StatefulWidget {
@@ -68,7 +69,7 @@ class _AccountabilityPostSheetState extends State<AccountabilityPostSheet> {
     final url = trainingState.forumUrl;
     final uri = Uri.tryParse(url);
     if (uri != null) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
     }
     if (mounted) {
       Navigator.of(context).pop();
@@ -135,14 +136,16 @@ class _AccountabilityPostSheetState extends State<AccountabilityPostSheet> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isSignedIn
-                  ? Colors.green.withValues(alpha: 0.1)
-                  : Colors.amber.withValues(alpha: 0.1),
+              color: (isSignedIn
+                      ? AppTheme.positiveAccent(context)
+                      : Theme.of(context).colorScheme.secondary)
+                  .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSignedIn
-                    ? Colors.green.withValues(alpha: 0.3)
-                    : Colors.amber.withValues(alpha: 0.3),
+                color: (isSignedIn
+                        ? AppTheme.positiveAccent(context)
+                        : Theme.of(context).colorScheme.secondary)
+                    .withValues(alpha: 0.35),
               ),
             ),
             child: Row(
@@ -150,7 +153,9 @@ class _AccountabilityPostSheetState extends State<AccountabilityPostSheet> {
               children: [
                 Icon(
                   isSignedIn ? Icons.check_circle : Icons.info_outline,
-                  color: isSignedIn ? Colors.green : Colors.amber.shade700,
+                  color: isSignedIn
+                      ? AppTheme.positiveAccent(context)
+                      : Theme.of(context).colorScheme.secondary,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -166,8 +171,8 @@ class _AccountabilityPostSheetState extends State<AccountabilityPostSheet> {
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                           color: isSignedIn
-                              ? Colors.green.shade800
-                              : Colors.amber.shade900,
+                              ? AppTheme.positiveAccent(context)
+                              : Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                       const SizedBox(height: 2),
