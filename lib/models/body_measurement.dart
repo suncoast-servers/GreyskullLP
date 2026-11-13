@@ -13,6 +13,7 @@ class BodyMeasurement {
     this.chestCm,
     this.armsCm,
     this.notes = '',
+    this.photoBase64,
   })  : id = id ?? '${(date ?? DateTime.now()).microsecondsSinceEpoch}_bm',
         date = date ?? DateTime.now();
 
@@ -36,6 +37,10 @@ class BodyMeasurement {
 
   final String notes;
 
+  /// Optional progress selfie, base64 JPEG. Stored locally and only leaves the
+  /// device through an explicit backup export (#85).
+  final String? photoBase64;
+
   bool get hasAnyValue =>
       weightKg != null ||
       bodyFatPct != null ||
@@ -51,6 +56,8 @@ class BodyMeasurement {
     double? chestCm,
     double? armsCm,
     String? notes,
+    String? photoBase64,
+    bool clearPhoto = false,
     bool clearWeight = false,
     bool clearBodyFat = false,
     bool clearWaist = false,
@@ -66,6 +73,7 @@ class BodyMeasurement {
       chestCm: clearChest ? null : (chestCm ?? this.chestCm),
       armsCm: clearArms ? null : (armsCm ?? this.armsCm),
       notes: notes ?? this.notes,
+      photoBase64: clearPhoto ? null : (photoBase64 ?? this.photoBase64),
     );
   }
 
@@ -78,6 +86,7 @@ class BodyMeasurement {
         'chestCm': chestCm,
         'armsCm': armsCm,
         'notes': notes,
+        'photoBase64': photoBase64,
       };
 
   factory BodyMeasurement.fromJsonMap(Map<String, dynamic> map) {
@@ -96,6 +105,7 @@ class BodyMeasurement {
       chestCm: asDouble(map['chestCm']),
       armsCm: asDouble(map['armsCm']),
       notes: map['notes'] as String? ?? '',
+      photoBase64: map['photoBase64'] as String?,
     );
   }
 }
