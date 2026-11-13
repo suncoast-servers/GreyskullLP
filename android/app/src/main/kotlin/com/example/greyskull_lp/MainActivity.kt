@@ -1,5 +1,6 @@
 package com.app.greyskull
 
+import android.util.Log
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -20,6 +21,9 @@ class MainActivity : FlutterActivity() {
                         } else {
                             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                         }
+                        val hasFlag = (window.attributes.flags and
+                            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) != 0
+                        Log.d("GreyskullScreen", "setAwake=$awake keepScreenOn=$hasFlag")
                         result.success(true)
                     }
                     else -> result.notImplemented()
