@@ -7,6 +7,7 @@ import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/demo_seed_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
+import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
 import 'package:share_plus/share_plus.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -711,6 +712,38 @@ class _SettingsPageState extends State<SettingsPage> {
                 onPressed: _saveSocialSettings,
                 icon: const Icon(Icons.save, size: 16),
                 label: const Text('Save Sharing Settings'),
+              ),
+              const Divider(height: 32),
+              const Text(
+                'Calisthenics Accessories',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Accessories shown on the Frequency, Ladder and Total Work screens.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              CalisthenicsAccessoriesSection(
+                method: DailyMethod.frequency,
+                completedAccessories: const <String>{},
+                onCompletedChanged: (_) {},
+                showCompletion: false,
+              ),
+              CalisthenicsAccessoriesSection(
+                method: DailyMethod.ladder,
+                completedAccessories: const <String>{},
+                onCompletedChanged: (_) {},
+                showCompletion: false,
+              ),
+              CalisthenicsAccessoriesSection(
+                method: DailyMethod.totalWork,
+                completedAccessories: const <String>{},
+                onCompletedChanged: (_) {},
+                showCompletion: false,
               ),
               const Divider(height: 32),
               const Text(

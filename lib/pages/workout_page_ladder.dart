@@ -3,7 +3,7 @@ import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
-import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
+import 'package:greyskull_lp/widgets/accessory_checklist.dart';
 
 class WorkoutPageLadder extends StatefulWidget {
   const WorkoutPageLadder({super.key});
@@ -370,11 +370,16 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
               const SizedBox(height: 16),
             ],
 
-            // Optional Accessories Section
-            CalisthenicsAccessoriesSection(
+            // Accessories (configured in Settings)
+            const Text(
+              'Accessories',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            AccessoryChecklist(
               method: DailyMethod.ladder,
-              completedAccessories: _completedAccessories,
-              onCompletedChanged: (updated) {
+              completed: _completedAccessories,
+              onChanged: (updated) {
                 setState(() {
                   _completedAccessories
                     ..clear()
