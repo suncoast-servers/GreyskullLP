@@ -611,6 +611,160 @@ class GsIconButton extends StatelessWidget {
   }
 }
 
+/// One working set, styled like the prototype's `.set` row.
+///
+/// The whole row is the tap target: tap toggles completion, long-press opens
+/// the rep override dialog on the workout screen.
+class GsSetRow extends StatelessWidget {
+  const GsSetRow({
+    super.key,
+    required this.weightLabel,
+    required this.repsLabel,
+    required this.isDone,
+    required this.isAmrap,
+    this.isLogged = false,
+    this.onTap,
+    this.onLongPress,
+    this.semanticsLabel,
+  });
+
+  final String weightLabel;
+  final String repsLabel;
+  final bool isDone;
+  final bool isAmrap;
+
+  /// True once the AMRAP rep count has been entered.
+  final bool isLogged;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.gs;
+    final radius = BorderRadius.circular(tokens.smallRadius + 2);
+    final accentBorder = tokens.accent.withValues(alpha: 0.45);
+
+    return Semantics(
+      button: true,
+      label: semanticsLabel,
+      child: Material(
+        color:
+            isAmrap ? tokens.accent.withValues(alpha: 0.10) : tokens.surface2,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(
+            color: isAmrap ? accentBorder : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: Opacity(
+            opacity: isDone ? 0.55 : 1,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDone ? tokens.accent : Colors.transparent,
+                      border: Border.all(
+                        color: isDone ? tokens.accent : tokens.line,
+                        width: 1.8,
+                      ),
+                    ),
+                    child: isDone
+                        ? GsIcon(
+                            'check',
+                            size: 12,
+                            color: tokens.accentInk,
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      weightLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: GsFont.body,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        decoration: isDone ? TextDecoration.lineThrough : null,
+                        color: tokens.bone,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    repsLabel,
+                    style: TextStyle(
+                      fontFamily: GsFont.mono,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
+                      color: tokens.accent,
+                    ),
+                  ),
+                  if (isAmrap) ...<Widget>[
+                    const SizedBox(width: 8),
+                    GsTag(
+                      isLogged ? 'PR LOG' : 'AMRAP',
+                      tone: GsTagTone.accent,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pinned bottom action/rest surface (the prototype's `.restdock`).
+class GsStickyDock extends StatelessWidget {
+  const GsStickyDock({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.gs;
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.surface.withValues(alpha: 0.97),
+        border: Border(top: BorderSide(color: tokens.line, width: 1)),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.28),
+            blurRadius: 24,
+            offset: const Offset(0, -8),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 /// One destination in [GsTabBar].
 class GsTabItem {
   const GsTabItem({

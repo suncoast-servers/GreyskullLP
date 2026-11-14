@@ -90,6 +90,42 @@ void main() {
     });
   });
 
+  group('Workout dock components', () {
+    testWidgets('GsSetRow shows weight, reps, AMRAP and reports taps',
+        (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        _app(
+          GsSetRow(
+            weightLabel: '100 lb',
+            repsLabel: '5',
+            isDone: false,
+            isAmrap: true,
+            onTap: () => taps++,
+            onLongPress: () {},
+          ),
+        ),
+      );
+
+      expect(find.text('100 lb'), findsOneWidget);
+      expect(find.text('5'), findsOneWidget);
+      expect(find.text('AMRAP'), findsOneWidget);
+
+      await tester.tap(find.text('100 lb'));
+      expect(taps, 1);
+    });
+
+    testWidgets('GsStickyDock renders its child', (tester) async {
+      await tester.pumpWidget(
+        _app(
+          const GsStickyDock(child: Text('Rest dock')),
+        ),
+      );
+
+      expect(find.text('Rest dock'), findsOneWidget);
+    });
+  });
+
   group('SVG icon set', () {
     test('icons used by the refreshed shell exist as assets', () {
       for (final name in <String>[

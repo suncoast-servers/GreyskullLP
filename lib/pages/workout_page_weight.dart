@@ -5,8 +5,11 @@ import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/workout_notification_service.dart';
 import 'package:greyskull_lp/program/template_labels.dart';
-import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/services/social_share_service.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
+import 'package:greyskull_lp/themes/theme.dart';
+import 'package:greyskull_lp/ui/gs_icon.dart';
+import 'package:greyskull_lp/ui/gs_widgets.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/custom_program_editor_sheet.dart';
 import 'package:greyskull_lp/widgets/circular_rest_timer.dart';
@@ -105,6 +108,17 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
 
   double _fieldDouble(TextEditingController controller) {
     return double.tryParse(controller.text.trim()) ?? 0;
+  }
+
+  String _weightLabel(TextEditingController controller) {
+    final value = _fieldDouble(controller);
+    if (value <= 0) {
+      return '—';
+    }
+    final text = value.truncateToDouble() == value
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(1);
+    return '$text lb';
   }
 
   double _calculateTotalVolume(List<TemplateLift> coreLifts) {
@@ -589,58 +603,150 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     });
   }
 
+  Widget _buildSessionHeader({
+    required TemplateWorkoutDay currentWorkout,
+    required BarbellTemplateDetails templateDetails,
+    required List<TemplateLift> coreLifts,
+    required double totalVolume,
+  }) {
+    final tokens = context.gs;
+    final totalSets = coreLifts.fold<int>(
+      0,
+      (sum, lift) => sum + (lift.sets <= 0 ? 3 : lift.sets),
+    );
+    final doneSets = coreLifts.fold<int>(
+      0,
+      (sum, lift) => sum + _setsForLift(lift.name).length,
+    );
+    final progress = totalSets == 0 ? 0.0 : doneSets / totalSets;
+
+    return GsCard(
+      gradient: LinearGradient(
+        colors: <Color>[
+          tokens.accent.withValues(alpha: 0.18),
+          tokens.surface,
+        ],
+        begin: Alignment.topRight,
+        end: Alignment.bottomLeft,
+      ),
+      borderColor: tokens.accent.withValues(alpha: 0.30),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'LIVE SESSION',
+                      style: TextStyle(
+                        fontFamily: GsFont.body,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.8,
+                        color: tokens.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      currentWorkout.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: GsFont.display,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
+                        color: tokens.bone,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${templateDetails.name} · ${currentWorkout.subtitle}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: GsFont.body,
+                        fontSize: 10.5,
+                        height: 1.4,
+                        color: tokens.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              GsRing(
+                progress: progress,
+                size: 58,
+                strokeWidth: 5.5,
+                child: Text(
+                  '${(progress * 100).round()}%',
+                  style: TextStyle(
+                    fontFamily: GsFont.mono,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.accent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: <Widget>[
+              GsTag(
+                'Session ${_formatElapsed(Duration(seconds: _sessionSeconds))}',
+                tone: GsTagTone.accent,
+                svgIcon: 'timer',
+              ),
+              GsTag('$doneSets SETS'),
+              GsTag(
+                'VOL ${totalVolume.toStringAsFixed(0)} LBS',
+                svgIcon: 'db',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: trainingState,
       builder: (context, _) {
+        final tokens = context.gs;
         final templateDetails = trainingState.activeBarbellTemplateDetails;
         final currentWorkout = trainingState.currentTemplateWorkout;
         final coreLifts = currentWorkout.coreLifts;
         final accessories = trainingState.currentWorkoutAccessories;
         final totalVolume = _calculateTotalVolume(coreLifts);
 
-        // The countdown stays pinned above the scroll area so it remains
-        // visible while the user works through lifts further down the page.
+        // Session summary stays at the top of the list; the rest countdown
+        // docks to the bottom so it remains visible while scrolling (#75).
         return Column(
           children: [
-            if (_sessionRunning)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                child: Row(
-                  children: [
-                    Icon(Icons.av_timer,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Session ${_formatElapsed(Duration(seconds: _sessionSeconds))}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (_restTimerActive)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: CircularRestTimer(
-                  key: ValueKey('rest-$_restTimerToken'),
-                  seconds: _restSeconds,
-                  soundEnabled: trainingState.restTimerSoundEnabled,
-                  countUp: trainingState.restTimerCountUp,
-                  size: trainingState.restTimerSize,
-                  coachingText: widget.liveMode ? null : _restCoaching,
-                  onDismissed: () => setState(() => _restTimerActive = false),
-                ),
-              ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(16, 10, 16, 24),
                 children: [
+                  if (_sessionRunning) ...<Widget>[
+                    _buildSessionHeader(
+                      currentWorkout: currentWorkout,
+                      templateDetails: templateDetails,
+                      coreLifts: coreLifts,
+                      totalVolume: totalVolume,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   if (!widget.liveMode &&
                       trainingState.programLevel ==
                           ProgramLevel.foundation) ...[
@@ -882,18 +988,24 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                   // Core Barbell Lifts Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
+                    children: <Widget>[
+                      Text(
                         'Core Barbell Lifts',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                          fontFamily: GsFont.body,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.bone,
+                        ),
                       ),
                       Text(
                         '${_completedCoreLifts.length}/${coreLifts.length} complete',
                         style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.mutedText(context)),
+                          fontFamily: GsFont.body,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: tokens.muted,
+                        ),
                       ),
                     ],
                   ),
@@ -912,100 +1024,54 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                     final isCurrent =
                         !isCompleted && currentLift?.name == lift.name;
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: isCurrent
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .outline
-                                  .withValues(alpha: 0.5),
-                          width: isCurrent ? 2 : 1,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: GsCard(
+                        borderColor: isCurrent
+                            ? tokens.accent
+                            : tokens.line.withValues(alpha: 0.8),
+                        color: isCurrent
+                            ? tokens.accent.withValues(alpha: 0.04)
+                            : null,
+                        padding: const EdgeInsets.all(13),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                          children: <Widget>[
                             Row(
-                              children: [
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
-                                    children: [
+                                    children: <Widget>[
                                       Row(
-                                        children: [
+                                        children: <Widget>[
                                           Flexible(
                                             child: Text(
                                               lift.name,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontFamily: GsFont.body,
                                                 fontSize: 15,
+                                                fontWeight: FontWeight.w700,
+                                                color: tokens.bone,
                                               ),
                                             ),
                                           ),
-                                          if (isCurrent) ...[
+                                          if (isCurrent) ...<Widget>[
                                             const SizedBox(width: 6),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 6,
-                                                      vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primary
-                                                    .withValues(alpha: 0.16),
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                'NEXT',
-                                                style: TextStyle(
-                                                  fontSize: 9,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                ),
-                                              ),
+                                            const GsTag(
+                                              'NEXT',
+                                              tone: GsTagTone.accent,
                                             ),
                                           ],
                                           const SizedBox(width: 6),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: lift.isUpperBody
-                                                  ? AppTheme.resistanceAccent(
-                                                          context)
-                                                      .withValues(alpha: 0.16)
-                                                  : AppTheme.calisthenicsAccent(
-                                                          context)
-                                                      .withValues(alpha: 0.16),
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              lift.isUpperBody
-                                                  ? 'Upper Body'
-                                                  : 'Lower Body',
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w600,
-                                                color: lift.isUpperBody
-                                                    ? AppTheme.resistanceAccent(
-                                                        context)
-                                                    : AppTheme
-                                                        .calisthenicsAccent(
-                                                            context),
-                                              ),
-                                            ),
+                                          GsTag(
+                                            lift.isUpperBody
+                                                ? 'UPPER BODY'
+                                                : 'LOWER BODY',
                                           ),
                                         ],
                                       ),
@@ -1013,113 +1079,132 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                       Text(
                                         lift.prescription,
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontFamily: GsFont.body,
+                                          fontSize: 11.5,
                                           fontWeight: FontWeight.w500,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
+                                          color: tokens.accent,
                                         ),
                                       ),
-                                      TextButton.icon(
+                                      TextButton(
                                         onPressed: () =>
                                             _editRestSeconds(lift.name),
-                                        icon: const Icon(Icons.alarm, size: 14),
-                                        label: Text(
-                                          'Rest ${trainingState.restSecondsForLift(lift.name)}s',
-                                          style: const TextStyle(fontSize: 11),
-                                        ),
                                         style: TextButton.styleFrom(
                                           padding: EdgeInsets.zero,
                                           minimumSize: const Size(0, 24),
                                           tapTargetSize:
                                               MaterialTapTargetSize.shrinkWrap,
                                         ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: <Widget>[
+                                            GsIcon('timer',
+                                                size: 13, color: tokens.accent),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Rest ${trainingState.restSecondsForLift(lift.name)}s',
+                                              style:
+                                                  const TextStyle(fontSize: 11),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
                                 if (isCompleted)
-                                  Icon(Icons.check_circle,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary),
+                                  GsIcon(
+                                    'check',
+                                    size: 18,
+                                    color: tokens.accent,
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                ...List.generate(totalSets, (index) {
-                                  final isAmrapSet =
-                                      lift.isAmrap && index == totalSets - 1;
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: _SetCircleButton(
-                                      key: ValueKey(
-                                          'set-tap-${lift.name}-$index'),
-                                      label:
-                                          '${_repOverrides[lift.name]?[index] ?? lift.defaultReps}',
-                                      isAmrap: isAmrapSet,
-                                      isDone: doneSets.contains(index),
-                                      semanticsLabel: isAmrapSet
-                                          ? 'Log AMRAP set reps'
-                                          : 'Mark set ${index + 1} done',
-                                      onTap: () {
-                                        if (isAmrapSet &&
-                                            !doneSets.contains(index)) {
-                                          _promptRepOverride(
-                                            lift,
-                                            index,
-                                            totalSets,
-                                            completeAfterSave: true,
-                                          );
-                                        } else {
-                                          _toggleSet(
-                                              lift.name, index, totalSets);
-                                        }
-                                      },
-                                      onLongPress: () => _promptRepOverride(
-                                          lift, index, totalSets),
-                                    ),
-                                  );
-                                }),
-                                if (widget.liveMode)
-                                  const Spacer()
-                                else
-                                  Expanded(
-                                    child: Text(
-                                      totalSets == 1
-                                          ? 'Tap the circle when the AMRAP set is done'
-                                          : lift.isAmrap
-                                              ? 'Tap 5, 5, then 5+ (AMRAP) as you finish each set'
-                                              : 'Tap each circle as you finish a set',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
+                            ...List<Widget>.generate(totalSets, (int index) {
+                              final isAmrapSet =
+                                  lift.isAmrap && index == totalSets - 1;
+                              final isDone = doneSets.contains(index);
+                              final reps = _repOverrides[lift.name]?[index] ??
+                                  lift.defaultReps;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: GsSetRow(
+                                  key: ValueKey('set-tap-${lift.name}-$index'),
+                                  weightLabel: _weightLabel(weightCtrl),
+                                  repsLabel: '$reps',
+                                  isDone: isDone,
+                                  isAmrap: isAmrapSet,
+                                  isLogged: isAmrapSet && isDone,
+                                  semanticsLabel: isAmrapSet
+                                      ? 'Log AMRAP set reps'
+                                      : 'Mark set ${index + 1} done',
+                                  onTap: () {
+                                    if (isAmrapSet && !isDone) {
+                                      _promptRepOverride(
+                                        lift,
+                                        index,
+                                        totalSets,
+                                        completeAfterSave: true,
+                                      );
+                                    } else {
+                                      _toggleSet(lift.name, index, totalSets);
+                                    }
+                                  },
+                                  onLongPress: () => _promptRepOverride(
+                                      lift, index, totalSets),
+                                ),
+                              );
+                            }),
+                            if (!widget.liveMode) ...<Widget>[
+                              const SizedBox(height: 2),
+                              Text(
+                                totalSets == 1
+                                    ? 'Tap the circle when the AMRAP set is done'
+                                    : lift.isAmrap
+                                        ? 'Tap 5, 5, then 5+ (AMRAP) as you finish each set'
+                                        : 'Tap each circle as you finish a set',
+                                style: TextStyle(
+                                  fontFamily: GsFont.body,
+                                  fontSize: 11,
+                                  color: tokens.muted,
+                                ),
+                              ),
+                            ],
+                            if (lift.isAmrap)
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () =>
+                                      _toggleAmrapStopwatch(lift.name),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                    minimumSize: const Size(0, 30),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      GsIcon(
+                                        _amrapRunningLift == lift.name
+                                            ? 'pause'
+                                            : 'timer',
+                                        size: 14,
+                                        color: tokens.accent,
                                       ),
-                                    ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        _amrapLabel(lift.name),
+                                        style: const TextStyle(fontSize: 11),
+                                      ),
+                                    ],
                                   ),
-                                if (lift.isAmrap)
-                                  TextButton.icon(
-                                    onPressed: () =>
-                                        _toggleAmrapStopwatch(lift.name),
-                                    icon: Icon(
-                                      _amrapRunningLift == lift.name
-                                          ? Icons.stop_circle_outlined
-                                          : Icons.timer_outlined,
-                                      size: 16,
-                                    ),
-                                    label: Text(
-                                      _amrapLabel(lift.name),
-                                      style: const TextStyle(fontSize: 11),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
+                                ),
+                              ),
+                            const SizedBox(height: 6),
                             Row(
-                              children: [
+                              children: <Widget>[
                                 Expanded(
                                   child: TextField(
                                     controller: weightCtrl,
@@ -1166,11 +1251,15 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
+                        children: <Widget>[
+                          Text(
                             'Plug-in Accessories',
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                              fontFamily: GsFont.body,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: tokens.bone,
+                            ),
                           ),
                           Text(
                             'Book limit: 1–3 per session (${accessories.length} configured)',
@@ -1323,32 +1412,32 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                   const SizedBox(height: 16),
 
                   // Live Volume Summary
-                  Card(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primaryContainer
-                        .withValues(alpha: 0.3),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Calculated Session Volume:',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 13),
+                  GsCard(
+                    color: tokens.surface2,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Text(
+                          'Calculated Session Volume:',
+                          style: TextStyle(
+                            fontFamily: GsFont.body,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                            color: tokens.bone,
                           ),
-                          Text(
-                            '${totalVolume.toStringAsFixed(1)} lbs',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                        ),
+                        Text(
+                          '${totalVolume.toStringAsFixed(1)} lbs',
+                          style: TextStyle(
+                            fontFamily: GsFont.mono,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: tokens.accent,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1367,17 +1456,10 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                   const SizedBox(height: 14),
 
                   // Log Button
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
+                  GsPrimaryButton(
+                    label: 'Log Today\'s Barbell Workout to History',
+                    svgIcon: 'check',
                     onPressed: () => _logSession(currentWorkout, coreLifts),
-                    icon: const Icon(Icons.save),
-                    label: const Text(
-                      'Log Today\'s Barbell Workout to History',
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
@@ -1408,78 +1490,21 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                 ],
               ),
             ),
+            if (_restTimerActive)
+              GsStickyDock(
+                child: CircularRestTimer(
+                  key: ValueKey('rest-$_restTimerToken'),
+                  seconds: _restSeconds,
+                  soundEnabled: trainingState.restTimerSoundEnabled,
+                  countUp: trainingState.restTimerCountUp,
+                  size: trainingState.restTimerSize,
+                  coachingText: widget.liveMode ? null : _restCoaching,
+                  onDismissed: () => setState(() => _restTimerActive = false),
+                ),
+              ),
           ],
         );
       },
-    );
-  }
-}
-
-/// Circular tap target used to mark a single set (5 / 5 / 5+ AMRAP) complete.
-///
-/// Mirrors the simple "tap the ring" flow of the official Greyskull reference
-/// apps and keeps the AMRAP set visually distinct.
-class _SetCircleButton extends StatelessWidget {
-  const _SetCircleButton({
-    super.key,
-    required this.label,
-    required this.isAmrap,
-    required this.isDone,
-    required this.semanticsLabel,
-    required this.onTap,
-    this.onLongPress,
-  });
-
-  final String label;
-  final bool isAmrap;
-  final bool isDone;
-  final String semanticsLabel;
-  final VoidCallback onTap;
-  final VoidCallback? onLongPress;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    // AMRAP keeps the Greyskull amber accent so the top set reads differently
-    // from the straight sets on every skin.
-    const amrapAccent = Color(0xFFFFB300);
-    final ringColor = isAmrap ? amrapAccent : scheme.primary;
-    final textColor = isDone
-        ? (isAmrap ? Colors.black : scheme.onPrimary)
-        : (isAmrap ? amrapAccent : scheme.onSurface);
-
-    return Semantics(
-      button: true,
-      label: semanticsLabel,
-      child: InkResponse(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        radius: 26,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: 46,
-          height: 46,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isDone ? ringColor : Colors.transparent,
-            border: Border.all(
-              color: isDone
-                  ? ringColor
-                  : ringColor.withValues(alpha: isAmrap ? 1.0 : 0.45),
-              width: isAmrap ? 2.5 : 1.5,
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: isAmrap ? 13 : 15,
-              color: textColor,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

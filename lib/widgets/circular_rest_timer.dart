@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/timer_cue_service.dart';
 import 'package:greyskull_lp/services/workout_notification_service.dart';
-import 'package:greyskull_lp/themes/theme.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
 
 /// Circular arc rest timer (parity with the old app's round countdown).
 ///
@@ -99,9 +99,9 @@ class _CircularRestTimerState extends State<CircularRestTimer> {
       widget.seconds == 0 ? 0 : (_elapsed / widget.seconds).clamp(0.0, 1.0);
 
   double get _diameter => switch (widget.size) {
-        1 => 112,
-        3 => 188,
-        _ => 148,
+        1 => 54,
+        3 => 90,
+        _ => 68,
       };
 
   void _adjust(int delta) {
@@ -118,106 +118,124 @@ class _CircularRestTimerState extends State<CircularRestTimer> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final accent = _finished
-        ? AppTheme.positiveAccent(context)
-        : Theme.of(context).colorScheme.primary;
+    final tokens = context.gs;
+    final accent = _finished ? tokens.ok : tokens.accent;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: accent.withValues(alpha: 0.07),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                SizedBox(
-                  width: _diameter,
-                  height: _diameter,
-                  child: CustomPaint(
-                    painter: _ArcPainter(
-                      progress: _progress,
+    return Row(
+      children: <Widget>[
+        SizedBox(
+          width: _diameter,
+          height: _diameter,
+          child: CustomPaint(
+            painter: _ArcPainter(
+              progress: _progress,
+              color: accent,
+              trackColor: tokens.surface2,
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    _label,
+                    style: TextStyle(
+                      fontFamily: GsFont.mono,
+                      fontSize: _diameter * 0.21,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
                       color: accent,
-                      trackColor: scheme.onSurface.withValues(alpha: 0.12),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _label,
-                            style: TextStyle(
-                              fontSize: _diameter * 0.2,
-                              fontWeight: FontWeight.bold,
-                              fontFeatures: const [
-                                FontFeature.tabularFigures()
-                              ],
-                              color: accent,
-                            ),
-                          ),
-                          Text(
-                            _finished
-                                ? 'next set'
-                                : widget.countUp
-                                    ? 'elapsed'
-                                    : 'remaining',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _finished
+                        ? 'NEXT SET'
+                        : widget.countUp
+                            ? 'ELAPSED'
+                            : 'REMAINING',
+                    style: TextStyle(
+                      fontFamily: GsFont.body,
+                      fontSize: 7.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: tokens.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                _finished ? 'Rest complete' : 'Rest',
+                style: TextStyle(
+                  fontFamily: GsFont.body,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: accent,
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _finished ? 'Rest complete' : 'Rest',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: accent,
-                        ),
-                      ),
-                      if (widget.coachingText != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.coachingText!,
-                          style: TextStyle(
-                              fontSize: 12, color: scheme.onSurfaceVariant),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 4,
-                        children: [
-                          TextButton(
-                            onPressed: () => _adjust(-15),
-                            child: const Text('-15 s'),
-                          ),
-                          TextButton(
-                            onPressed: () => _adjust(15),
-                            child: const Text('+15 s'),
-                          ),
-                          TextButton(
-                            onPressed: _skip,
-                            child: const Text('Skip'),
-                          ),
-                        ],
-                      ),
-                    ],
+              ),
+              if (widget.coachingText != null) ...<Widget>[
+                const SizedBox(height: 2),
+                Text(
+                  widget.coachingText!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: GsFont.body,
+                    fontSize: 11,
+                    height: 1.35,
+                    color: tokens.muted,
                   ),
                 ),
               ],
-            ),
-          ],
+              const SizedBox(height: 2),
+              Wrap(
+                spacing: 2,
+                children: <Widget>[
+                  TextButton(
+                    onPressed: () => _adjust(-15),
+                    style: _compactButtonStyle(tokens),
+                    child: const Text('-15 s'),
+                  ),
+                  TextButton(
+                    onPressed: () => _adjust(15),
+                    style: _compactButtonStyle(tokens),
+                    child: const Text('+15 s'),
+                  ),
+                  TextButton(
+                    onPressed: _skip,
+                    style: _compactButtonStyle(tokens),
+                    child: const Text('Skip'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
+      ],
+    );
+  }
+
+  ButtonStyle _compactButtonStyle(GsTokens tokens) {
+    return TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      minimumSize: const Size(0, 28),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      foregroundColor: tokens.accent,
+      textStyle: TextStyle(
+        fontFamily: GsFont.body,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
       ),
     );
   }
