@@ -4,6 +4,7 @@ import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/calisthenics_progress_service.dart';
 import 'package:greyskull_lp/services/lift_progress_service.dart';
 import 'package:greyskull_lp/themes/app_icons.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 
 class StatsPage extends StatefulWidget {
@@ -48,9 +49,10 @@ class _StatsPageState extends State<StatsPage> {
   void _showMetricDefinitions() {
     showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
       builder: (context) {
         return Padding(
@@ -60,11 +62,17 @@ class _StatsPageState extends State<StatsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Metric Definitions & Rules',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                children: <Widget>[
+                  const Expanded(
+                    child: Text(
+                      'Metric Definitions & Rules',
+                      maxLines: 2,
+                      style: TextStyle(
+                        fontFamily: GsFont.display,
+                        fontSize: 21,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -111,7 +119,7 @@ class _StatsPageState extends State<StatsPage> {
       children: [
         Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
         const SizedBox(height: 4),
         Text(
@@ -465,7 +473,7 @@ class _StatsPageState extends State<StatsPage> {
                               children: [
                                 Text(
                                   m.title,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13),
                                 ),
@@ -543,7 +551,7 @@ class _StatsPageState extends State<StatsPage> {
                           Expanded(
                             child: Text(
                               lift.lift,
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontWeight: FontWeight.w600, fontSize: 13),
                             ),
                           ),
@@ -652,8 +660,7 @@ class _StatsPageState extends State<StatsPage> {
               children: [
                 Text(
                   useWeight ? 'Bodyweight Trend' : 'Body Fat Trend',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 14),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 Text(
                   deltaText,
@@ -906,10 +913,10 @@ class _StatsPageState extends State<StatsPage> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
-        Expanded(child: Text(name, style: const TextStyle(fontSize: 13))),
+        Expanded(child: Text(name, style: TextStyle(fontSize: 13))),
         Text(
           '$reps reps',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
         ),
       ],
     );
@@ -1031,7 +1038,7 @@ class _StatsPageState extends State<StatsPage> {
                         Expanded(
                           child: Text(
                             lift.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontWeight: FontWeight.w600, fontSize: 13),
                           ),
                         ),
@@ -1189,8 +1196,7 @@ class _StatsPageState extends State<StatsPage> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 13),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                 ),
               ),
               Text(
@@ -1251,7 +1257,7 @@ class _StatsPageState extends State<StatsPage> {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 6),
             Text(
@@ -1286,10 +1292,10 @@ class _StatsPageState extends State<StatsPage> {
           color: Theme.of(context).primaryColor,
         ),
         title: Text(entry.title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         subtitle: Text(
           '$stamp\n${entry.details}',
-          style: const TextStyle(fontSize: 12),
+          style: TextStyle(fontSize: 12),
         ),
         isThreeLine: true,
       ),

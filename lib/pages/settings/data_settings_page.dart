@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:flutter/services.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/settings/settings_common.dart';
@@ -70,7 +71,7 @@ class _DataSettingsPageState extends State<DataSettingsPage> {
   Future<void> _importDemoScenario(DemoScenario scenario) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: Text('Load ${scenario.title}?'),
         content: Text(
           '${scenario.description}\n\n'

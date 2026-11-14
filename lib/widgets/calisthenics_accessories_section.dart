@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 
@@ -48,7 +49,7 @@ class _CalisthenicsAccessoriesSectionState
     showDialog<void>(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
+        return GsAlertDialog(
           title: const Text('Add Optional Calisthenics Accessory'),
           content: SingleChildScrollView(
             child: Column(

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/calisthenics_reminder_service.dart';
@@ -156,7 +157,7 @@ class _WorkoutPageLadderState extends State<WorkoutPageLadder> {
 
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('Ladder Session Saved'),
         content: Text(
           'Saved $totalReps reps of $exercise across ${allLadders.length} ladder(s) (Peak rung: $peak).\n\n'

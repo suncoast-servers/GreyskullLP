@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/program/template_labels.dart';
 import 'package:greyskull_lp/pages/live_workout_page.dart';
@@ -314,10 +315,10 @@ class _WorkoutSetupPageState extends State<WorkoutSetupPage> {
   void _duplicateFromPreset(BuildContext context) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => SimpleDialog(
+      builder: (ctx) => GsSimpleDialog(
         title: const Text('Start custom from a preset'),
         children: TrainingState.officialBookTemplates.map((template) {
-          return SimpleDialogOption(
+          return GsDialogOption(
             onPressed: () {
               Navigator.of(ctx).pop();
               trainingState.duplicateTemplateFromPreset(template);

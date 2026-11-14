@@ -84,6 +84,7 @@ Future<void> showAchievementBadgeSheet(
   final tokens = context.gs;
   return showModalBottomSheet<void>(
     context: context,
+    showDragHandle: true,
     isScrollControlled: true,
     backgroundColor: tokens.surface,
     shape: const RoundedRectangleBorder(
@@ -93,23 +94,12 @@ Future<void> showAchievementBadgeSheet(
       return SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Center(
-                  child: Container(
-                    width: 38,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: tokens.line,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[

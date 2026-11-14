@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/pages/workout_page_weight.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -277,7 +278,7 @@ void main() {
 
       expect(find.text('Reset to Factory Defaults?'), findsOneWidget);
       await tester.tap(find.descendant(
-          of: find.byType(AlertDialog),
+          of: find.byType(GsAlertDialog),
           matching: find.text('Revert to Factory')));
       await tester.pumpAndSettle();
 

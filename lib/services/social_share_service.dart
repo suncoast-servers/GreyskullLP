@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/training_state.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
 
 typedef ShareHandler = Future<void> Function({
   required String text,
@@ -169,9 +170,10 @@ class SocialShareService {
   }) async {
     await showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
       builder: (modalContext) {
         return _SocialShareModalContent(
@@ -336,7 +338,11 @@ class _SocialShareModalContentState extends State<_SocialShareModalContent> {
             children: [
               const Text(
                 'Share Workout to Social',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(
+                  fontFamily: GsFont.display,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.close),

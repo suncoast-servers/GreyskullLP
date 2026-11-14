@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/calisthenics_reminder_service.dart';
@@ -161,7 +162,7 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
 
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('Session Saved'),
         content: Text(
           'Frequency session logged to history with $totalPushUps push-ups and $totalChinUps chin-ups across ${sets.length} sets.\n\n'

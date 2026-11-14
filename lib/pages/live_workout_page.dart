@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/workout_page_weight.dart';
 import 'package:greyskull_lp/services/screen_awake_service.dart';
@@ -71,7 +72,7 @@ class _LiveWorkoutPageState extends State<LiveWorkoutPage> {
   Future<bool> _confirmEnd(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('End workout?'),
         content: const Text(
             'Leaving now stops the session. Logged sets are kept in the workout page until you finish.'),

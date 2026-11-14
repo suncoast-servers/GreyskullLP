@@ -1,5 +1,6 @@
 import '../services/social_share_service.dart';
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 
@@ -16,7 +17,7 @@ class _HistoryPageState extends State<HistoryPage> {
   void _showDeleteDialog(BuildContext context, HistoryEntry entry) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('Delete Entry?'),
         content: Text(
             'Are you sure you want to delete "${entry.title}"? This cannot be undone.'),
@@ -71,7 +72,7 @@ class _HistoryPageState extends State<HistoryPage> {
     showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
+        builder: (ctx, setDialogState) => GsAlertDialog(
           title: const Text('Edit Frequency Method Entry'),
           content: SingleChildScrollView(
             child: Column(
@@ -189,7 +190,7 @@ class _HistoryPageState extends State<HistoryPage> {
     showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
+        builder: (ctx, setDialogState) => GsAlertDialog(
           title: const Text('Edit Ladder Method Entry'),
           content: SingleChildScrollView(
             child: Column(
@@ -327,7 +328,7 @@ class _HistoryPageState extends State<HistoryPage> {
     showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
+        builder: (ctx, setDialogState) => GsAlertDialog(
           title: const Text('Edit Total Work Method Entry'),
           content: SingleChildScrollView(
             child: Column(
@@ -492,7 +493,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('Edit Barbell Session'),
         content: SingleChildScrollView(
           child: Column(
@@ -607,7 +608,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: Text('Edit ${entry.title}'),
         content: SingleChildScrollView(
           child: Column(
@@ -666,7 +667,7 @@ class _HistoryPageState extends State<HistoryPage> {
   void _showDetailsDialog(BuildContext context, HistoryEntry entry) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: Text(entry.title),
         content: SingleChildScrollView(
           child: Column(

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/calisthenics_reminder_service.dart';
@@ -146,7 +147,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
 
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('Total Work Session Saved'),
         content: Text(
           'Saved $totalReps reps of $exercise in ${sets.length} sets toward $target rep target.\n\n'

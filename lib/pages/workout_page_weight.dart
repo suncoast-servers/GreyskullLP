@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/workout_notification_service.dart';
@@ -146,7 +147,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
+            return GsAlertDialog(
               title: const Text('Add Plug-in Accessory'),
               content: SingleChildScrollView(
                 child: Column(
@@ -230,7 +231,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   void _showDuplicatePresetDialog(BuildContext context) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('Duplicate from Book Preset'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -278,7 +279,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   void _confirmResetToFactory(BuildContext context) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('Reset to Factory Defaults?'),
         content: const Text(
           'Revert custom program to factory starting template? All added workout days and custom core lifts will be reset.',
@@ -442,11 +443,11 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     final current = trainingState.restSecondsForLift(liftName);
     final choice = await showDialog<int>(
       context: context,
-      builder: (ctx) => SimpleDialog(
+      builder: (ctx) => GsSimpleDialog(
         title: Text('Rest for $liftName'),
         children: [
           for (final seconds in const [30, 45, 60, 90, 120, 180, 300])
-            SimpleDialogOption(
+            GsDialogOption(
               onPressed: () => Navigator.of(ctx).pop(seconds),
               child: Row(
                 children: [
@@ -478,7 +479,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     final result = await showDialog<int>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
+        builder: (ctx, setLocal) => GsAlertDialog(
           title: Text('${lift.name} set ${setIndex + 1} reps'),
           content: Row(
             mainAxisSize: MainAxisSize.min,

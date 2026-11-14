@@ -8,6 +8,7 @@ import 'package:greyskull_lp/pages/home_page.dart';
 import 'package:greyskull_lp/pages/settings/appearance_settings_page.dart';
 import 'package:greyskull_lp/pages/settings_page.dart';
 import 'package:greyskull_lp/themes/theme.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/ui/gs_icon.dart';
 import 'package:greyskull_lp/ui/gs_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -219,6 +220,52 @@ void main() {
         find.text(TrainingState.methodLabel(trainingState.activeDailyMethod)),
         findsOneWidget,
       );
+    });
+  });
+
+  group('Dialog components', () {
+    testWidgets('GsAlertDialog renders title, content and actions',
+        (tester) async {
+      var tapped = 0;
+      await tester.pumpWidget(
+        _app(
+          GsAlertDialog(
+            title: const Text('Confirm'),
+            content: const Text('Are you sure?'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => tapped++,
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(find.text('Confirm'), findsOneWidget);
+      expect(find.text('Are you sure?'), findsOneWidget);
+      await tester.tap(find.text('OK'));
+      expect(tapped, 1);
+    });
+
+    testWidgets('GsSimpleDialog option reports taps', (tester) async {
+      var tapped = 0;
+      await tester.pumpWidget(
+        _app(
+          GsSimpleDialog(
+            title: const Text('Pick one'),
+            children: <Widget>[
+              GsDialogOption(
+                onPressed: () => tapped++,
+                child: const Text('Option A'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Option A'));
+      expect(tapped, 1);
     });
   });
 

@@ -42,8 +42,9 @@ class _WorkoutPageState extends State<WorkoutPage> {
       {required ProgramLevel targetLevel, required VoidCallback onProceed}) {
     showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
       builder: (context) {
         return Padding(
@@ -61,7 +62,9 @@ class _WorkoutPageState extends State<WorkoutPage> {
                     child: Text(
                       'Graduate to ${targetLevel.shortLabel}',
                       style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                          fontFamily: GsFont.display,
+                          fontSize: 21,
+                          fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
@@ -114,8 +117,9 @@ class _WorkoutPageState extends State<WorkoutPage> {
   void _showAdjustLevelSheet() {
     showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
       builder: (context) {
         return Padding(
@@ -126,7 +130,10 @@ class _WorkoutPageState extends State<WorkoutPage> {
             children: [
               const Text(
                 'Adjust Programming Level',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontFamily: GsFont.display,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 4),
               Text(
@@ -412,11 +419,12 @@ void showStarterOnboardingDialog(BuildContext context,
     {VoidCallback? onCompleted}) {
   showModalBottomSheet<void>(
     context: context,
+    showDragHandle: true,
     isDismissible: false,
     enableDrag: false,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
     ),
     builder: (context) {
       ProgramLevel selected = ProgramLevel.foundation;
@@ -447,7 +455,9 @@ void showStarterOnboardingDialog(BuildContext context,
                           const Text(
                             'Welcome to Greyskull LP',
                             style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
+                                fontFamily: GsFont.display,
+                                fontSize: 21,
+                                fontWeight: FontWeight.w600),
                           ),
                           Text(
                             'Select your initial programming level:',
