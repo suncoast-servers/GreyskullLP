@@ -85,11 +85,32 @@ class LiftProgressService {
     return output;
   }
 
+  /// Canonical display order (issue #115): the four main barbell lifts first,
+  /// then plug-in accessories alphabetically.
+  static const List<String> canonicalOrder = [
+    'Bench Press',
+    'Squat',
+    'Overhead Press',
+    'Deadlift',
+  ];
+
+  /// Bench, squat, OHP, deadlift, then accessories A-Z.
+  static int compareLifts(String a, String b) {
+    final indexA = canonicalOrder.indexOf(a);
+    final indexB = canonicalOrder.indexOf(b);
+    if (indexA >= 0 && indexB >= 0) return indexA.compareTo(indexB);
+    if (indexA >= 0) return -1;
+    if (indexB >= 0) return 1;
+    return a.toLowerCase().compareTo(b.toLowerCase());
+  }
+
   /// Builds chronological series for every lift found in [entries]
   /// (entries are expected newest-first, as returned by TrainingState).
+  ///
+  /// Pass `maxLifts: null` to keep every lift (the Stats page does).
   static List<LiftSeries> seriesFor(
     Iterable<HistoryEntry> entries, {
-    int maxLifts = 3,
+    int? maxLifts = 3,
   }) {
     final chronological = entries
         .where((e) => e.category == HistoryCategory.weight)
@@ -109,8 +130,8 @@ class LiftProgressService {
         .where((e) => e.value.length >= 2)
         .map((e) => LiftSeries(lift: e.key, points: e.value))
         .toList()
-      ..sort((a, b) => b.change.compareTo(a.change));
+      ..sort((a, b) => compareLifts(a.lift, b.lift));
 
-    return series.take(maxLifts).toList();
+    return maxLifts == null ? series : series.take(maxLifts).toList();
   }
 }
