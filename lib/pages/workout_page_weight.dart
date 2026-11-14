@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/program/template_labels.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/services/social_share_service.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
@@ -10,7 +11,12 @@ import 'package:greyskull_lp/widgets/custom_program_editor_sheet.dart';
 import 'package:greyskull_lp/widgets/circular_rest_timer.dart';
 
 class WorkoutPageWeight extends StatefulWidget {
-  const WorkoutPageWeight({super.key});
+  const WorkoutPageWeight({super.key, this.liveMode = false});
+
+  /// When true the page runs as the focused live session (issue #80):
+  /// session clock starts immediately, setup chrome is hidden and leaving
+  /// requires confirmation.
+  final bool liveMode;
 
   @override
   State<WorkoutPageWeight> createState() => _WorkoutPageWeightState();
@@ -28,6 +34,9 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   int _restTimerToken = 0;
   int _restSeconds = 90;
   String _restCoaching = '';
+
+  // Per-set rep overrides from press-and-hold (#80): lift -> set index -> reps.
+  final Map<String, Map<int, int>> _repOverrides = {};
 
   // AMRAP stopwatch (#75)
   final Map<String, int> _amrapSeconds = {};
@@ -58,9 +67,26 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.liveMode) {
+      _sessionRunning = true;
+      _sessionSeconds = 0;
+      _sessionTicker = Timer.periodic(
+        const Duration(seconds: 1),
+        (_) => setState(() => _sessionSeconds += 1),
+      );
+    }
+  }
+
   TextEditingController _getWeightController(String liftName) {
-    return _weightControllers.putIfAbsent(
-        liftName, () => TextEditingController());
+    return _weightControllers.putIfAbsent(liftName, () {
+      final suggested = trainingState.nextSessionWeight(liftName);
+      return TextEditingController(
+        text: suggested == null ? '' : suggested.toStringAsFixed(1),
+      );
+    });
   }
 
   TextEditingController _getRepsController(String liftName) {
@@ -260,6 +286,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   void _logSession(
       TemplateWorkoutDay currentWorkout, List<TemplateLift> coreLifts) {
     final coreLiftSummaries = <String>[];
+    final bumpedLifts = <String>[];
     for (final lift in coreLifts) {
       final isDone = _completedCoreLifts.contains(lift.name);
       final weight = _fieldDouble(_getWeightController(lift.name));
@@ -267,8 +294,22 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
       final status = isDone ? 'Done' : 'Not marked';
       final amrapSeconds = _amrapSeconds[lift.name];
       final amrapNote = amrapSeconds == null ? '' : ', AMRAP ${amrapSeconds}s';
+      // AMRAP >= 10 reps -> add weight next session (5 lb upper / 10 lb lower).
+      if (weight > 0) {
+        final bump =
+            lift.isAmrap && reps >= 10 ? (lift.isUpperBody ? 5.0 : 10.0) : 0.0;
+        trainingState.setNextSessionWeight(lift.name, weight + bump);
+        if (bump > 0) {
+          bumpedLifts
+              .add('${lift.name} -> ${(weight + bump).toStringAsFixed(1)} lb');
+        }
+      }
+      final overrides = _repOverrides[lift.name];
+      final overrideNote = overrides == null || overrides.isEmpty
+          ? ''
+          : ', set reps ${overrides.entries.map((e) => '${e.key + 1}:${e.value}').join(' ')}';
       final details = weight > 0 && reps > 0
-          ? '${lift.name} ($status, ${weight.toStringAsFixed(1)} lbs x ${reps.toInt()} reps x ${lift.sets} sets$amrapNote)'
+          ? '${lift.name} ($status, ${weight.toStringAsFixed(1)} lbs x ${reps.toInt()} reps x ${lift.sets} sets$amrapNote$overrideNote)'
           : '${lift.name} ($status)';
       coreLiftSummaries.add(details);
     }
@@ -306,6 +347,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     setState(() {
       _completedCoreLifts.clear();
       _completedSetsByLift.clear();
+      _repOverrides.clear();
       _completedAccessories.clear();
       _notesController.clear();
       for (final controller in _weightControllers.values) {
@@ -320,6 +362,13 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
       return;
     }
 
+    // Keep the AMRAP bump visible: one snackbar carries both facts so the
+    // progression advice is not replaced by the generic log toast.
+    final bumpSuffix =
+        bumpedLifts.isEmpty ? '' : '\nNext session: ${bumpedLifts.join(', ')}';
+    final loggedMessage = 'Workout logged! Advanced rotation to: '
+        '${trainingState.currentTemplateWorkout.title}$bumpSuffix';
+
     if (trainingState.accountabilityMode ==
             AccountabilityPostMode.onWorkoutComplete &&
         draft != null) {
@@ -329,9 +378,8 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
         draft != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Workout logged! Advanced rotation to: ${trainingState.currentTemplateWorkout.title}',
-          ),
+          content: Text(loggedMessage),
+          duration: const Duration(seconds: 5),
           action: SnackBarAction(
             label: 'Post to Forum',
             onPressed: () =>
@@ -342,9 +390,8 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Workout logged! Advanced rotation to: ${trainingState.currentTemplateWorkout.title}',
-          ),
+          content: Text(loggedMessage),
+          duration: Duration(seconds: bumpedLifts.isEmpty ? 4 : 6),
         ),
       );
     }
@@ -382,6 +429,59 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     if (choice != null) {
       trainingState.setPerExerciseRestSeconds(liftName, choice);
       setState(() {});
+    }
+  }
+
+  Future<void> _promptRepOverride(
+      TemplateLift lift, int setIndex, int totalSets) async {
+    final current = _repOverrides[lift.name]?[setIndex] ?? lift.defaultReps;
+    var value = current;
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: Text('${lift.name} set ${setIndex + 1} reps'),
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () =>
+                    setLocal(() => value = (value - 1).clamp(1, 30)),
+                icon: const Icon(Icons.remove_circle_outline),
+              ),
+              Expanded(
+                child: Text(
+                  '$value',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 26, fontWeight: FontWeight.bold),
+                ),
+              ),
+              IconButton(
+                onPressed: () =>
+                    setLocal(() => value = (value + 1).clamp(1, 30)),
+                icon: const Icon(Icons.add_circle_outline),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(value),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        _repOverrides.putIfAbsent(lift.name, () => <int, int>{})[setIndex] =
+            result;
+      });
     }
   }
 
@@ -542,110 +642,88 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                       ),
                     ),
                   ],
-                  // Template selection card
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Official Greyskull LP Template',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: AppTheme.mutedText(context)),
-                          ),
-                          const SizedBox(height: 6),
-                          DropdownButtonFormField<BarbellTemplate>(
-                            key: ValueKey(trainingState.activeBarbellTemplate),
-                            initialValue: trainingState.activeBarbellTemplate,
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 10),
+                  if (!widget.liveMode) ...[
+                    // Template selection card
+                    Card(
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Program',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppTheme.mutedText(context)),
                             ),
-                            items: BarbellTemplate.values.map((template) {
-                              final details =
-                                  trainingState.getTemplateDetails(template);
-                              return DropdownMenuItem(
-                                value: template,
-                                child: Text(
-                                  details.name,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (newTemplate) {
-                              if (newTemplate != null) {
-                                setState(() {
-                                  _completedCoreLifts.clear();
-                                  _completedAccessories.clear();
-                                });
-                                trainingState.setBarbellTemplate(newTemplate);
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            templateDetails.subtitle,
-                            style: const TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Book ref: ${templateDetails.bookReference}',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.resistanceAccent(context),
-                                fontStyle: FontStyle.italic),
-                          ),
-                          Text(
-                            'Cadence: ${templateDetails.scheduleDescription}',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.onSurface),
-                          ),
-                          if (trainingState.isCustomTemplateActive) ...[
-                            const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
+                            const SizedBox(height: 6),
+                            Row(
                               children: [
-                                ElevatedButton.icon(
-                                  key: const Key('customize_program_btn'),
-                                  onPressed: () =>
-                                      CustomProgramEditorSheet.show(context),
-                                  icon: const Icon(Icons.tune, size: 16),
-                                  label: const Text('Customize Program'),
-                                ),
-                                OutlinedButton.icon(
-                                  key: const Key('duplicate_preset_btn'),
-                                  onPressed: () =>
-                                      _showDuplicatePresetDialog(context),
-                                  icon: const Icon(Icons.copy, size: 16),
-                                  label: const Text('Duplicate Preset'),
-                                ),
-                                if (trainingState.isCustomTemplateModified)
-                                  OutlinedButton.icon(
-                                    key: const Key('reset_custom_btn'),
-                                    onPressed: () =>
-                                        _confirmResetToFactory(context),
-                                    icon: const Icon(Icons.restore,
-                                        size: 16, color: Colors.red),
-                                    label: const Text('Revert to Factory',
-                                        style: TextStyle(color: Colors.red)),
+                                Expanded(
+                                  child: Text(
+                                    TemplateLabels.nameFor(
+                                        trainingState.activeBarbellTemplate),
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
                                   ),
+                                ),
+                                Text(
+                                  'Change in Setup',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppTheme.mutedText(context)),
+                                ),
                               ],
                             ),
+                            const SizedBox(height: 4),
+                            Text(
+                              TemplateLabels.lineFor(
+                                  trainingState.activeBarbellTemplate),
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.mutedText(context)),
+                            ),
+                            if (trainingState.isCustomTemplateActive) ...[
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  ElevatedButton.icon(
+                                    key: const Key('customize_program_btn'),
+                                    onPressed: () =>
+                                        CustomProgramEditorSheet.show(context),
+                                    icon: const Icon(Icons.tune, size: 16),
+                                    label: const Text('Customize Program'),
+                                  ),
+                                  OutlinedButton.icon(
+                                    key: const Key('duplicate_preset_btn'),
+                                    onPressed: () =>
+                                        _showDuplicatePresetDialog(context),
+                                    icon: const Icon(Icons.copy, size: 16),
+                                    label: const Text('Duplicate Preset'),
+                                  ),
+                                  if (trainingState.isCustomTemplateModified)
+                                    OutlinedButton.icon(
+                                      key: const Key('reset_custom_btn'),
+                                      onPressed: () =>
+                                          _confirmResetToFactory(context),
+                                      icon: const Icon(Icons.restore,
+                                          size: 16, color: Colors.red),
+                                      label: const Text('Revert to Factory',
+                                          style: TextStyle(color: Colors.red)),
+                                    ),
+                                ],
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 12),
 
                   // Workout day switcher & rotation indicator
@@ -940,7 +1018,9 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                     child: _SetCircleButton(
                                       key: ValueKey(
                                           'set-tap-${lift.name}-$index'),
-                                      label: isAmrapSet ? '5+' : '${index + 1}',
+                                      label: isAmrapSet
+                                          ? '5+'
+                                          : '${_repOverrides[lift.name]?[index] ?? lift.defaultReps}',
                                       isAmrap: isAmrapSet,
                                       isDone: doneSets.contains(index),
                                       semanticsLabel: isAmrapSet
@@ -948,6 +1028,8 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                           : 'Mark set ${index + 1} done',
                                       onTap: () => _toggleSet(
                                           lift.name, index, totalSets),
+                                      onLongPress: () => _promptRepOverride(
+                                          lift, index, totalSets),
                                     ),
                                   );
                                 }),
@@ -956,7 +1038,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                     totalSets == 1
                                         ? 'Tap the circle when the AMRAP set is done'
                                         : lift.isAmrap
-                                            ? 'Tap 1, 2, then 5+ (AMRAP) as you finish each set'
+                                            ? 'Tap 5, 5, then 5+ (AMRAP) as you finish each set'
                                             : 'Tap each circle as you finish a set',
                                     style: TextStyle(
                                       fontSize: 11,
@@ -1283,6 +1365,7 @@ class _SetCircleButton extends StatelessWidget {
     required this.isDone,
     required this.semanticsLabel,
     required this.onTap,
+    this.onLongPress,
   });
 
   final String label;
@@ -1290,6 +1373,7 @@ class _SetCircleButton extends StatelessWidget {
   final bool isDone;
   final String semanticsLabel;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -1307,6 +1391,7 @@ class _SetCircleButton extends StatelessWidget {
       label: semanticsLabel,
       child: InkResponse(
         onTap: onTap,
+        onLongPress: onLongPress,
         radius: 26,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),

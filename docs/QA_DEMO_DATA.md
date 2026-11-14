@@ -16,6 +16,25 @@ releases may hide the picker; owner QA builds must keep both scenarios
 > unless the app is built in debug/profile (`kDebugMode`) or compiled with
 > `--dart-define=ENABLE_DEMO_DATA=true`.
 
+## Retention policy (issue #89)
+
+Owner decision: **Scenario A and Scenario B stay available in every owner QA
+build** so Stats and History can be compared side by side. `DemoSeedService`,
+the `scenarios` list and the Settings picker must not be removed without
+explicit owner approval.
+
+| Build | Demo import visible? |
+|---|---|
+| `flutter build apk --debug` / `flutter run` | Yes (`kDebugMode`) |
+| Owner/QA release build | Yes with `--dart-define=ENABLE_DEMO_DATA=true` |
+| Store build (no flag) | No |
+
+Example owner build:
+
+```bash
+flutter build apk --release --dart-define=ENABLE_DEMO_DATA=true
+```
+
 ## Scenario A — 90-day newbie (OG → Villain → Gladiator)
 
 Issue: [#55](https://github.com/suncoast-servers/GreyskullLP/issues/55)

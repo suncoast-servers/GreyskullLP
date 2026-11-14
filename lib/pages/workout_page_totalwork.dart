@@ -3,7 +3,8 @@ import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
-import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
+import 'package:greyskull_lp/widgets/accessory_checklist.dart';
+import 'package:greyskull_lp/widgets/tutorial_overlay.dart';
 
 class WorkoutPageTotalWork extends StatefulWidget {
   const WorkoutPageTotalWork({super.key});
@@ -13,6 +14,16 @@ class WorkoutPageTotalWork extends StatefulWidget {
 }
 
 class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Tutorials.showIfNeeded(context, 'total_work');
+      }
+    });
+  }
+
   int _repsThisSet = 15;
   final Set<String> _completedAccessories = {};
 
@@ -322,6 +333,13 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
                       value: progress,
                       minHeight: 10,
                       borderRadius: BorderRadius.circular(5),
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.12),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.secondary,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -456,11 +474,16 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
               const SizedBox(height: 16),
             ],
 
-            // Optional Accessories Section
-            CalisthenicsAccessoriesSection(
+            // Accessories (configured in Settings)
+            const Text(
+              'Accessories',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            AccessoryChecklist(
               method: DailyMethod.totalWork,
-              completedAccessories: _completedAccessories,
-              onCompletedChanged: (updated) {
+              completed: _completedAccessories,
+              onChanged: (updated) {
                 setState(() {
                   _completedAccessories
                     ..clear()

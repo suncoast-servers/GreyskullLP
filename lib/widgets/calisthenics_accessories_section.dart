@@ -11,12 +11,17 @@ class CalisthenicsAccessoriesSection extends StatefulWidget {
   /// remove) and does not show per-day completion checkboxes.
   final bool showCompletion;
 
+  /// Card title; Settings passes the method name so the three editors are
+  /// unmistakable ("Frequency Method", "Ladder Method", "Total Work Method").
+  final String title;
+
   const CalisthenicsAccessoriesSection({
     super.key,
     required this.method,
     required this.completedAccessories,
     required this.onCompletedChanged,
     this.showCompletion = true,
+    this.title = 'Optional Accessories',
   });
 
   @override
@@ -148,16 +153,16 @@ class _CalisthenicsAccessoriesSectionState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Optional Accessories',
-                            style: TextStyle(
+                          Text(
+                            widget.title,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${accessories.length} configured for ${TrainingState.methodLabel(widget.method)}',
+                            '${accessories.length} configured',
                             style: TextStyle(
                               fontSize: 12,
                               color: AppTheme.mutedText(context),

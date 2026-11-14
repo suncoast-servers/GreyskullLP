@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:greyskull_lp/models/body_measurement.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 
@@ -33,18 +36,22 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
   late final TextEditingController _chest;
   late final TextEditingController _arms;
   late final TextEditingController _notes;
+  String? _photoBase64;
 
   @override
   void initState() {
     super.initState();
     final before = widget.existing;
     String value(double? v) => v == null ? '' : v.toString();
+    String tape(double? cm) =>
+        cm == null ? '' : trainingState.tapeFromCm(cm).toStringAsFixed(1);
     _weight = TextEditingController(text: value(before?.weightKg));
     _bodyFat = TextEditingController(text: value(before?.bodyFatPct));
-    _waist = TextEditingController(text: value(before?.waistCm));
-    _chest = TextEditingController(text: value(before?.chestCm));
-    _arms = TextEditingController(text: value(before?.armsCm));
+    _waist = TextEditingController(text: tape(before?.waistCm));
+    _chest = TextEditingController(text: tape(before?.chestCm));
+    _arms = TextEditingController(text: tape(before?.armsCm));
     _notes = TextEditingController(text: before?.notes ?? '');
+    _photoBase64 = before?.photoBase64;
   }
 
   @override
@@ -61,14 +68,45 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
   double? _parse(TextEditingController controller) =>
       double.tryParse(controller.text.trim().replaceAll(',', '.'));
 
+  double? _toCm(double? value) =>
+      value == null ? null : trainingState.tapeToCm(value);
+
+  Future<void> _pickPhoto() async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 640,
+        imageQuality: 60,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (bytes.lengthInBytes > 500 * 1024) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Photo is too large; pick a smaller image.')),
+        );
+        return;
+      }
+      if (!mounted) return;
+      setState(() => _photoBase64 = base64Encode(bytes));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not read that photo.')),
+      );
+    }
+  }
+
   void _save() {
     final measurement = (widget.existing ?? BodyMeasurement()).copyWith(
       weightKg: _parse(_weight),
       bodyFatPct: _parse(_bodyFat),
-      waistCm: _parse(_waist),
-      chestCm: _parse(_chest),
-      armsCm: _parse(_arms),
+      waistCm: _toCm(_parse(_waist)),
+      chestCm: _toCm(_parse(_chest)),
+      armsCm: _toCm(_parse(_arms)),
       notes: _notes.text.trim(),
+      photoBase64: _photoBase64,
     );
 
     if (!measurement.hasAnyValue) {
@@ -110,7 +148,20 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text('cm')),
+                ButtonSegment(value: true, label: Text('in')),
+              ],
+              selected: {trainingState.tapeMeasurementsInInches},
+              onSelectionChanged: (selection) {
+                setState(() {
+                  trainingState.setTapeMeasurementsInInches(selection.first);
+                });
+              },
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -125,15 +176,15 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: _numberField(_waist, 'Waist (cm)')),
+                Expanded(child: _numberField(_waist, _tapeLabel('Waist'))),
                 const SizedBox(width: 10),
-                Expanded(child: _numberField(_chest, 'Chest (cm)')),
+                Expanded(child: _numberField(_chest, _tapeLabel('Chest'))),
               ],
             ),
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: _numberField(_arms, 'Arms (cm)')),
+                Expanded(child: _numberField(_arms, _tapeLabel('Arms'))),
                 const SizedBox(width: 10),
                 const Expanded(child: SizedBox()),
               ],
@@ -147,7 +198,40 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
                 isDense: true,
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (_photoBase64 != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.memory(
+                        base64Decode(_photoBase64!),
+                        width: 52,
+                        height: 52,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _pickPhoto,
+                    icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                    label: Text(_photoBase64 == null
+                        ? 'Add progress photo (optional)'
+                        : 'Replace photo'),
+                  ),
+                ),
+                if (_photoBase64 != null)
+                  IconButton(
+                    tooltip: 'Remove photo',
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () => setState(() => _photoBase64 = null),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -161,6 +245,9 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
       ),
     );
   }
+
+  String _tapeLabel(String part) =>
+      trainingState.tapeMeasurementsInInches ? '$part (in)' : '$part (cm)';
 
   Widget _numberField(TextEditingController controller, String label) {
     return TextField(

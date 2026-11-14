@@ -3,7 +3,7 @@ import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
-import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
+import 'package:greyskull_lp/widgets/tutorial_overlay.dart';
 
 class WorkoutPageFrequency extends StatefulWidget {
   const WorkoutPageFrequency({super.key});
@@ -24,8 +24,12 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
     WidgetsBinding.instance.addObserver(this);
     // Auto-save rollover: if the app was left open (or resumed) after
     // midnight, close out yesterday before showing today's tally.
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => trainingState.ensureCurrentDay());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      trainingState.ensureCurrentDay();
+      if (mounted) {
+        Tutorials.showIfNeeded(context, 'frequency');
+      }
+    });
   }
 
   @override
@@ -94,24 +98,6 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
     if (result != null && mounted) {
       trainingState.logFrequencyAccessory(name, value: result, unit: unit);
     }
-  }
-
-  void _openAccessoryManager() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: SingleChildScrollView(
-          child: CalisthenicsAccessoriesSection(
-            method: DailyMethod.frequency,
-            completedAccessories: trainingState.completedFrequencyAccessories,
-            onCompletedChanged: (_) {},
-            showCompletion: false,
-          ),
-        ),
-      ),
-    );
   }
 
   void _addSet() {
@@ -292,14 +278,14 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                       label: 'Push-ups',
                       current: totalPushUps,
                       target: pushUpTarget,
-                      color: AppTheme.resistanceAccent(context),
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                     const SizedBox(height: 12),
                     _ProgressBar(
                       label: 'Chin-ups / Negatives',
                       current: totalChinUps,
                       target: chinUpTarget,
-                      color: AppTheme.positiveAccent(context),
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                     const SizedBox(height: 4),
                     const Divider(height: 20),
@@ -307,27 +293,20 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                       children: [
                         const Expanded(
                           child: Text(
-                            'Optional Accessories',
+                            'Accessories',
                             style: TextStyle(
                                 fontSize: 14, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: _openAccessoryManager,
-                          icon: const Icon(Icons.tune, size: 16),
-                          label: const Text('Manage'),
-                          style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
                           ),
                         ),
                       ],
                     ),
                     if (accessories.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
-                          'No accessories configured. Tap Manage to add dips, planks, and more.',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          'No accessories configured. Add them in Settings → Calisthenics Accessories.',
+                          style: TextStyle(
+                              fontSize: 12, color: AppTheme.mutedText(context)),
                         ),
                       )
                     else
@@ -404,7 +383,7 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                     if (accessories.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       const Text(
-                        'Accessories (optional)',
+                        'Accessories',
                         style: TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w600),
                       ),
@@ -419,7 +398,9 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                             avatar: Icon(
                               log == null ? Icons.add : Icons.check_circle,
                               size: 18,
-                              color: log == null ? null : Colors.teal,
+                              color: log == null
+                                  ? null
+                                  : AppTheme.positiveAccent(context),
                             ),
                             label: Text(
                               log == null
@@ -624,7 +605,7 @@ class _AccessoryLogTile extends StatelessWidget {
         log == null
             ? 'Tap to log ${measuredInSeconds ? 'seconds' : 'reps'}'
             : 'Logged ${log!.formattedValue}',
-        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+        style: TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
       ),
       trailing: log == null
           ? const Icon(Icons.add_circle_outline, size: 20)

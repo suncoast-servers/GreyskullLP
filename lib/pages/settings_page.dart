@@ -7,6 +7,7 @@ import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/demo_seed_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
+import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
 import 'package:share_plus/share_plus.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -714,6 +715,41 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const Divider(height: 32),
               const Text(
+                'Calisthenics Accessories',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Accessories shown on the Frequency, Ladder and Total Work screens.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              CalisthenicsAccessoriesSection(
+                method: DailyMethod.frequency,
+                completedAccessories: const <String>{},
+                onCompletedChanged: (_) {},
+                showCompletion: false,
+                title: 'Frequency Method',
+              ),
+              CalisthenicsAccessoriesSection(
+                method: DailyMethod.ladder,
+                completedAccessories: const <String>{},
+                onCompletedChanged: (_) {},
+                showCompletion: false,
+                title: 'Ladder Method',
+              ),
+              CalisthenicsAccessoriesSection(
+                method: DailyMethod.totalWork,
+                completedAccessories: const <String>{},
+                onCompletedChanged: (_) {},
+                showCompletion: false,
+                title: 'Total Work Method',
+              ),
+              const Divider(height: 32),
+              const Text(
                 'Workout Timing',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
@@ -761,10 +797,43 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 4),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Sound and vibration when rest ends'),
+                  title: const Text('Bell and vibration when rest ends'),
                   value: trainingState.restTimerSoundEnabled,
                   onChanged: (val) =>
                       trainingState.setRestTimerSoundEnabled(val),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    trainingState.replayTutorials();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Tutorials reset — they show again on each screen.'),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.school_outlined, size: 16),
+                  label: const Text('Replay section tutorials'),
+                ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Live workout notifications'),
+                  subtitle: const Text(
+                      'Ongoing session notification and rest-complete alerts.'),
+                  value: trainingState.workoutNotifications,
+                  onChanged: (val) =>
+                      trainingState.setWorkoutNotifications(val),
+                ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Keep screen awake in a live workout'),
+                  subtitle: const Text(
+                      'Prevents the display sleeping while a session is open.'),
+                  value: trainingState.keepScreenAwake,
+                  onChanged: (val) => trainingState.setKeepScreenAwake(val),
                 ),
                 const SizedBox(height: 4),
                 SwitchListTile(

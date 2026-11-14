@@ -436,6 +436,21 @@ class TrainingState extends ChangeNotifier {
   int _restTimerSize = 2;
   int _restAfterExerciseSeconds = 60;
   final Map<String, int> _perExerciseRestSeconds = {};
+
+  /// Tape measurements use inches when true (#85).
+  bool _tapeMeasurementsInInches = false;
+
+  /// Keep the screen awake while a live workout is running (#82).
+  bool _keepScreenAwake = true;
+
+  /// Show the ongoing live-workout notification and rest alerts (#82).
+  bool _workoutNotifications = true;
+
+  /// Sections whose first-run tutorial has been seen (#83).
+  final Set<String> _seenTutorials = {};
+
+  /// Next working weight per lift, carried between sessions (#80).
+  final Map<String, double> _nextSessionWeights = {};
   String _socialShareHashtag = '#GreyskullLP #JohnnyPain';
   BarbellTemplate _activeBarbellTemplate = BarbellTemplate.ogBase;
   int _activeBarbellRotationIndex = 0;
@@ -932,6 +947,59 @@ class TrainingState extends ChangeNotifier {
   Map<String, int> get perExerciseRestSeconds =>
       Map<String, int>.unmodifiable(_perExerciseRestSeconds);
 
+  bool get tapeMeasurementsInInches => _tapeMeasurementsInInches;
+
+  bool get keepScreenAwake => _keepScreenAwake;
+
+  bool get workoutNotifications => _workoutNotifications;
+
+  bool hasSeenTutorial(String section) => _seenTutorials.contains(section);
+
+  void markTutorialSeen(String section) {
+    if (_seenTutorials.add(section)) {
+      _notifyAndPersist();
+    }
+  }
+
+  void replayTutorials() {
+    if (_seenTutorials.isEmpty) return;
+    _seenTutorials.clear();
+    _notifyAndPersist();
+  }
+
+  void setWorkoutNotifications(bool value) {
+    if (_workoutNotifications == value) return;
+    _workoutNotifications = value;
+    _notifyAndPersist();
+  }
+
+  void setKeepScreenAwake(bool value) {
+    if (_keepScreenAwake == value) return;
+    _keepScreenAwake = value;
+    _notifyAndPersist();
+  }
+
+  double? nextSessionWeight(String liftName) => _nextSessionWeights[liftName];
+
+  void setNextSessionWeight(String liftName, double weight) {
+    if (_nextSessionWeights[liftName] == weight) return;
+    _nextSessionWeights[liftName] = weight;
+    _notifyAndPersist();
+  }
+
+  void setTapeMeasurementsInInches(bool value) {
+    if (_tapeMeasurementsInInches == value) return;
+    _tapeMeasurementsInInches = value;
+    _notifyAndPersist();
+  }
+
+  /// Converts a stored centimetre value for display in the chosen unit.
+  double tapeFromCm(double cm) => _tapeMeasurementsInInches ? cm / 2.54 : cm;
+
+  /// Converts a value entered in the chosen unit back to centimetres.
+  double tapeToCm(double value) =>
+      _tapeMeasurementsInInches ? value * 2.54 : value;
+
   /// Rest seconds for a lift: explicit per-exercise override, else the global
   /// default.
   int restSecondsForLift(String liftName) =>
@@ -1321,6 +1389,11 @@ class TrainingState extends ChangeNotifier {
       'restTimerSize': _restTimerSize,
       'restAfterExerciseSeconds': _restAfterExerciseSeconds,
       'perExerciseRestSeconds': _perExerciseRestSeconds,
+      'tapeMeasurementsInInches': _tapeMeasurementsInInches,
+      'nextSessionWeights': _nextSessionWeights,
+      'keepScreenAwake': _keepScreenAwake,
+      'workoutNotifications': _workoutNotifications,
+      'seenTutorials': _seenTutorials.toList(),
       'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
@@ -1397,6 +1470,24 @@ class TrainingState extends ChangeNotifier {
     _restTimerSize = (map['restTimerSize'] as int? ?? 2).clamp(1, 3);
     _restAfterExerciseSeconds =
         (map['restAfterExerciseSeconds'] as int? ?? 60).clamp(0, 600);
+    _tapeMeasurementsInInches =
+        map['tapeMeasurementsInInches'] as bool? ?? false;
+    _keepScreenAwake = map['keepScreenAwake'] as bool? ?? true;
+    _workoutNotifications = map['workoutNotifications'] as bool? ?? true;
+    _seenTutorials
+      ..clear()
+      ..addAll(
+        (map['seenTutorials'] as List<dynamic>? ?? <dynamic>[])
+            .whereType<String>(),
+      );
+    _nextSessionWeights
+      ..clear()
+      ..addAll(
+        (map['nextSessionWeights'] as Map<dynamic, dynamic>? ??
+                <dynamic, dynamic>{})
+            .map((key, value) =>
+                MapEntry(key.toString(), (value as num?)?.toDouble() ?? 0)),
+      );
     _perExerciseRestSeconds
       ..clear()
       ..addAll(

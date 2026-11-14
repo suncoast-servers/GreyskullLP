@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
+import 'workout_setup_page.dart';
 import 'workout_page_frequency.dart';
 import 'workout_page_ladder.dart';
 import 'workout_page_totalwork.dart';
-import 'workout_page_weight.dart';
 
 class WorkoutPage extends StatefulWidget {
   final ValueNotifier<String> titleNotifier;
@@ -282,7 +282,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
               const IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
               'Weight Program',
               onTap: () =>
-                  _openSubPage(const WorkoutPageWeight(), 'Weight Program'),
+                  _openSubPage(const WorkoutSetupPage(), 'Weight Program'),
               statusBadge: 'Core Lifts',
             ),
             _buildWorkoutButton(

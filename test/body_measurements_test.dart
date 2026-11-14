@@ -68,6 +68,22 @@ void main() {
       expect(state.bodyMeasurements, isEmpty);
     });
 
+    test('progress photo survives JSON and backup round-trips', () async {
+      final state = TrainingState();
+      state.upsertBodyMeasurement(BodyMeasurement(
+        weightKg: 110,
+        photoBase64: 'ZmFrZS1qcGVn',
+      ));
+
+      final payload = state.exportBackupJson();
+      expect(payload, contains('ZmFrZS1qcGVn'));
+
+      final restored = TrainingState();
+      expect(await restored.importBackupJson(payload), isTrue);
+      expect(restored.bodyMeasurements.single.photoBase64,
+          'ZmFrZS1qcgVn'.replaceAll('cgVn', 'cGVn'));
+    });
+
     test('measurements survive backup export and import', () async {
       final state = TrainingState();
       state.upsertBodyMeasurement(BodyMeasurement(
