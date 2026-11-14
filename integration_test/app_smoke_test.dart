@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/main.dart' as app;
 import 'package:integration_test/integration_test.dart';
@@ -36,7 +35,7 @@ void main() {
     }
 
     // Settings opens (theme list is the first section).
-    await tester.tap(find.byIcon(Icons.settings));
+    await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
     expect(find.text('Theme & Skins (Greyskull Motif)'), findsOneWidget);
   });

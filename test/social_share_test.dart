@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/history_page.dart';
-import 'package:greyskull_lp/pages/settings_page.dart';
+import 'package:greyskull_lp/pages/settings/sharing_settings_page.dart';
 import 'package:greyskull_lp/pages/workout_page_weight.dart';
 import 'package:greyskull_lp/services/social_share_service.dart';
 import 'package:image_picker/image_picker.dart';
@@ -154,16 +154,23 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Share Workout to Social'), findsOneWidget);
-      expect(find.byType(TextField), findsOneWidget);
-      expect(find.text('Share Now'), findsOneWidget);
-      expect(find.text('Attach Photo'), findsOneWidget);
+      expect(find.byType(TextField), findsNWidgets(2));
+      expect(find.text('Share to apps / save'), findsOneWidget);
+      expect(find.text('Gallery'), findsOneWidget);
+      expect(find.text('Selfie'), findsOneWidget);
+      expect(find.text('Copy caption'), findsOneWidget);
+      expect(find.text('Forum'), findsOneWidget);
 
-      await tester.tap(find.text('Share Now'));
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Location (optional)'),
+          'Suncoast Barbell');
+      await tester.tap(find.text('Share to apps / save'));
       await tester.pumpAndSettle();
 
       expect(sharedText, isNotNull);
       expect(sharedText, contains('Crushed my Greyskull LP workout!'));
       expect(sharedText, contains('Squat 315 lbs x 5'));
+      expect(sharedText, contains('📍 Suncoast Barbell'));
       expect(sharedSubject, equals('My Greyskull LP Workout'));
       expect(sharedFiles, isNull);
     });
@@ -188,7 +195,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Share Workout to Social'), findsOneWidget);
-      expect(find.text('Share Now'), findsOneWidget);
+      expect(find.text('Share to apps / save'), findsOneWidget);
     });
 
     testWidgets('Weight workout page provides share button after logging',
@@ -215,7 +222,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: SettingsPage()),
+          home: SharingSettingsPage(),
         ),
       );
       await tester.pumpAndSettle();

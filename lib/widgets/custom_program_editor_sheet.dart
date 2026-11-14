@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 
 /// Modal bottom sheet to create and edit custom barbell programs from zero
@@ -10,6 +12,7 @@ class CustomProgramEditorSheet extends StatefulWidget {
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet<void>(
       context: context,
+      showDragHandle: true,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (ctx) => const CustomProgramEditorSheet(),
@@ -44,7 +47,7 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
   void _showDuplicatePresetDialog() {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('Duplicate from Book Preset'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -64,7 +67,7 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.fitness_center),
                 title: Text(details.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text(details.subtitle,
                     maxLines: 1, overflow: TextOverflow.ellipsis),
                 onTap: () {
@@ -99,7 +102,7 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
   void _confirmResetToFactory() {
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('Reset to Factory Defaults?'),
         content: const Text(
           'This will restore the standard Day A / Day B starting template and remove '
@@ -141,7 +144,7 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
 
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => GsAlertDialog(
         title: const Text('Add Workout Day'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -223,7 +226,7 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                   ? '${sets - 1} x $reps, 1 x $reps+ (AMRAP)'
                   : '$sets x $reps');
 
-          return AlertDialog(
+          return GsAlertDialog(
             title: const Text('Add Core Barbell Lift'),
             content: SingleChildScrollView(
               child: Column(
@@ -241,8 +244,7 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                       ...defaultOptions.map((opt) {
                         final isSel = !isCustomName && selectedLift == opt;
                         return ChoiceChip(
-                          label:
-                              Text(opt, style: const TextStyle(fontSize: 12)),
+                          label: Text(opt, style: TextStyle(fontSize: 12)),
                           selected: isSel,
                           onSelected: (val) {
                             if (val) {
@@ -427,7 +429,10 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                           const Text(
                             'Customize Barbell Program',
                             style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
+                              fontFamily: GsFont.display,
+                              fontSize: 21,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           Text(
                             'Build from zero without book presets',
@@ -550,7 +555,7 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                     children: [
                       Text(
                         'Workout Days (${days.length})',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       TextButton.icon(
@@ -587,14 +592,14 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                                           .colorScheme
                                           .primaryContainer,
                                       child: Text(day.code,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.bold)),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
                                       day.title,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15),
                                     ),
@@ -655,12 +660,12 @@ class _CustomProgramEditorSheetState extends State<CustomProgramEditorSheet> {
                                         : AppTheme.calisthenicsAccent(context),
                                   ),
                                   title: Text(lift.name,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 14)),
                                   subtitle: Text(
                                     '${lift.prescription} • ${lift.isUpperBody ? "Upper Body" : "Lower Body"}',
-                                    style: const TextStyle(fontSize: 12),
+                                    style: TextStyle(fontSize: 12),
                                   ),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,

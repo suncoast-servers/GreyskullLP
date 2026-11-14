@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:greyskull_lp/models/body_measurement.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
 
 /// Bottom sheet used to add or edit an optional body measurement (#57).
 Future<void> showBodyMeasurementSheet(
@@ -12,6 +13,7 @@ Future<void> showBodyMeasurementSheet(
 }) {
   return showModalBottomSheet<void>(
     context: context,
+    showDragHandle: true,
     isScrollControlled: true,
     builder: (ctx) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
@@ -138,7 +140,11 @@ class _BodyMeasurementFormState extends State<_BodyMeasurementForm> {
               widget.existing == null
                   ? 'Log Body Measurement'
                   : 'Edit Body Measurement',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontFamily: GsFont.display,
+                fontSize: 21,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 4),
             Text(

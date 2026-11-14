@@ -1,41 +1,554 @@
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/pages/achievements_page.dart';
+import 'package:greyskull_lp/services/achievement_service.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
+import 'package:greyskull_lp/ui/gs_icon.dart';
+import 'package:greyskull_lp/ui/gs_widgets.dart';
+import 'package:greyskull_lp/widgets/achievement_badge.dart';
 
+/// Dashboard-style home. Every tile and action routes to an existing tab —
+/// no new destinations or data were added.
 class HomePage extends StatelessWidget {
   final Function(int) onItemSelected;
   const HomePage({super.key, required this.onItemSelected});
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      padding: const EdgeInsets.all(16.0),
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      children: [
-        _buildIcon(
-            context,
-            const IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
-            "Workout",
-            0),
-        _buildIcon(context, Icons.forum, "Forum", 1),
-        _buildIcon(context, Icons.restaurant, "Diet", 2),
-        _buildIcon(context, Icons.stacked_line_chart, "Stats", 3),
-        _buildIcon(context, Icons.history, "History", 4),
-        _buildIcon(context, Icons.shopping_cart, "Store", 5),
-      ],
+    return AnimatedBuilder(
+      animation: trainingState,
+      builder: (context, _) {
+        final tokens = context.gs;
+        final badges = AchievementService.evaluate(trainingState.history);
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
+          children: <Widget>[
+            _ProgramHero(onTap: () => onItemSelected(0)),
+            const SizedBox(height: 12),
+            _TodaySessionCard(onTap: () => onItemSelected(0)),
+            const SizedBox(height: 12),
+            _StreakCard(onTap: () => onItemSelected(3)),
+            const GsSectionTitle('Explore'),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1.45,
+              children: <Widget>[
+                _HomeTile(
+                  svg: 'train',
+                  label: 'Workout',
+                  subtitle: 'Plan & log',
+                  onTap: () => onItemSelected(0),
+                ),
+                _HomeTile(
+                  svg: 'forum',
+                  label: 'Forum',
+                  subtitle: 'Greyskull Nation',
+                  onTap: () => onItemSelected(1),
+                ),
+                _HomeTile(
+                  svg: 'food',
+                  label: 'Diet',
+                  subtitle: 'Fuel & macros',
+                  onTap: () => onItemSelected(2),
+                ),
+                _HomeTile(
+                  svg: 'stats',
+                  label: 'Stats',
+                  subtitle: 'Progress',
+                  onTap: () => onItemSelected(3),
+                ),
+                _HomeTile(
+                  svg: 'history',
+                  label: 'History',
+                  subtitle: 'Past sessions',
+                  onTap: () => onItemSelected(4),
+                ),
+                _HomeTile(
+                  svg: 'store',
+                  label: 'Store',
+                  subtitle: 'Official gear',
+                  onTap: () => onItemSelected(5),
+                ),
+              ],
+            ),
+            GsSectionTitle(
+              'Recent activity',
+              trailing: TextButton(
+                onPressed: () => onItemSelected(4),
+                child: Text(
+                  'View all',
+                  style: TextStyle(fontSize: 11, color: tokens.accent),
+                ),
+              ),
+            ),
+            ..._recentActivity(context, onItemSelected),
+            GsSectionTitle(
+              'Achievements',
+              trailing: TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AchievementsPage(),
+                  ),
+                ),
+                child: Text(
+                  'All badges',
+                  style: TextStyle(fontSize: 11, color: tokens.accent),
+                ),
+              ),
+            ),
+            GridView.count(
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 7,
+              mainAxisSpacing: 7,
+              childAspectRatio: 0.82,
+              children: badges
+                  .take(4)
+                  .map(
+                    (badge) => AchievementBadgeTile(
+                      progress: badge,
+                      onTap: () => showAchievementBadgeSheet(context, badge),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildIcon(
-      BuildContext context, IconData icon, String label, int index) {
-    return GestureDetector(
-      onTap: () => onItemSelected(index),
+  List<Widget> _recentActivity(
+    BuildContext context,
+    Function(int) onItemSelected,
+  ) {
+    final entries = trainingState.history.take(3).toList();
+    if (entries.isEmpty) {
+      return <Widget>[
+        GsCard(
+          child: Text(
+            'No sessions logged yet. Start a workout and it will appear here.',
+            style: gsCaption(context),
+          ),
+        ),
+      ];
+    }
+
+    return entries.map((entry) {
+      final date = entry.timestamp;
+      final stamp =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final String icon = switch (entry.category) {
+        HistoryCategory.weight => 'db',
+        HistoryCategory.daily => 'bolt',
+        HistoryCategory.diet => 'food',
+      };
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: GsListRow(
+          svg: icon,
+          title: entry.title,
+          subtitle: '$stamp · ${_categoryLabel(entry.category)}',
+          onTap: () => onItemSelected(4),
+        ),
+      );
+    }).toList();
+  }
+
+  String _categoryLabel(HistoryCategory category) {
+    switch (category) {
+      case HistoryCategory.weight:
+        return 'Resistance';
+      case HistoryCategory.daily:
+        return 'Calisthenics';
+      case HistoryCategory.diet:
+        return 'Diet';
+    }
+  }
+}
+
+class _ProgramHero extends StatelessWidget {
+  const _ProgramHero({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.gs;
+    final level = trainingState.programLevel;
+    return GsCard(
+      onTap: onTap,
+      gradient: LinearGradient(
+        colors: <Color>[
+          tokens.accent.withValues(alpha: 0.20),
+          tokens.surface,
+        ],
+        begin: Alignment.topRight,
+        end: Alignment.bottomLeft,
+      ),
+      borderColor: tokens.accent.withValues(alpha: 0.32),
+      padding: const EdgeInsets.all(16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 64.0, color: Theme.of(context).primaryColor),
-          const SizedBox(height: 8.0),
-          Text(label, style: Theme.of(context).textTheme.titleMedium),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'CURRENT PROGRAM',
+                      style: TextStyle(
+                        fontFamily: GsFont.body,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.8,
+                        color: tokens.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      level.displayName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: GsFont.display,
+                        fontSize: 25,
+                        fontWeight: FontWeight.w700,
+                        height: 1.05,
+                        letterSpacing: 0.2,
+                        color: tokens.bone,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      level.subtitle,
+                      style: TextStyle(
+                        fontFamily: GsFont.body,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                        color: tokens.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              GsRing(
+                progress: level.levelNumber / ProgramLevel.values.length,
+                size: 66,
+                strokeWidth: 6,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      '${level.levelNumber}',
+                      style: TextStyle(
+                        fontFamily: GsFont.display,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        height: 1,
+                        color: tokens.bone,
+                      ),
+                    ),
+                    Text(
+                      'LEVEL',
+                      style: TextStyle(
+                        fontFamily: GsFont.body,
+                        fontSize: 7,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: tokens.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: <Widget>[
+              GsTag(level.badge, tone: GsTagTone.accent),
+              GsTag(
+                TrainingState.methodLabel(trainingState.activeDailyMethod),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TodaySessionCard extends StatelessWidget {
+  const _TodaySessionCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.gs;
+    final template = trainingState.activeBarbellTemplateDetails;
+    final workout = trainingState.currentTemplateWorkout;
+    final lifts = workout.coreLifts.take(4).toList();
+
+    return GsCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  "TODAY'S SESSION",
+                  style: TextStyle(
+                    fontFamily: GsFont.body,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.8,
+                    color: tokens.muted,
+                  ),
+                ),
+              ),
+              GsTag('${workout.coreLifts.length} LIFTS'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            workout.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: GsFont.display,
+              fontSize: 23,
+              fontWeight: FontWeight.w600,
+              height: 1.1,
+              color: tokens.bone,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            '${template.name} · ${workout.subtitle}',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: GsFont.body,
+              fontSize: 11.5,
+              height: 1.4,
+              color: tokens.muted,
+            ),
+          ),
+          if (lifts.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: lifts
+                  .map((lift) => GsTag(
+                        lift.name,
+                        svgIcon: 'db',
+                      ))
+                  .toList(),
+            ),
+          ],
+          const SizedBox(height: 14),
+          GsPrimaryButton(
+            label: 'Start Workout',
+            svgIcon: 'play',
+            onPressed: onTap,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StreakCard extends StatelessWidget {
+  const _StreakCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.gs;
+    final streak = trainingState.calculateCurrentStreakDays();
+    final now = DateTime.now();
+    final dayLabels = <String>['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    final activeDays = <bool>[];
+    for (var i = 6; i >= 0; i--) {
+      final day =
+          DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+      activeDays.add(
+        trainingState.history.any(
+          (entry) => DateUtils.isSameDay(entry.timestamp, day),
+        ),
+      );
+    }
+    final start = now.subtract(const Duration(days: 6));
+    final labelOffset = start.weekday - 1;
+
+    return GsCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              GsIconTile.svg(
+                'flame',
+                size: 38,
+                color: tokens.accent2,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      streak == 0 ? 'Start your streak' : '$streak-day streak',
+                      style: TextStyle(
+                        fontFamily: GsFont.body,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.bone,
+                      ),
+                    ),
+                    Text(
+                      streak == 0
+                          ? 'Log a session to begin'
+                          : '${activeDays.where((active) => active).length} '
+                              'active of the last 7 days',
+                      style: gsCaption(context),
+                    ),
+                  ],
+                ),
+              ),
+              GsIcon('chevron', size: 17, color: tokens.muted),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: List<Widget>.generate(7, (int index) {
+              final active = activeDays[index];
+              final isToday = index == 6;
+              return Expanded(
+                child: Column(
+                  children: <Widget>[
+                    Text(
+                      dayLabels[(labelOffset + index) % 7],
+                      style: TextStyle(
+                        fontFamily: GsFont.body,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                        color: tokens.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Container(
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: active
+                            ? tokens.accent.withValues(alpha: 0.16)
+                            : tokens.surface2,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: active
+                              ? tokens.accent.withValues(alpha: 0.5)
+                              : isToday
+                                  ? tokens.accent
+                                  : tokens.line,
+                          width: isToday && !active ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: active
+                            ? GsIcon('check', size: 13, color: tokens.accent)
+                            : Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  color: tokens.muted.withValues(alpha: 0.35),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeTile extends StatelessWidget {
+  const _HomeTile({
+    required this.svg,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final String svg;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.gs;
+    return GsCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              GsIconTile.svg(svg, size: 34),
+              const Spacer(),
+              GsIcon('chevron', size: 16, color: tokens.muted),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: GsFont.body,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.bone,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: GsFont.body,
+              fontSize: 10.5,
+              color: tokens.muted,
+            ),
+          ),
         ],
       ),
     );

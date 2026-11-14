@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/ui/gs_dialog.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 
@@ -166,7 +167,7 @@ class _TutorialDialogState extends State<_TutorialDialog> {
     final step = widget.steps[_index];
     final isLast = _index == widget.steps.length - 1;
 
-    return AlertDialog(
+    return GsAlertDialog(
       title: Row(
         children: [
           Icon(step.icon ?? Icons.info_outline,

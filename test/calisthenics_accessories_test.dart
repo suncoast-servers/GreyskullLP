@@ -149,20 +149,16 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Log a set first so session can be saved
+      // Accessories are logged with the same counter row as push/chins.
+      final increaseDips = find.byTooltip('Increase Dips');
+      await tester.ensureVisible(increaseDips);
+      await tester.tap(increaseDips);
+      await tester.pumpAndSettle();
+
       final logSetBtn = find.text('Record This Set');
       expect(logSetBtn, findsOneWidget);
+      await tester.ensureVisible(logSetBtn);
       await tester.tap(logSetBtn);
-      await tester.pumpAndSettle();
-
-      // Log the Dips accessory (tap-to-log with a value, issue #51)
-      final dipsTile = find.text('Dips').first;
-      await tester.ensureVisible(dipsTile);
-      await tester.tap(dipsTile);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Log Dips'), findsOneWidget);
-      await tester.tap(find.text('Log'));
       await tester.pumpAndSettle();
 
       // Tap Log Today's Frequency Day to History
@@ -180,7 +176,7 @@ void main() {
 
       // Verify in history
       final lastEntry = trainingState.history.first;
-      expect(lastEntry.details, contains('Dips (10 reps)'));
+      expect(lastEntry.details, contains('Dips (11 reps)'));
     });
 
     testWidgets('WorkoutPageLadder displays accessories and logs to history',
@@ -207,11 +203,11 @@ void main() {
       await tester.tap(find.text('Finish Ladder'));
       await tester.pumpAndSettle();
 
-      // Mark Inverted Rows accessory (configured in Settings)
-      final rowsTile = find.text('Inverted Rows');
-      expect(rowsTile, findsOneWidget);
-      await tester.ensureVisible(rowsTile);
-      await tester.tap(rowsTile);
+      // Count Inverted Rows with the same minus/value/plus row (#111).
+      final increaseRows = find.byTooltip('Increase Inverted Rows');
+      expect(increaseRows, findsOneWidget);
+      await tester.ensureVisible(increaseRows);
+      await tester.tap(increaseRows);
       await tester.pumpAndSettle();
 
       // Save to history
@@ -226,7 +222,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final lastEntry = trainingState.history.first;
-      expect(lastEntry.details, contains('Inverted Rows [Completed]'));
+      expect(lastEntry.details, contains('Inverted Rows (11 reps)'));
     });
 
     testWidgets('WorkoutPageTotalWork displays accessories and logs to history',
@@ -251,11 +247,11 @@ void main() {
       await tester.tap(recordSetBtn);
       await tester.pumpAndSettle();
 
-      // Mark Planks accessory (configured in Settings)
-      final planksTile = find.text('Planks');
-      expect(planksTile, findsOneWidget);
-      await tester.ensureVisible(planksTile);
-      await tester.tap(planksTile);
+      // Count Planks (seconds) with the same row as push/chins (#111).
+      final increasePlanks = find.byTooltip('Increase Planks');
+      expect(increasePlanks, findsOneWidget);
+      await tester.ensureVisible(increasePlanks);
+      await tester.tap(increasePlanks);
       await tester.pumpAndSettle();
 
       // Save to history
@@ -270,7 +266,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final lastEntry = trainingState.history.first;
-      expect(lastEntry.details, contains('Planks [Completed]'));
+      expect(lastEntry.details, contains('Planks (35s)'));
     });
   });
 }

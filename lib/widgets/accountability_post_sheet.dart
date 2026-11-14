@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -16,6 +17,7 @@ class AccountabilityPostSheet extends StatefulWidget {
   }) {
     return showModalBottomSheet(
       context: context,
+      showDragHandle: true,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).cardColor,
       shape: const RoundedRectangleBorder(
@@ -90,19 +92,6 @@ class _AccountabilityPostSheetState extends State<AccountabilityPostSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Drag handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-
           // Title & Category
           Row(
             children: [
@@ -119,8 +108,10 @@ class _AccountabilityPostSheetState extends State<AccountabilityPostSheet> {
               Expanded(
                 child: Text(
                   'Forum Accountability Post',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  style: const TextStyle(
+                    fontFamily: GsFont.display,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),

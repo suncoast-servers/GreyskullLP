@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
-import 'package:greyskull_lp/pages/settings_page.dart';
+import 'package:greyskull_lp/pages/settings/sharing_settings_page.dart';
 import 'package:greyskull_lp/services/accountability_template_service.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -207,7 +207,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: SettingsPage()),
+          home: SharingSettingsPage(),
         ),
       );
       await tester.pumpAndSettle();
