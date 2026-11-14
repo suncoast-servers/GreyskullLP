@@ -26,18 +26,18 @@ void main() {
         () {
       final ironTheme = AppTheme.themeFor(GreyskullSkin.ironAndBone);
       expect(ironTheme.brightness, equals(Brightness.dark));
-      expect(
-          ironTheme.scaffoldBackgroundColor, equals(const Color(0xFF141414)));
+      expect(ironTheme.scaffoldBackgroundColor,
+          equals(AppTheme.tokensFor(GreyskullSkin.ironAndBone).bg));
 
       final havocTheme = AppTheme.themeFor(GreyskullSkin.skeletorHavoc);
       expect(havocTheme.brightness, equals(Brightness.dark));
-      expect(
-          havocTheme.scaffoldBackgroundColor, equals(const Color(0xFF000000)));
+      expect(havocTheme.scaffoldBackgroundColor,
+          equals(AppTheme.tokensFor(GreyskullSkin.skeletorHavoc).bg));
 
       final chalkTheme = AppTheme.themeFor(GreyskullSkin.chalkAndSteel);
       expect(chalkTheme.brightness, equals(Brightness.light));
-      expect(
-          chalkTheme.scaffoldBackgroundColor, equals(const Color(0xFFF6F7F9)));
+      expect(chalkTheme.scaffoldBackgroundColor,
+          equals(AppTheme.tokensFor(GreyskullSkin.chalkAndSteel).bg));
     });
 
     test('trainingState defaults to Iron & Bone and updates activeSkin', () {
@@ -115,8 +115,8 @@ void main() {
       // Starts in Iron & Bone (Dark mode)
       MaterialApp app = tester.widget<MaterialApp>(find.byType(MaterialApp));
       expect(app.theme?.brightness, equals(Brightness.dark));
-      expect(
-          app.theme?.scaffoldBackgroundColor, equals(const Color(0xFF141414)));
+      expect(app.theme?.scaffoldBackgroundColor,
+          equals(AppTheme.tokensFor(GreyskullSkin.ironAndBone).bg));
 
       // Switch to Chalk & Steel (Daylight / Light mode)
       trainingState.setActiveSkin(GreyskullSkin.chalkAndSteel);
@@ -124,8 +124,8 @@ void main() {
 
       app = tester.widget<MaterialApp>(find.byType(MaterialApp));
       expect(app.theme?.brightness, equals(Brightness.light));
-      expect(
-          app.theme?.scaffoldBackgroundColor, equals(const Color(0xFFF6F7F9)));
+      expect(app.theme?.scaffoldBackgroundColor,
+          equals(AppTheme.tokensFor(GreyskullSkin.chalkAndSteel).bg));
     });
   });
 }

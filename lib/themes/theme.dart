@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
 
 enum GreyskullSkin {
   ironAndBone(
@@ -8,9 +9,9 @@ enum GreyskullSkin {
     description:
         'Johnny Pain’s iconic gym aesthetic: matte iron background, bone-white typography, and amber AMRAP accents.',
     isDark: true,
-    bgHex: 0xFF141414,
-    surfaceHex: 0xFF1F1F1F,
-    accentHex: 0xFFFFB300,
+    bgHex: 0xFF0A0B0D,
+    surfaceHex: 0xFF15181C,
+    accentHex: 0xFFC8A02A,
   ),
   skeletorHavoc(
     displayName: 'Skeletor Havoc',
@@ -19,9 +20,9 @@ enum GreyskullSkin {
     description:
         'Pure obsidian monochrome with sharp steel borders and maximum contrast for low-light gym grinding.',
     isDark: true,
-    bgHex: 0xFF000000,
-    surfaceHex: 0xFF121212,
-    accentHex: 0xFF8E8E93,
+    bgHex: 0xFF0A0714,
+    surfaceHex: 0xFF161029,
+    accentHex: 0xFF8B5CF6,
   ),
   chalkAndSteel(
     displayName: 'Chalk & Steel',
@@ -30,9 +31,9 @@ enum GreyskullSkin {
     description:
         'High-visibility daylight mode engineered for outdoor training and brightly lit gym floors.',
     isDark: false,
-    bgHex: 0xFFF6F7F9,
+    bgHex: 0xFFF5F3EE,
     surfaceHex: 0xFFFFFFFF,
-    accentHex: 0xFF4A4A4A,
+    accentHex: 0xFF8A6A12,
   );
 
   final String displayName;
@@ -57,271 +58,442 @@ enum GreyskullSkin {
 }
 
 class AppTheme {
-  // Legacy color constants preserved for backward compatibility
-  static const Color darkBackground = Color(0xFF141414);
-  static const Color darkText = Color(0xFFF5F5F0);
-  static const Color lightBackground = Color(0xFFF6F7F9);
-  static const Color lightText = Color(0xFF1A1A1A);
-  static const Color appBarColor = Color(0xFFE8E9ED);
-  static const Color appBarDarkColor = Color(0xFF181818);
-  static const Color appBarTextColor = Color(0xFF000000);
-  static const Color bottomNavBarColor = Color(0xFFE8E9ED);
-  static const Color bottomNavDarkColor = Color(0xFF181818);
-  static const Color bottomNavBarSelectedColor = Color(0xFF000000);
-  static const Color bottomNavBarUnselectedColor = Color(0xFF757575);
+  // Legacy color constants preserved for backward compatibility.
+  static const Color darkBackground = Color(0xFF0A0B0D);
+  static const Color darkText = Color(0xFFEFE7D6);
+  static const Color lightBackground = Color(0xFFF5F3EE);
+  static const Color lightText = Color(0xFF1A1814);
+  static const Color appBarColor = Color(0xFFEDEAE3);
+  static const Color appBarDarkColor = Color(0xFF0F1114);
+  static const Color appBarTextColor = Color(0xFF1A1814);
+  static const Color bottomNavBarColor = Color(0xFFEDEAE3);
+  static const Color bottomNavDarkColor = Color(0xFF0F1114);
+  static const Color bottomNavBarSelectedColor = Color(0xFF1A1814);
+  static const Color bottomNavBarUnselectedColor = Color(0xFF7E8792);
 
-  /// Builds a cohesive, rugged, high-contrast [ThemeData] for the requested [GreyskullSkin].
+  /// Builds a cohesive, rugged, high-contrast [ThemeData] for the requested
+  /// [GreyskullSkin]. Colours come from [GsTokens] so screens can consume the
+  /// same design language through `context.gs`.
   static ThemeData themeFor(GreyskullSkin skin) {
     switch (skin) {
       case GreyskullSkin.ironAndBone:
-        return _buildIronAndBoneTheme();
+        return _buildTheme(skin, GsPalettes.ironAndBone);
       case GreyskullSkin.skeletorHavoc:
-        return _buildSkeletorHavocTheme();
+        return _buildTheme(skin, GsPalettes.skeletorHavoc);
       case GreyskullSkin.chalkAndSteel:
-        return _buildChalkAndSteelTheme();
+        return _buildTheme(skin, GsPalettes.chalkAndSteel);
     }
   }
 
-  static ThemeData _buildIronAndBoneTheme() {
-    const bg = Color(0xFF141414);
-    const surface = Color(0xFF1F1F1F);
-    const cardBg = Color(0xFF242424);
-    const boneWhite = Color(0xFFF5F5F0);
-    const mutedBone = Color(0xFFA5A59E);
-    const amberAccent = Color(0xFFFFB300);
-    const border = Color(0xFF333333);
-
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: bg,
-      primaryColor: boneWhite,
-      cardColor: cardBg,
-      cardTheme: CardThemeData(
-        color: cardBg,
-        elevation: 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: const BorderSide(color: border, width: 1),
-        ),
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF181818),
-        foregroundColor: boneWhite,
-        elevation: 0,
-        centerTitle: true,
-        titleTextStyle: TextStyle(
-          color: boneWhite,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-        iconTheme: IconThemeData(color: boneWhite),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Color(0xFF181818),
-        selectedItemColor: amberAccent,
-        unselectedItemColor: mutedBone,
-        type: BottomNavigationBarType.fixed,
-        elevation: 8,
-      ),
-      colorScheme: const ColorScheme(
-        brightness: Brightness.dark,
-        primary: boneWhite,
-        onPrimary: Color(0xFF121212),
-        secondary: amberAccent,
-        onSecondary: Color(0xFF121212),
-        surface: surface,
-        onSurface: boneWhite,
-        onSurfaceVariant: mutedBone,
-        error: Color(0xFFFF8A80),
-        onError: Colors.black,
-        outline: border,
-      ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: boneWhite),
-        bodyMedium: TextStyle(color: boneWhite),
-        bodySmall: TextStyle(color: mutedBone),
-        titleLarge: TextStyle(color: boneWhite, fontWeight: FontWeight.bold),
-        titleMedium: TextStyle(color: boneWhite, fontWeight: FontWeight.w600),
-      ),
-      dividerTheme: const DividerThemeData(color: border, thickness: 1),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: boneWhite,
-          foregroundColor: const Color(0xFF121212),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          textStyle: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: boneWhite,
-          side: const BorderSide(color: border, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      ),
-    );
+  /// Tokens for [skin] without building a whole [ThemeData].
+  static GsTokens tokensFor(GreyskullSkin skin) {
+    switch (skin) {
+      case GreyskullSkin.ironAndBone:
+        return GsPalettes.ironAndBone;
+      case GreyskullSkin.skeletorHavoc:
+        return GsPalettes.skeletorHavoc;
+      case GreyskullSkin.chalkAndSteel:
+        return GsPalettes.chalkAndSteel;
+    }
   }
 
-  static ThemeData _buildSkeletorHavocTheme() {
-    const bg = Color(0xFF000000); // Pure OLED black
-    const surface = Color(0xFF0D0D0D);
-    const cardBg = Color(0xFF121212);
-    const pureWhite = Color(0xFFFFFFFF);
-    const coldSteel = Color(0xFF8E8E93);
-    const sharpBorder = Color(0xFF2C2C2E);
+  static ThemeData _buildTheme(GreyskullSkin skin, GsTokens t) {
+    final bool isDark = skin.isDark;
 
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: bg,
-      primaryColor: pureWhite,
-      cardColor: cardBg,
-      cardTheme: CardThemeData(
-        color: cardBg,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: sharpBorder, width: 1.2),
-        ),
+    // Dark skins use the accent as the primary ink so icons and active states
+    // read gold/amethyst. The daylight skin keeps near-black primary ink for
+    // AA contrast on white; the accent carries the highlights instead.
+    final Color primary = isDark ? t.accent : t.bone;
+    final Color onPrimary = isDark ? t.accentInk : Colors.white;
+    final Color buttonForeground = isDark ? t.accentInk : Colors.white;
+    final Color navSelected = isDark ? t.accent : t.bone;
+
+    final TextTheme textTheme = TextTheme(
+      displayLarge: TextStyle(
+        fontFamily: GsFont.display,
+        fontSize: 48,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.5,
+        color: t.bone,
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF000000),
-        foregroundColor: pureWhite,
-        elevation: 0,
-        centerTitle: true,
-        titleTextStyle: TextStyle(
-          color: pureWhite,
-          fontSize: 18,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 1.0,
-        ),
-        iconTheme: IconThemeData(color: pureWhite),
+      displayMedium: TextStyle(
+        fontFamily: GsFont.display,
+        fontSize: 38,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.4,
+        color: t.bone,
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Color(0xFF080808),
-        selectedItemColor: pureWhite,
-        unselectedItemColor: coldSteel,
-        type: BottomNavigationBarType.fixed,
-        elevation: 4,
+      displaySmall: TextStyle(
+        fontFamily: GsFont.display,
+        fontSize: 30,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.3,
+        color: t.bone,
       ),
-      colorScheme: const ColorScheme(
-        brightness: Brightness.dark,
-        primary: pureWhite,
-        onPrimary: Color(0xFF000000),
-        secondary: coldSteel,
-        onSecondary: Color(0xFF000000),
-        surface: surface,
-        onSurface: pureWhite,
-        onSurfaceVariant: coldSteel,
-        error: Color(0xFFFF453A),
-        onError: Colors.black,
-        outline: sharpBorder,
+      headlineLarge: TextStyle(
+        fontFamily: GsFont.display,
+        fontSize: 26,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.3,
+        color: t.bone,
       ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: pureWhite),
-        bodyMedium: TextStyle(color: pureWhite),
-        bodySmall: TextStyle(color: coldSteel),
-        titleLarge: TextStyle(color: pureWhite, fontWeight: FontWeight.w900),
-        titleMedium: TextStyle(color: pureWhite, fontWeight: FontWeight.bold),
+      headlineMedium: TextStyle(
+        fontFamily: GsFont.display,
+        fontSize: 23,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+        color: t.bone,
       ),
-      dividerTheme: const DividerThemeData(color: sharpBorder, thickness: 1),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: pureWhite,
-          foregroundColor: const Color(0xFF000000),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w900),
-        ),
+      headlineSmall: TextStyle(
+        fontFamily: GsFont.display,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: t.bone,
       ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: pureWhite,
-          side: const BorderSide(color: pureWhite, width: 1.2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-        ),
+      titleLarge: TextStyle(
+        fontFamily: GsFont.display,
+        fontSize: 21,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.4,
+        color: t.bone,
+      ),
+      titleMedium: TextStyle(
+        fontFamily: GsFont.body,
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: t.bone,
+      ),
+      titleSmall: TextStyle(
+        fontFamily: GsFont.body,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: t.bone,
+      ),
+      bodyLarge: TextStyle(
+        fontFamily: GsFont.body,
+        fontSize: 16,
+        height: 1.45,
+        color: t.bone,
+      ),
+      bodyMedium: TextStyle(
+        fontFamily: GsFont.body,
+        fontSize: 14,
+        height: 1.45,
+        color: t.bone,
+      ),
+      bodySmall: TextStyle(
+        fontFamily: GsFont.body,
+        fontSize: 12,
+        height: 1.4,
+        color: t.muted,
+      ),
+      labelLarge: TextStyle(
+        fontFamily: GsFont.body,
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.3,
+        color: t.bone,
+      ),
+      labelMedium: TextStyle(
+        fontFamily: GsFont.body,
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.6,
+        color: t.muted,
+      ),
+      labelSmall: TextStyle(
+        fontFamily: GsFont.body,
+        fontSize: 9.5,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.4,
+        color: t.muted,
       ),
     );
-  }
-
-  static ThemeData _buildChalkAndSteelTheme() {
-    const bg = Color(0xFFF6F7F9);
-    const surface = Color(0xFFFFFFFF);
-    const cardBg = Color(0xFFFFFFFF);
-    const charcoal = Color(0xFF1A1A1A);
-    const slateMuted = Color(0xFF636366);
-    const rawSteel = Color(0xFF4A4A4A);
-    const lightBorder = Color(0xFFE2E4E8);
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: bg,
-      primaryColor: charcoal,
-      cardColor: cardBg,
-      cardTheme: CardThemeData(
-        color: cardBg,
-        elevation: 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: const BorderSide(color: lightBorder, width: 1),
-        ),
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFFFFFFF),
-        foregroundColor: charcoal,
-        elevation: 0.5,
-        centerTitle: true,
-        titleTextStyle: TextStyle(
-          color: charcoal,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-        iconTheme: IconThemeData(color: charcoal),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Color(0xFFFFFFFF),
-        selectedItemColor: charcoal,
-        unselectedItemColor: slateMuted,
-        type: BottomNavigationBarType.fixed,
-        elevation: 4,
-      ),
-      colorScheme: const ColorScheme(
-        brightness: Brightness.light,
-        primary: charcoal,
-        onPrimary: Color(0xFFFFFFFF),
-        secondary: rawSteel,
-        onSecondary: Color(0xFFFFFFFF),
-        surface: surface,
-        onSurface: charcoal,
-        onSurfaceVariant: slateMuted,
-        error: Color(0xFFD32F2F),
+      brightness: isDark ? Brightness.dark : Brightness.light,
+      fontFamily: GsFont.body,
+      scaffoldBackgroundColor: t.bg,
+      primaryColor: t.accent,
+      cardColor: t.surface,
+      dividerColor: t.line,
+      splashColor: t.accent.withValues(alpha: 0.12),
+      highlightColor: t.accent.withValues(alpha: 0.08),
+      extensions: <ThemeExtension<dynamic>>[t],
+      colorScheme: ColorScheme(
+        brightness: isDark ? Brightness.dark : Brightness.light,
+        primary: primary,
+        onPrimary: onPrimary,
+        primaryContainer: t.surface2,
+        onPrimaryContainer: t.bone,
+        secondary: t.accent,
+        onSecondary: buttonForeground,
+        secondaryContainer: t.accent.withValues(alpha: 0.16),
+        onSecondaryContainer: t.bone,
+        tertiary: t.ok,
+        onTertiary: isDark ? t.accentInk : Colors.white,
+        surface: t.surface,
+        onSurface: t.bone,
+        surfaceContainerHighest: t.surface2,
+        onSurfaceVariant: t.muted,
+        outline: t.line,
+        outlineVariant: t.line,
+        error: t.danger,
         onError: Colors.white,
-        outline: lightBorder,
+        shadow: Colors.black,
+        scrim: t.scrim,
+        inverseSurface: t.bone,
+        onInverseSurface: t.bg,
+        inversePrimary: t.accent2,
       ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: charcoal),
-        bodyMedium: TextStyle(color: charcoal),
-        bodySmall: TextStyle(color: slateMuted),
-        titleLarge: TextStyle(color: charcoal, fontWeight: FontWeight.bold),
-        titleMedium: TextStyle(color: charcoal, fontWeight: FontWeight.w600),
+      appBarTheme: AppBarTheme(
+        backgroundColor: t.bg2,
+        foregroundColor: t.bone,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          fontFamily: GsFont.display,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+          color: t.bone,
+        ),
+        iconTheme: IconThemeData(color: t.bone),
+        actionsIconTheme: IconThemeData(color: t.bone),
       ),
-      dividerTheme: const DividerThemeData(color: lightBorder, thickness: 1),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: t.bg2,
+        selectedItemColor: navSelected,
+        unselectedItemColor: t.muted,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+        selectedLabelStyle: TextStyle(
+          fontFamily: GsFont.body,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontFamily: GsFont.body,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.6,
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: t.surface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(t.cardRadius),
+          side: BorderSide(color: t.line, width: 1),
+        ),
+      ),
+      iconTheme: IconThemeData(color: t.bone),
+      dividerTheme: DividerThemeData(color: t.line, thickness: 1),
+      textTheme: textTheme,
+      inputDecorationTheme: InputDecorationThemeData(
+        filled: true,
+        fillColor: t.surface2,
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        labelStyle: TextStyle(
+          fontFamily: GsFont.body,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: t.muted,
+        ),
+        hintStyle: TextStyle(
+          fontFamily: GsFont.body,
+          fontSize: 13,
+          color: t.muted,
+        ),
+        prefixIconColor: t.muted,
+        suffixIconColor: t.muted,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.controlRadius),
+          borderSide: BorderSide(color: t.line, width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.controlRadius),
+          borderSide: BorderSide(color: t.line, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.controlRadius),
+          borderSide: BorderSide(color: t.accent, width: 1.6),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.controlRadius),
+          borderSide: BorderSide(color: t.danger, width: 1.4),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.controlRadius),
+          borderSide: BorderSide(color: t.danger, width: 1.6),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: t.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(color: t.line, width: 1),
+        ),
+        titleTextStyle: TextStyle(
+          fontFamily: GsFont.display,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
+          color: t.bone,
+        ),
+        contentTextStyle: TextStyle(
+          fontFamily: GsFont.body,
+          fontSize: 14,
+          height: 1.5,
+          color: t.muted,
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: t.surface,
+        modalBackgroundColor: t.surface,
+        surfaceTintColor: Colors.transparent,
+        modalBarrierColor: t.scrim,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: t.surface2,
+        contentTextStyle: TextStyle(
+          fontFamily: GsFont.body,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w500,
+          color: t.bone,
+        ),
+        actionTextColor: t.accent,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(t.smallRadius + 2),
+          side: BorderSide(color: t.line, width: 1),
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: charcoal,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          backgroundColor: t.accent,
+          foregroundColor: buttonForeground,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(t.controlRadius),
+          ),
+          textStyle: TextStyle(
+            fontFamily: GsFont.body,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            letterSpacing: 0.3,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: charcoal,
-          side: const BorderSide(color: charcoal, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          foregroundColor: t.bone,
+          side: BorderSide(color: t.line, width: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(t.controlRadius),
+          ),
+          textStyle: TextStyle(
+            fontFamily: GsFont.body,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: t.accent,
+          textStyle: TextStyle(
+            fontFamily: GsFont.body,
+            fontWeight: FontWeight.w700,
+            fontSize: 12.5,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: t.surface2,
+        selectedColor: t.accent.withValues(alpha: 0.16),
+        disabledColor: t.surface2,
+        side: BorderSide(color: t.line, width: 1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(t.tagRadius + 2),
+        ),
+        labelStyle: TextStyle(
+          fontFamily: GsFont.body,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: t.bone,
+        ),
+        secondaryLabelStyle: TextStyle(
+          fontFamily: GsFont.body,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: t.accent,
+        ),
+        showCheckmark: false,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith<Color>((states) {
+          return states.contains(WidgetState.selected) ? t.accent : t.muted;
+        }),
+        trackColor: WidgetStateProperty.resolveWith<Color>((states) {
+          return states.contains(WidgetState.selected)
+              ? t.accent.withValues(alpha: 0.35)
+              : t.surface2;
+        }),
+        trackOutlineColor: WidgetStatePropertyAll<Color>(t.line),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+          return states.contains(WidgetState.selected) ? t.accent : t.muted;
+        }),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+          return states.contains(WidgetState.selected)
+              ? t.accent
+              : Colors.transparent;
+        }),
+        checkColor: WidgetStatePropertyAll<Color>(
+          isDark ? t.accentInk : Colors.white,
+        ),
+        side: BorderSide(color: t.line, width: 1.5),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+        ),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: t.accent,
+        linearTrackColor: t.surface2,
+        circularTrackColor: t.surface2,
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: t.accent,
+        titleTextStyle: TextStyle(
+          fontFamily: GsFont.body,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: t.bone,
+        ),
+        subtitleTextStyle: TextStyle(
+          fontFamily: GsFont.body,
+          fontSize: 12,
+          height: 1.4,
+          color: t.muted,
         ),
       ),
     );
@@ -339,15 +511,13 @@ class AppTheme {
 
   /// Accent colours for analytics and status surfaces.
   ///
-  /// Light variants are darker (WCAG AA on white cards) while dark variants are
-  /// brighter, so the same semantic colour reads on all three skins.
   /// Completed/positive states use the skin's gold (secondary) so the
   /// interface stays on the Greyskull motif (issue #105).
   static Color positiveAccent(BuildContext context) =>
       Theme.of(context).colorScheme.secondary;
 
-  static Color negativeAccent(BuildContext context) => _accent(context,
-      light: const Color(0xFFC62828), dark: const Color(0xFFEF5350));
+  static Color negativeAccent(BuildContext context) =>
+      Theme.of(context).colorScheme.error;
 
   /// Resistance surfaces use the skin's primary ink instead of blue (#105).
   static Color resistanceAccent(BuildContext context) =>
