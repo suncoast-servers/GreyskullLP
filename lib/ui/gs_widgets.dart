@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/themes/gs_tokens.dart';
 import 'package:greyskull_lp/themes/theme.dart';
+import 'package:greyskull_lp/ui/gs_icon.dart';
 
 /// Rounded surface used by every screen in the refresh.
 ///
@@ -99,11 +100,13 @@ class GsTag extends StatelessWidget {
     super.key,
     this.tone = GsTagTone.neutral,
     this.icon,
+    this.svgIcon,
   });
 
   final String label;
   final GsTagTone tone;
   final IconData? icon;
+  final String? svgIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +144,10 @@ class GsTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          if (icon != null) ...<Widget>[
+          if (svgIcon != null) ...<Widget>[
+            GsIcon(svgIcon!, size: 11, color: foreground),
+            const SizedBox(width: 4),
+          ] else if (icon != null) ...<Widget>[
             Icon(icon, size: 11, color: foreground),
             const SizedBox(width: 4),
           ],
@@ -162,15 +168,28 @@ class GsTag extends StatelessWidget {
 }
 
 /// Small rounded icon container used inside cards and list rows.
+///
+/// Use [GsIconTile.svg] for prototype line icons, or the default constructor
+/// for Material icons while a screen is still being migrated.
 class GsIconTile extends StatelessWidget {
   const GsIconTile(
-    this.icon, {
+    IconData iconData, {
     super.key,
     this.size = 40,
     this.color,
-  });
+  })  : _icon = iconData,
+        _svgIcon = null;
 
-  final IconData icon;
+  const GsIconTile.svg(
+    String svgName, {
+    super.key,
+    this.size = 40,
+    this.color,
+  })  : _svgIcon = svgName,
+        _icon = null;
+
+  final IconData? _icon;
+  final String? _svgIcon;
   final double size;
   final Color? color;
 
@@ -185,7 +204,19 @@ class GsIconTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(size * 0.28),
         border: Border.all(color: tokens.line, width: 1),
       ),
-      child: Icon(icon, size: size * 0.46, color: color ?? tokens.accent),
+      child: Center(
+        child: _svgIcon != null
+            ? GsIcon(
+                _svgIcon,
+                size: size * 0.46,
+                color: color ?? tokens.accent,
+              )
+            : Icon(
+                _icon,
+                size: size * 0.46,
+                color: color ?? tokens.accent,
+              ),
+      ),
     );
   }
 }
@@ -360,14 +391,16 @@ class _GsRingPainter extends CustomPainter {
 class GsListRow extends StatelessWidget {
   const GsListRow({
     super.key,
-    required this.icon,
+    this.icon,
+    this.svg,
     required this.title,
     this.subtitle,
     this.onTap,
     this.trailing,
-  });
+  }) : assert(icon != null || svg != null, 'Provide icon or svg');
 
-  final IconData icon;
+  final IconData? icon;
+  final String? svg;
   final String title;
   final String? subtitle;
   final VoidCallback? onTap;
@@ -390,7 +423,9 @@ class GsListRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           child: Row(
             children: <Widget>[
-              GsIconTile(icon, size: 34),
+              svg != null
+                  ? GsIconTile.svg(svg!, size: 34)
+                  : GsIconTile(icon!, size: 34),
               const SizedBox(width: 11),
               Expanded(
                 child: Column(
@@ -442,12 +477,14 @@ class GsPrimaryButton extends StatelessWidget {
     super.key,
     required this.label,
     this.icon,
+    this.svgIcon,
     this.onPressed,
     this.expand = true,
   });
 
   final String label;
   final IconData? icon;
+  final String? svgIcon;
   final VoidCallback? onPressed;
   final bool expand;
 
@@ -475,7 +512,10 @@ class GsPrimaryButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
                 children: <Widget>[
-                  if (icon != null) ...<Widget>[
+                  if (svgIcon != null) ...<Widget>[
+                    GsIcon(svgIcon!, size: 17, color: tokens.accentInk),
+                    const SizedBox(width: 7),
+                  ] else if (icon != null) ...<Widget>[
                     Icon(icon, size: 17, color: tokens.accentInk),
                     const SizedBox(width: 7),
                   ],
@@ -548,12 +588,14 @@ class GsSquareButton extends StatelessWidget {
 class GsIconButton extends StatelessWidget {
   const GsIconButton({
     super.key,
-    required this.icon,
+    this.icon,
+    this.svg,
     this.onPressed,
     this.tooltip,
-  });
+  }) : assert(icon != null || svg != null, 'Provide icon or svg');
 
-  final IconData icon;
+  final IconData? icon;
+  final String? svg;
   final VoidCallback? onPressed;
   final String? tooltip;
 
@@ -562,16 +604,23 @@ class GsIconButton extends StatelessWidget {
     return GsSquareButton(
       onPressed: onPressed,
       tooltip: tooltip,
-      child: Icon(icon, size: 18, color: context.gs.bone),
+      child: svg != null
+          ? GsIcon(svg!, size: 18, color: context.gs.bone)
+          : Icon(icon, size: 18, color: context.gs.bone),
     );
   }
 }
 
 /// One destination in [GsTabBar].
 class GsTabItem {
-  const GsTabItem({required this.icon, required this.label});
+  const GsTabItem({
+    this.icon,
+    this.svg,
+    required this.label,
+  }) : assert(icon != null || svg != null, 'Provide icon or svg');
 
-  final IconData icon;
+  final IconData? icon;
+  final String? svg;
   final String label;
 }
 
@@ -627,7 +676,9 @@ class GsTabBar extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Icon(item.icon, size: 19, color: color),
+                        item.svg != null
+                            ? GsIcon(item.svg!, size: 19, color: color)
+                            : Icon(item.icon, size: 19, color: color),
                         const SizedBox(height: 3),
                         Text(
                           item.label.toUpperCase(),

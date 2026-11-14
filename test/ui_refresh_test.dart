@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/home_page.dart';
 import 'package:greyskull_lp/themes/theme.dart';
+import 'package:greyskull_lp/ui/gs_icon.dart';
 import 'package:greyskull_lp/ui/gs_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -57,12 +61,12 @@ void main() {
         _app(
           GsTabBar(
             items: const <GsTabItem>[
-              GsTabItem(icon: Icons.fitness_center, label: 'Workout'),
-              GsTabItem(icon: Icons.forum, label: 'Forum'),
-              GsTabItem(icon: Icons.restaurant, label: 'Diet'),
-              GsTabItem(icon: Icons.stacked_line_chart, label: 'Stats'),
-              GsTabItem(icon: Icons.history, label: 'History'),
-              GsTabItem(icon: Icons.shopping_cart, label: 'Store'),
+              GsTabItem(svg: 'train', label: 'Workout'),
+              GsTabItem(svg: 'forum', label: 'Forum'),
+              GsTabItem(svg: 'food', label: 'Diet'),
+              GsTabItem(svg: 'stats', label: 'Stats'),
+              GsTabItem(svg: 'history', label: 'History'),
+              GsTabItem(svg: 'store', label: 'Store'),
             ],
             currentIndex: 0,
             onTap: (index) => selected = index,
@@ -83,6 +87,45 @@ void main() {
 
       await tester.tap(find.text('STATS'));
       expect(selected, 3);
+    });
+  });
+
+  group('SVG icon set', () {
+    test('icons used by the refreshed shell exist as assets', () {
+      for (final name in <String>[
+        'train',
+        'forum',
+        'food',
+        'stats',
+        'history',
+        'store',
+        'gear',
+        'more',
+        'flame',
+        'check',
+        'play',
+        'chevron',
+        'db',
+        'repeat',
+        'ladder',
+        'lock',
+        'target',
+        'reorder',
+        'bolt',
+      ]) {
+        expect(
+          File('assets/icons/$name.svg').existsSync(),
+          isTrue,
+          reason: 'missing icon asset: $name',
+        );
+      }
+    });
+
+    testWidgets('GsIcon renders a tinted SVG', (tester) async {
+      await tester.pumpWidget(_app(const GsIcon('flame', size: 24)));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SvgPicture), findsOneWidget);
     });
   });
 

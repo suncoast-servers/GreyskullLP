@@ -10,10 +10,9 @@ import 'package:greyskull_lp/pages/settings_page.dart';
 import 'package:greyskull_lp/pages/stats_page.dart';
 import 'package:greyskull_lp/pages/store_page.dart';
 import 'package:greyskull_lp/pages/workout_page.dart';
-import 'package:greyskull_lp/themes/app_icons.dart';
 import 'package:greyskull_lp/themes/gs_tokens.dart';
+import 'package:greyskull_lp/ui/gs_icon.dart';
 import 'package:greyskull_lp/ui/gs_widgets.dart';
-import 'package:greyskull_lp/widgets/bento_menu_icon.dart';
 import 'themes/theme.dart';
 
 Future<void> main() async {
@@ -160,7 +159,7 @@ class MainPageState extends State<MainPage> {
                       _appBarTitle.value = "Official Greyskull LP App";
                     });
                   },
-                  child: const BentoMenuIcon(size: 18),
+                  child: const GsIcon('more', size: 18),
                 ),
               ),
         leadingWidth: isHome ? null : 56,
@@ -183,12 +182,12 @@ class MainPageState extends State<MainPage> {
                 child: GsTag(
                   '$streak DAY STREAK',
                   tone: GsTagTone.accent,
-                  icon: Icons.local_fire_department,
+                  svgIcon: 'flame',
                 ),
               ),
             ),
           GsIconButton(
-            icon: Icons.settings,
+            svg: 'gear',
             tooltip: 'Settings',
             onPressed: () {
               Navigator.push(
@@ -207,12 +206,12 @@ class MainPageState extends State<MainPage> {
           ? null
           : GsTabBar(
               items: const <GsTabItem>[
-                GsTabItem(icon: AppIcons.barbell, label: 'Workout'),
-                GsTabItem(icon: Icons.forum, label: 'Forum'),
-                GsTabItem(icon: Icons.restaurant, label: 'Diet'),
-                GsTabItem(icon: Icons.stacked_line_chart, label: 'Stats'),
-                GsTabItem(icon: Icons.history, label: 'History'),
-                GsTabItem(icon: Icons.shopping_cart, label: 'Store'),
+                GsTabItem(svg: 'train', label: 'Workout'),
+                GsTabItem(svg: 'forum', label: 'Forum'),
+                GsTabItem(svg: 'food', label: 'Diet'),
+                GsTabItem(svg: 'stats', label: 'Stats'),
+                GsTabItem(svg: 'history', label: 'History'),
+                GsTabItem(svg: 'store', label: 'Store'),
               ],
               currentIndex: _selectedIndex,
               onTap: _onItemTapped,

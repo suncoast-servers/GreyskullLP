@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
-import 'package:greyskull_lp/themes/app_icons.dart';
 import 'package:greyskull_lp/themes/gs_tokens.dart';
+import 'package:greyskull_lp/ui/gs_icon.dart';
 import 'package:greyskull_lp/ui/gs_widgets.dart';
 
 /// Dashboard-style home. Every tile and action routes to an existing tab —
@@ -34,37 +34,37 @@ class HomePage extends StatelessWidget {
               childAspectRatio: 1.45,
               children: <Widget>[
                 _HomeTile(
-                  icon: AppIcons.barbell,
+                  svg: 'train',
                   label: 'Workout',
                   subtitle: 'Plan & log',
                   onTap: () => onItemSelected(0),
                 ),
                 _HomeTile(
-                  icon: Icons.forum_outlined,
+                  svg: 'forum',
                   label: 'Forum',
                   subtitle: 'Greyskull Nation',
                   onTap: () => onItemSelected(1),
                 ),
                 _HomeTile(
-                  icon: Icons.restaurant_outlined,
+                  svg: 'food',
                   label: 'Diet',
                   subtitle: 'Fuel & macros',
                   onTap: () => onItemSelected(2),
                 ),
                 _HomeTile(
-                  icon: Icons.stacked_line_chart,
+                  svg: 'stats',
                   label: 'Stats',
                   subtitle: 'Progress',
                   onTap: () => onItemSelected(3),
                 ),
                 _HomeTile(
-                  icon: Icons.history,
+                  svg: 'history',
                   label: 'History',
                   subtitle: 'Past sessions',
                   onTap: () => onItemSelected(4),
                 ),
                 _HomeTile(
-                  icon: Icons.shopping_cart_outlined,
+                  svg: 'store',
                   label: 'Store',
                   subtitle: 'Official gear',
                   onTap: () => onItemSelected(5),
@@ -108,15 +108,15 @@ class HomePage extends StatelessWidget {
       final date = entry.timestamp;
       final stamp =
           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final IconData icon = switch (entry.category) {
-        HistoryCategory.weight => AppIcons.barbell,
-        HistoryCategory.daily => Icons.accessibility_new,
-        HistoryCategory.diet => Icons.restaurant_outlined,
+      final String icon = switch (entry.category) {
+        HistoryCategory.weight => 'db',
+        HistoryCategory.daily => 'bolt',
+        HistoryCategory.diet => 'food',
       };
       return Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: GsListRow(
-          icon: icon,
+          svg: icon,
           title: entry.title,
           subtitle: '$stamp · ${_categoryLabel(entry.category)}',
           onTap: () => onItemSelected(4),
@@ -323,7 +323,7 @@ class _TodaySessionCard extends StatelessWidget {
               children: lifts
                   .map((lift) => GsTag(
                         lift.name,
-                        icon: Icons.fitness_center,
+                        svgIcon: 'db',
                       ))
                   .toList(),
             ),
@@ -331,7 +331,7 @@ class _TodaySessionCard extends StatelessWidget {
           const SizedBox(height: 14),
           GsPrimaryButton(
             label: 'Start Workout',
-            icon: Icons.play_arrow_rounded,
+            svgIcon: 'play',
             onPressed: onTap,
           ),
         ],
@@ -371,8 +371,8 @@ class _StreakCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              GsIconTile(
-                Icons.local_fire_department,
+              GsIconTile.svg(
+                'flame',
                 size: 38,
                 color: tokens.accent2,
               ),
@@ -400,7 +400,7 @@ class _StreakCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, size: 17, color: tokens.muted),
+              GsIcon('chevron', size: 17, color: tokens.muted),
             ],
           ),
           const SizedBox(height: 12),
@@ -440,7 +440,7 @@ class _StreakCard extends StatelessWidget {
                       ),
                       child: Center(
                         child: active
-                            ? Icon(Icons.check, size: 13, color: tokens.accent)
+                            ? GsIcon('check', size: 13, color: tokens.accent)
                             : Container(
                                 width: 5,
                                 height: 5,
@@ -464,13 +464,13 @@ class _StreakCard extends StatelessWidget {
 
 class _HomeTile extends StatelessWidget {
   const _HomeTile({
-    required this.icon,
+    required this.svg,
     required this.label,
     required this.subtitle,
     required this.onTap,
   });
 
-  final IconData icon;
+  final String svg;
   final String label;
   final String subtitle;
   final VoidCallback onTap;
@@ -486,9 +486,9 @@ class _HomeTile extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              GsIconTile(icon, size: 34),
+              GsIconTile.svg(svg, size: 34),
               const Spacer(),
-              Icon(Icons.chevron_right, size: 16, color: tokens.muted),
+              GsIcon('chevron', size: 16, color: tokens.muted),
             ],
           ),
           const Spacer(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/gs_tokens.dart';
 import 'package:greyskull_lp/themes/theme.dart';
+import 'package:greyskull_lp/ui/gs_icon.dart';
 import 'package:greyskull_lp/ui/gs_widgets.dart';
 import 'workout_setup_page.dart';
 import 'workout_page_frequency.dart';
@@ -239,10 +240,16 @@ class _WorkoutPageState extends State<WorkoutPage> {
                 children: <Widget>[
                   GsTag(level.shortLabel, tone: GsTagTone.accent),
                   const Spacer(),
-                  TextButton.icon(
+                  TextButton(
                     onPressed: _showAdjustLevelSheet,
-                    icon: const Icon(Icons.tune, size: 15),
-                    label: const Text('Adjust Level'),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        GsIcon('reorder', size: 15, color: tokens.accent),
+                        const SizedBox(width: 5),
+                        const Text('Adjust Level'),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -280,14 +287,14 @@ class _WorkoutPageState extends State<WorkoutPage> {
           childAspectRatio: 1.25,
           children: <Widget>[
             _buildWorkoutButton(
-              const IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
+              'train',
               'Weight Program',
               onTap: () =>
                   _openSubPage(const WorkoutSetupPage(), 'Weight Program'),
               statusBadge: 'Core Lifts',
             ),
             _buildWorkoutButton(
-              Icons.repeat,
+              'repeat',
               'Frequency Method',
               onTap: () => _openSubPage(
                   const WorkoutPageFrequency(), 'Frequency Method'),
@@ -296,7 +303,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
               statusBadge: 'Level 1 Active',
             ),
             _buildWorkoutButton(
-              Icons.trending_up,
+              'ladder',
               'Ladder Method',
               onTap: () {
                 if (!trainingState.isLadderMethodUnlocked) {
@@ -316,7 +323,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
               isLocked: !trainingState.isLadderMethodUnlocked,
             ),
             _buildWorkoutButton(
-              Icons.balance,
+              'target',
               'Total Work Method',
               onTap: () {
                 if (!trainingState.isTotalWorkMethodUnlocked) {
@@ -344,7 +351,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
   }
 
   Widget _buildWorkoutButton(
-    IconData icon,
+    String svgIcon,
     String label, {
     required VoidCallback onTap,
     bool isActive = false,
@@ -366,16 +373,16 @@ class _WorkoutPageState extends State<WorkoutPage> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              GsIconTile(
-                icon,
+              GsIconTile.svg(
+                svgIcon,
                 size: 38,
                 color: isLocked ? tokens.muted : tokens.accent,
               ),
               const Spacer(),
               if (isLocked)
-                Icon(Icons.lock_outline, size: 16, color: tokens.muted)
+                GsIcon('lock', size: 16, color: tokens.muted)
               else
-                Icon(Icons.chevron_right, size: 17, color: tokens.muted),
+                GsIcon('chevron', size: 17, color: tokens.muted),
             ],
           ),
           const Spacer(),
