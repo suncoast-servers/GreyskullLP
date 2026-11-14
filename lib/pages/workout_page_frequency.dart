@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/services/calisthenics_reminder_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/method_lift_row.dart';
@@ -87,6 +90,7 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
       );
     }
     _touchedAccessories.clear();
+    unawaited(CalisthenicsReminderService.noteSetLogged());
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -132,6 +136,8 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
         'Sets completed: ${sets.length}\n'
         'Optional Accessories: $optional\n\n'
         'Breakdown:\n$setBreakdown';
+
+    unawaited(CalisthenicsReminderService.cancel());
 
     final draft = trainingState.logDailyMethodSession(
       method: DailyMethod.frequency,
