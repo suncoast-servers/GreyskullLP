@@ -434,7 +434,9 @@ class TrainingState extends ChangeNotifier {
   bool _restTimerSoundEnabled = true;
   bool _restTimerCountUp = true;
   int _restTimerSize = 2;
-  int _restAfterExerciseSeconds = 60;
+
+  /// 0 means "same as the lift's own rest" (issue #107).
+  int _restAfterExerciseSeconds = 0;
   final Map<String, int> _perExerciseRestSeconds = {};
 
   /// Tape measurements use inches when true (#85).
@@ -1468,8 +1470,9 @@ class TrainingState extends ChangeNotifier {
     _restTimerSoundEnabled = map['restTimerSoundEnabled'] as bool? ?? true;
     _restTimerCountUp = map['restTimerCountUp'] as bool? ?? true;
     _restTimerSize = (map['restTimerSize'] as int? ?? 2).clamp(1, 3);
+    final storedAfterRest = map['restAfterExerciseSeconds'] as int?;
     _restAfterExerciseSeconds =
-        (map['restAfterExerciseSeconds'] as int? ?? 60).clamp(0, 600);
+        (storedAfterRest == 60 ? 0 : storedAfterRest ?? 0).clamp(0, 600);
     _tapeMeasurementsInInches =
         map['tapeMeasurementsInInches'] as bool? ?? false;
     _keepScreenAwake = map['keepScreenAwake'] as bool? ?? true;

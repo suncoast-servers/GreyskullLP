@@ -39,12 +39,29 @@ void main() {
       expect(find.text('Change in Setup'), findsNothing);
     });
 
-    testWidgets('set circles are labelled 5 / 5 / 5+', (tester) async {
+    testWidgets('set circles show 5 until AMRAP reps are entered',
+        (tester) async {
       await pumpLive(tester);
 
-      // Two straight sets show 5, the AMRAP set shows 5+.
+      // Straight sets and the AMRAP set all read 5; the AMRAP circle keeps its
+      // amber ring and tapping it opens rep entry (#106).
       expect(find.text('5'), findsWidgets);
-      expect(find.text('5+'), findsWidgets);
+      expect(find.text('5+'), findsNothing);
+
+      final lift = trainingState
+          .activeBarbellTemplateDetails.workouts.first.coreLifts.first;
+      final amrapIndex = (lift.sets <= 0 ? 3 : lift.sets) - 1;
+      await tester.tap(_setCircle(lift.name, amrapIndex));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('set ${amrapIndex + 1} reps'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.add_circle_outline));
+      await tester.pump();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      // The circle now shows the entered AMRAP count and counts as done.
+      expect(find.text('6'), findsWidgets);
     });
 
     testWidgets('press-and-hold overrides reps for one set', (tester) async {
