@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/services/workout_notification_service.dart';
 import 'package:greyskull_lp/program/template_labels.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/services/social_share_service.dart';
@@ -335,6 +336,10 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
       notes: _notesController.text.trim(),
     );
 
+    // The session is finished: no ongoing or rest alerts should linger
+    // (issue #112).
+    WorkoutNotificationService.instance.cancelAll();
+
     // Advance rotation to next workout in cycle
     trainingState.advanceBarbellRotation();
 
@@ -433,7 +438,8 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
   }
 
   Future<void> _promptRepOverride(
-      TemplateLift lift, int setIndex, int totalSets) async {
+      TemplateLift lift, int setIndex, int totalSets,
+      {bool completeAfterSave = false}) async {
     final current = _repOverrides[lift.name]?[setIndex] ?? lift.defaultReps;
     var value = current;
     final result = await showDialog<int>(
@@ -482,6 +488,9 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
         _repOverrides.putIfAbsent(lift.name, () => <int, int>{})[setIndex] =
             result;
       });
+      if (completeAfterSave && !_setsForLift(lift.name).contains(setIndex)) {
+        _toggleSet(lift.name, setIndex, totalSets);
+      }
     }
   }
 
@@ -532,9 +541,12 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
       // Start a rest countdown when a set is completed, not when un-done.
       if (!wasDone && trainingState.restTimerEnabled) {
         final liftDone = sets.length >= totalSets;
-        _restSeconds = liftDone
+        final perLiftRest = trainingState.restSecondsForLift(liftName);
+        // 0 means "same as the lift's own rest" (issue #107): the hidden 60s
+        // default used to override a configured 90s rest on the last set.
+        _restSeconds = liftDone && trainingState.restAfterExerciseSeconds > 0
             ? trainingState.restAfterExerciseSeconds
-            : trainingState.restSecondsForLift(liftName);
+            : perLiftRest;
         _restCoaching = liftDone
             ? 'Move to the next lift when this rest ends.'
             : 'Rest, then $liftName set ${sets.length + 1}.';
@@ -602,7 +614,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                   soundEnabled: trainingState.restTimerSoundEnabled,
                   countUp: trainingState.restTimerCountUp,
                   size: trainingState.restTimerSize,
-                  coachingText: _restCoaching,
+                  coachingText: widget.liveMode ? null : _restCoaching,
                   onDismissed: () => setState(() => _restTimerActive = false),
                 ),
               ),
@@ -610,8 +622,9 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  if (trainingState.programLevel ==
-                      ProgramLevel.foundation) ...[
+                  if (!widget.liveMode &&
+                      trainingState.programLevel ==
+                          ProgramLevel.foundation) ...[
                     Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(10),
@@ -780,13 +793,18 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                               return ChoiceChip(
                                 label: Text(workout.code),
                                 selected: isSelected,
-                                onSelected: (_) {
-                                  setState(() {
-                                    _completedCoreLifts.clear();
-                                    _completedAccessories.clear();
-                                  });
-                                  trainingState.setBarbellRotationIndex(index);
-                                },
+                                // The plan is frozen during a live session
+                                // (issue #109); change days in Setup.
+                                onSelected: widget.liveMode
+                                    ? null
+                                    : (_) {
+                                        setState(() {
+                                          _completedCoreLifts.clear();
+                                          _completedAccessories.clear();
+                                        });
+                                        trainingState
+                                            .setBarbellRotationIndex(index);
+                                      },
                               );
                             }),
                           ),
@@ -808,37 +826,38 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Johnny Pain Rule Banner
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .secondary
-                          .withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .secondary
-                              .withValues(alpha: 0.35)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.info_outline,
-                            size: 20,
-                            color: Theme.of(context).colorScheme.secondary),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'Greyskull Rule: Upper body compound lifts are always completed before lower body lifts. Last set is AMRAP (5+ to failure). Accessories are performed last.',
-                            style: TextStyle(fontSize: 12, height: 1.3),
+                  // Johnny Pain Rule Banner (setup only; issue #108).
+                  if (!widget.liveMode)
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .secondary
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondary
+                                .withValues(alpha: 0.35)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline,
+                              size: 20,
+                              color: Theme.of(context).colorScheme.secondary),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Greyskull Rule: Upper body compound lifts are always completed before lower body lifts. Last set is AMRAP (5+ to failure). Accessories are performed last.',
+                              style: TextStyle(fontSize: 12, height: 1.3),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 16),
 
                   // Core Barbell Lifts Section
@@ -1018,36 +1037,50 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                     child: _SetCircleButton(
                                       key: ValueKey(
                                           'set-tap-${lift.name}-$index'),
-                                      label: isAmrapSet
-                                          ? '5+'
-                                          : '${_repOverrides[lift.name]?[index] ?? lift.defaultReps}',
+                                      label:
+                                          '${_repOverrides[lift.name]?[index] ?? lift.defaultReps}',
                                       isAmrap: isAmrapSet,
                                       isDone: doneSets.contains(index),
                                       semanticsLabel: isAmrapSet
-                                          ? 'Mark AMRAP set done'
+                                          ? 'Log AMRAP set reps'
                                           : 'Mark set ${index + 1} done',
-                                      onTap: () => _toggleSet(
-                                          lift.name, index, totalSets),
+                                      onTap: () {
+                                        if (isAmrapSet &&
+                                            !doneSets.contains(index)) {
+                                          _promptRepOverride(
+                                            lift,
+                                            index,
+                                            totalSets,
+                                            completeAfterSave: true,
+                                          );
+                                        } else {
+                                          _toggleSet(
+                                              lift.name, index, totalSets);
+                                        }
+                                      },
                                       onLongPress: () => _promptRepOverride(
                                           lift, index, totalSets),
                                     ),
                                   );
                                 }),
-                                Expanded(
-                                  child: Text(
-                                    totalSets == 1
-                                        ? 'Tap the circle when the AMRAP set is done'
-                                        : lift.isAmrap
-                                            ? 'Tap 5, 5, then 5+ (AMRAP) as you finish each set'
-                                            : 'Tap each circle as you finish a set',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                                if (widget.liveMode)
+                                  const Spacer()
+                                else
+                                  Expanded(
+                                    child: Text(
+                                      totalSets == 1
+                                          ? 'Tap the circle when the AMRAP set is done'
+                                          : lift.isAmrap
+                                              ? 'Tap 5, 5, then 5+ (AMRAP) as you finish each set'
+                                              : 'Tap each circle as you finish a set',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
                                     ),
                                   ),
-                                ),
                                 if (lift.isAmrap)
                                   TextButton.icon(
                                     onPressed: () =>
@@ -1134,11 +1167,12 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                           ),
                         ],
                       ),
-                      TextButton.icon(
-                        onPressed: _showAddAccessoryDialog,
-                        icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Add Plug-in'),
-                      ),
+                      if (!widget.liveMode)
+                        TextButton.icon(
+                          onPressed: _showAddAccessoryDialog,
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('Add Plug-in'),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -1155,12 +1189,14 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                 style: TextStyle(
                                     color: AppTheme.mutedText(context)),
                               ),
-                              const SizedBox(height: 6),
-                              OutlinedButton.icon(
-                                onPressed: _showAddAccessoryDialog,
-                                icon: const Icon(Icons.add, size: 16),
-                                label: const Text('Add Official Accessory'),
-                              ),
+                              if (!widget.liveMode) ...[
+                                const SizedBox(height: 6),
+                                OutlinedButton.icon(
+                                  onPressed: _showAddAccessoryDialog,
+                                  icon: const Icon(Icons.add, size: 16),
+                                  label: const Text('Add Official Accessory'),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -1197,51 +1233,58 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
                                   isDone ? TextDecoration.lineThrough : null,
                             ),
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (index > 0)
-                                IconButton(
-                                  icon:
-                                      const Icon(Icons.arrow_upward, size: 18),
-                                  tooltip: 'Move Up',
-                                  onPressed: () {
-                                    trainingState
-                                        .reorderAccessoriesInCurrentWorkout(
-                                            index, index - 1);
-                                  },
+                          trailing: widget.liveMode
+                              ? null
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (index > 0)
+                                      IconButton(
+                                        icon: const Icon(Icons.arrow_upward,
+                                            size: 18),
+                                        tooltip: 'Move Up',
+                                        onPressed: () {
+                                          trainingState
+                                              .reorderAccessoriesInCurrentWorkout(
+                                                  index, index - 1);
+                                        },
+                                      ),
+                                    if (index < accessories.length - 1)
+                                      IconButton(
+                                        icon: const Icon(Icons.arrow_downward,
+                                            size: 18),
+                                        tooltip: 'Move Down',
+                                        onPressed: () {
+                                          trainingState
+                                              .reorderAccessoriesInCurrentWorkout(
+                                                  index, index + 2);
+                                        },
+                                      ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete_outline,
+                                          size: 18,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .error),
+                                      tooltip: 'Remove',
+                                      onPressed: () {
+                                        setState(() {
+                                          _completedAccessories
+                                              .remove(accessory);
+                                        });
+                                        trainingState
+                                            .removeAccessoryFromCurrentWorkout(
+                                                index);
+                                      },
+                                    ),
+                                  ],
                                 ),
-                              if (index < accessories.length - 1)
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_downward,
-                                      size: 18),
-                                  tooltip: 'Move Down',
-                                  onPressed: () {
-                                    trainingState
-                                        .reorderAccessoriesInCurrentWorkout(
-                                            index, index + 2);
-                                  },
-                                ),
-                              IconButton(
-                                icon: Icon(Icons.delete_outline,
-                                    size: 18,
-                                    color: Theme.of(context).colorScheme.error),
-                                tooltip: 'Remove',
-                                onPressed: () {
-                                  setState(() {
-                                    _completedAccessories.remove(accessory);
-                                  });
-                                  trainingState
-                                      .removeAccessoryFromCurrentWorkout(index);
-                                },
-                              ),
-                            ],
-                          ),
                         ),
                       );
                     }),
 
-                  if (trainingState.isCurrentWorkoutCustomized())
+                  if (!widget.liveMode &&
+                      trainingState.isCurrentWorkoutCustomized())
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton.icon(

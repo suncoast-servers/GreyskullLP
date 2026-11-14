@@ -57,7 +57,7 @@ class _LiveWorkoutPageState extends State<LiveWorkoutPage> {
   @override
   void dispose() {
     _notificationTimer?.cancel();
-    WorkoutNotificationService.instance.cancelLive();
+    WorkoutNotificationService.instance.cancelAll();
     ScreenAwakeService.setAwake(false);
     super.dispose();
   }

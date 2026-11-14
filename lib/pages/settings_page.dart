@@ -875,6 +875,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     labelText: 'Rest after finishing a lift',
                   ),
                   items: const [
+                    DropdownMenuItem(
+                        value: 0, child: Text('Same as the lift rest')),
                     DropdownMenuItem(value: 30, child: Text('30 seconds')),
                     DropdownMenuItem(value: 60, child: Text('60 seconds')),
                     DropdownMenuItem(value: 90, child: Text('90 seconds')),

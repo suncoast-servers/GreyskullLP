@@ -22,6 +22,9 @@ class WorkoutNotificationService {
   /// Disable in tests or when the user turns notifications off.
   static bool enabled = true;
 
+  /// Test hook: how many times a session cleared its notifications (#112).
+  static int debugCancelAllCount = 0;
+
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   bool _initialised = false;
@@ -110,6 +113,17 @@ class WorkoutNotificationService {
     if (!Platform.isAndroid && !Platform.isIOS) return;
     try {
       await _plugin.cancel(id: liveId);
+    } catch (_) {}
+  }
+
+  /// Removes the ongoing session card and any leftover rest alert when a
+  /// workout ends (issue #112).
+  Future<void> cancelAll() async {
+    debugCancelAllCount += 1;
+    if (!Platform.isAndroid && !Platform.isIOS) return;
+    try {
+      await _plugin.cancel(id: liveId);
+      await _plugin.cancel(id: restId);
     } catch (_) {}
   }
 }
