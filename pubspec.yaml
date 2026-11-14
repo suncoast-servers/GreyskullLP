@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ^3.5.4
@@ -58,13 +58,16 @@ dev_dependencies:
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/app_icon.png"
+  # Full-bleed artwork: black background, no white halo on any launcher (#116).
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
 
 flutter_native_splash:
-  color: "#333333" # Background color for the splash screen
+  color: "#000000" # Full-bleed black so the icon has no halo (#116)
   image: assets/icon/app_icon.png # Path to your splash image
   android: true
   ios: true
