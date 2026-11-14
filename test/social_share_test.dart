@@ -222,7 +222,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: const SharingSettingsPage(),
+          home: SharingSettingsPage(),
         ),
       );
       await tester.pumpAndSettle();

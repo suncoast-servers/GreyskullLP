@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/pages/achievements_page.dart';
+import 'package:greyskull_lp/services/achievement_service.dart';
 import 'package:greyskull_lp/themes/gs_tokens.dart';
 import 'package:greyskull_lp/ui/gs_icon.dart';
 import 'package:greyskull_lp/ui/gs_widgets.dart';
+import 'package:greyskull_lp/widgets/achievement_badge.dart';
 
 /// Dashboard-style home. Every tile and action routes to an existing tab —
 /// no new destinations or data were added.
@@ -16,6 +19,7 @@ class HomePage extends StatelessWidget {
       animation: trainingState,
       builder: (context, _) {
         final tokens = context.gs;
+        final badges = AchievementService.evaluate(trainingState.history);
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
           children: <Widget>[
@@ -82,6 +86,37 @@ class HomePage extends StatelessWidget {
               ),
             ),
             ..._recentActivity(context, onItemSelected),
+            GsSectionTitle(
+              'Achievements',
+              trailing: TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AchievementsPage(),
+                  ),
+                ),
+                child: Text(
+                  'All badges',
+                  style: TextStyle(fontSize: 11, color: tokens.accent),
+                ),
+              ),
+            ),
+            GridView.count(
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 7,
+              mainAxisSpacing: 7,
+              childAspectRatio: 0.82,
+              children: badges
+                  .take(4)
+                  .map(
+                    (badge) => AchievementBadgeTile(
+                      progress: badge,
+                      onTap: () => showAchievementBadgeSheet(context, badge),
+                    ),
+                  )
+                  .toList(),
+            ),
           ],
         );
       },
