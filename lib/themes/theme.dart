@@ -341,14 +341,17 @@ class AppTheme {
   ///
   /// Light variants are darker (WCAG AA on white cards) while dark variants are
   /// brighter, so the same semantic colour reads on all three skins.
-  static Color positiveAccent(BuildContext context) => _accent(context,
-      light: const Color(0xFF2E7D32), dark: const Color(0xFF66BB6A));
+  /// Completed/positive states use the skin's gold (secondary) so the
+  /// interface stays on the Greyskull motif (issue #105).
+  static Color positiveAccent(BuildContext context) =>
+      Theme.of(context).colorScheme.secondary;
 
   static Color negativeAccent(BuildContext context) => _accent(context,
       light: const Color(0xFFC62828), dark: const Color(0xFFEF5350));
 
-  static Color resistanceAccent(BuildContext context) => _accent(context,
-      light: const Color(0xFF1565C0), dark: const Color(0xFF64B5F6));
+  /// Resistance surfaces use the skin's primary ink instead of blue (#105).
+  static Color resistanceAccent(BuildContext context) =>
+      Theme.of(context).colorScheme.primary;
 
   static Color calisthenicsAccent(BuildContext context) => _accent(context,
       light: const Color(0xFFE65100), dark: const Color(0xFFFFB74D));

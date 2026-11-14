@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/training_state.dart';
 
@@ -133,6 +135,31 @@ class SocialShareService {
     );
   }
 
+  /// Tests (and headless runs) never pop the post-log sheet; tests can force
+  /// it back on to exercise the flow.
+  @visibleForTesting
+  static bool? debugForceAutoPrompt;
+
+  static bool get _autoPromptAllowed {
+    if (debugForceAutoPrompt != null) return debugForceAutoPrompt!;
+    if (kIsWeb) return true;
+    try {
+      return Platform.environment['FLUTTER_TEST'] != 'true';
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Shows the share sheet right after a workout/session is logged (#110).
+  static void maybePromptAfterLog(BuildContext context, HistoryEntry entry) {
+    if (!_autoPromptAllowed) return;
+    if (!trainingState.socialSharePromptEnabled) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      showShareModal(context: context, entry: entry);
+    });
+  }
+
   /// Opens an interactive pre-share review modal sheet.
   /// Allows the user to inspect/edit their caption and optionally attach a photo.
   static Future<void> showShareModal({
@@ -174,6 +201,8 @@ class _SocialShareModalContentState extends State<_SocialShareModalContent> {
   late final TextEditingController _captionController;
   XFile? _attachedPhoto;
   bool _isPickingPhoto = false;
+  final TextEditingController _locationController = TextEditingController();
+  bool _copied = false;
 
   @override
   void initState() {
@@ -188,17 +217,50 @@ class _SocialShareModalContentState extends State<_SocialShareModalContent> {
   @override
   void dispose() {
     _captionController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickPhoto() async {
+  String get _captionWithExtras {
+    final buffer = StringBuffer(_captionController.text.trim());
+    final location = _locationController.text.trim();
+    if (location.isNotEmpty) {
+      buffer
+        ..writeln()
+        ..writeln()
+        ..write('📍 $location');
+    }
+    return buffer.toString();
+  }
+
+  Future<void> _copyCaption() async {
+    await Clipboard.setData(ClipboardData(text: _captionWithExtras));
+    if (mounted) {
+      setState(() => _copied = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Caption copied')),
+      );
+    }
+  }
+
+  Future<void> _postToForum() async {
+    await _copyCaption();
+    final uri = Uri.tryParse(trainingState.forumUrl);
+    if (uri != null) {
+      await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+    }
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _pickPhoto({ImageSource source = ImageSource.gallery}) async {
     setState(() => _isPickingPhoto = true);
     try {
       final picker = ImagePicker();
       final photo = await picker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         imageQuality: 85,
         maxWidth: 1600,
+        preferredCameraDevice: CameraDevice.front,
       );
       if (photo != null && mounted) {
         setState(() => _attachedPhoto = photo);
@@ -217,7 +279,7 @@ class _SocialShareModalContentState extends State<_SocialShareModalContent> {
   }
 
   Future<void> _handleShare() async {
-    final caption = _captionController.text.trim();
+    final caption = _captionWithExtras;
     if (caption.isEmpty) {
       return;
     }
@@ -305,6 +367,16 @@ class _SocialShareModalContentState extends State<_SocialShareModalContent> {
             ),
           ),
           const SizedBox(height: 10),
+          TextField(
+            controller: _locationController,
+            decoration: const InputDecoration(
+              labelText: 'Location (optional)',
+              hintText: 'e.g. Suncoast Barbell',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 10),
           if (_attachedPhoto != null)
             Container(
               margin: const EdgeInsets.only(bottom: 10),
@@ -349,31 +421,46 @@ class _SocialShareModalContentState extends State<_SocialShareModalContent> {
                 ],
               ),
             ),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _isPickingPhoto ? null : _pickPhoto,
-                  icon: _isPickingPhoto
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.add_a_photo, size: 18),
-                  label: Text(
-                      _attachedPhoto == null ? 'Attach Photo' : 'Change Photo'),
-                ),
+              OutlinedButton.icon(
+                onPressed: _isPickingPhoto
+                    ? null
+                    : () => _pickPhoto(source: ImageSource.camera),
+                icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                label: const Text('Selfie'),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _handleShare,
-                  icon: const Icon(Icons.share, size: 18),
-                  label: const Text('Share Now'),
-                ),
+              OutlinedButton.icon(
+                onPressed: _isPickingPhoto ? null : _pickPhoto,
+                icon: _isPickingPhoto
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_a_photo, size: 18),
+                label:
+                    Text(_attachedPhoto == null ? 'Gallery' : 'Change photo'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _copyCaption,
+                icon: Icon(_copied ? Icons.check : Icons.copy, size: 18),
+                label: Text(_copied ? 'Copied' : 'Copy caption'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _postToForum,
+                icon: const Icon(Icons.forum_outlined, size: 18),
+                label: const Text('Forum'),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: _handleShare,
+            icon: const Icon(Icons.share, size: 18),
+            label: const Text('Share to apps / save'),
           ),
         ],
       ),

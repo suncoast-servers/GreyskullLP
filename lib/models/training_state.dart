@@ -434,7 +434,9 @@ class TrainingState extends ChangeNotifier {
   bool _restTimerSoundEnabled = true;
   bool _restTimerCountUp = true;
   int _restTimerSize = 2;
-  int _restAfterExerciseSeconds = 60;
+
+  /// 0 means "same as the lift's own rest" (issue #107).
+  int _restAfterExerciseSeconds = 0;
   final Map<String, int> _perExerciseRestSeconds = {};
 
   /// Tape measurements use inches when true (#85).
@@ -448,6 +450,11 @@ class TrainingState extends ChangeNotifier {
 
   /// Sections whose first-run tutorial has been seen (#83).
   final Set<String> _seenTutorials = {};
+
+  /// Remind the user when no calisthenics set is logged within this window
+  /// (#113). Off by default and opt-in from Settings.
+  bool _calisthenicsReminders = false;
+  int _calisthenicsReminderMinutes = 60;
 
   /// Next working weight per lift, carried between sessions (#80).
   final Map<String, double> _nextSessionWeights = {};
@@ -953,6 +960,11 @@ class TrainingState extends ChangeNotifier {
 
   bool get workoutNotifications => _workoutNotifications;
 
+  bool get calisthenicsReminders => _calisthenicsReminders;
+  int get calisthenicsReminderMinutes => _calisthenicsReminderMinutes;
+
+  static const List<int> calisthenicsReminderPresets = [30, 45, 60, 90, 120];
+
   bool hasSeenTutorial(String section) => _seenTutorials.contains(section);
 
   void markTutorialSeen(String section) {
@@ -970,6 +982,19 @@ class TrainingState extends ChangeNotifier {
   void setWorkoutNotifications(bool value) {
     if (_workoutNotifications == value) return;
     _workoutNotifications = value;
+    _notifyAndPersist();
+  }
+
+  void setCalisthenicsReminders(bool value) {
+    if (_calisthenicsReminders == value) return;
+    _calisthenicsReminders = value;
+    _notifyAndPersist();
+  }
+
+  void setCalisthenicsReminderMinutes(int minutes) {
+    final clamped = minutes.clamp(15, 240);
+    if (_calisthenicsReminderMinutes == clamped) return;
+    _calisthenicsReminderMinutes = clamped;
     _notifyAndPersist();
   }
 
@@ -1394,6 +1419,8 @@ class TrainingState extends ChangeNotifier {
       'keepScreenAwake': _keepScreenAwake,
       'workoutNotifications': _workoutNotifications,
       'seenTutorials': _seenTutorials.toList(),
+      'calisthenicsReminders': _calisthenicsReminders,
+      'calisthenicsReminderMinutes': _calisthenicsReminderMinutes,
       'socialShareHashtag': _socialShareHashtag,
       'activeBarbellTemplate': _activeBarbellTemplate.name,
       'activeBarbellRotationIndex': _activeBarbellRotationIndex,
@@ -1468,12 +1495,16 @@ class TrainingState extends ChangeNotifier {
     _restTimerSoundEnabled = map['restTimerSoundEnabled'] as bool? ?? true;
     _restTimerCountUp = map['restTimerCountUp'] as bool? ?? true;
     _restTimerSize = (map['restTimerSize'] as int? ?? 2).clamp(1, 3);
+    final storedAfterRest = map['restAfterExerciseSeconds'] as int?;
     _restAfterExerciseSeconds =
-        (map['restAfterExerciseSeconds'] as int? ?? 60).clamp(0, 600);
+        (storedAfterRest == 60 ? 0 : storedAfterRest ?? 0).clamp(0, 600);
     _tapeMeasurementsInInches =
         map['tapeMeasurementsInInches'] as bool? ?? false;
     _keepScreenAwake = map['keepScreenAwake'] as bool? ?? true;
     _workoutNotifications = map['workoutNotifications'] as bool? ?? true;
+    _calisthenicsReminders = map['calisthenicsReminders'] as bool? ?? false;
+    _calisthenicsReminderMinutes =
+        (map['calisthenicsReminderMinutes'] as int? ?? 60).clamp(15, 240);
     _seenTutorials
       ..clear()
       ..addAll(

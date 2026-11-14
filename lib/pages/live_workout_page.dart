@@ -54,10 +54,16 @@ class _LiveWorkoutPageState extends State<LiveWorkoutPage> {
     }
   }
 
+  void _stopNotifications() {
+    _notificationTimer?.cancel();
+    _notificationTimer = null;
+    WorkoutNotificationService.instance.cancelAll();
+  }
+
   @override
   void dispose() {
     _notificationTimer?.cancel();
-    WorkoutNotificationService.instance.cancelLive();
+    WorkoutNotificationService.instance.cancelAll();
     ScreenAwakeService.setAwake(false);
     super.dispose();
   }
@@ -108,7 +114,10 @@ class _LiveWorkoutPageState extends State<LiveWorkoutPage> {
             },
           ),
         ),
-        body: const WorkoutPageWeight(liveMode: true),
+        body: WorkoutPageWeight(
+          liveMode: true,
+          onSessionLogged: _stopNotifications,
+        ),
       ),
     );
   }
