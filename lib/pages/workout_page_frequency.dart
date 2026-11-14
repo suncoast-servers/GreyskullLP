@@ -3,6 +3,7 @@ import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
+import 'package:greyskull_lp/widgets/method_lift_row.dart';
 import 'package:greyskull_lp/widgets/tutorial_overlay.dart';
 
 class WorkoutPageFrequency extends StatefulWidget {
@@ -17,6 +18,8 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
   int _pushUpsThisSet = 10;
   int _chinUpsThisSet = 3;
   bool _usedNegatives = false;
+  final Map<String, int> _accessoryThisSet = {};
+  final Set<String> _touchedAccessories = {};
 
   @override
   void initState() {
@@ -45,60 +48,20 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
     }
   }
 
-  Future<void> _logAccessory(String name) async {
-    final unit = TrainingState.measurementForAccessory(name);
-    final step = unit == AccessoryMeasurement.seconds ? 5 : 1;
-    final previous = trainingState.frequencyAccessoryLogFor(name);
-    var value = previous?.value ?? TrainingState.defaultAccessoryValue(name);
+  int _accessoryValue(String name) =>
+      _accessoryThisSet[name] ?? TrainingState.defaultAccessoryValue(name);
 
-    final result = await showDialog<int>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
-          title: Text('Log $name'),
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: 'Decrease',
-                onPressed: () =>
-                    setLocal(() => value = (value - step).clamp(1, 100000)),
-                icon: const Icon(Icons.remove_circle_outline),
-              ),
-              Expanded(
-                child: Text(
-                  '$value ${unit.suffix}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-              ),
-              IconButton(
-                tooltip: 'Increase',
-                onPressed: () =>
-                    setLocal(() => value = (value + step).clamp(1, 100000)),
-                icon: const Icon(Icons.add_circle_outline),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(ctx).pop(value),
-              child: const Text('Log'),
-            ),
-          ],
-        ),
-      ),
-    );
+  String _accessoryUnit(String name) =>
+      TrainingState.measurementForAccessory(name) ==
+              AccessoryMeasurement.seconds
+          ? 's'
+          : 'reps';
 
-    if (result != null && mounted) {
-      trainingState.logFrequencyAccessory(name, value: result, unit: unit);
-    }
-  }
+  int _accessoryStep(String name) =>
+      TrainingState.measurementForAccessory(name) ==
+              AccessoryMeasurement.seconds
+          ? 5
+          : 1;
 
   void _addSet() {
     if (_pushUpsThisSet == 0 && _chinUpsThisSet == 0) {
@@ -114,6 +77,16 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
       chinUps: _chinUpsThisSet,
       usedNegatives: _usedNegatives,
     );
+    for (final name in _touchedAccessories) {
+      final value = _accessoryValue(name);
+      if (value <= 0) continue;
+      trainingState.logFrequencyAccessory(
+        name,
+        value: value,
+        unit: TrainingState.measurementForAccessory(name),
+      );
+    }
+    _touchedAccessories.clear();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -310,15 +283,16 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                         ),
                       )
                     else
-                      ...accessories.map(
-                        (name) => _AccessoryLogTile(
-                          name: name,
-                          log: trainingState.frequencyAccessoryLogFor(name),
-                          onLog: () => _logAccessory(name),
-                          onUndo: () =>
-                              trainingState.undoFrequencyAccessory(name),
-                        ),
-                      ),
+                      ...accessories.map((name) {
+                        final log =
+                            trainingState.frequencyAccessoryLogFor(name);
+                        return MethodLiftProgressRow(
+                          label: name,
+                          current: log?.value ?? 0,
+                          target: TrainingState.defaultAccessoryValue(name),
+                          unit: _accessoryUnit(name),
+                        );
+                      }),
                     const SizedBox(height: 4),
                     Align(
                       alignment: Alignment.centerRight,
@@ -388,28 +362,17 @@ class _WorkoutPageFrequencyState extends State<WorkoutPageFrequency>
                             fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: accessories.map((name) {
-                          final log =
-                              trainingState.frequencyAccessoryLogFor(name);
-                          return ActionChip(
-                            avatar: Icon(
-                              log == null ? Icons.add : Icons.check_circle,
-                              size: 18,
-                              color: log == null
-                                  ? null
-                                  : AppTheme.positiveAccent(context),
-                            ),
-                            label: Text(
-                              log == null
-                                  ? name
-                                  : '$name ${log.formattedValue}',
-                            ),
-                            onPressed: () => _logAccessory(name),
-                          );
-                        }).toList(),
+                      ...accessories.map(
+                        (name) => MethodLiftCounterRow(
+                          label: name,
+                          value: _accessoryValue(name),
+                          unit: _accessoryUnit(name),
+                          step: _accessoryStep(name),
+                          onChanged: (next) => setState(() {
+                            _accessoryThisSet[name] = next;
+                            _touchedAccessories.add(name);
+                          }),
+                        ),
                       ),
                     ],
                     const SizedBox(height: 8),
@@ -570,50 +533,6 @@ class _RepStepper extends StatelessWidget {
           icon: const Icon(Icons.add_circle_outline),
         ),
       ],
-    );
-  }
-}
-
-class _AccessoryLogTile extends StatelessWidget {
-  const _AccessoryLogTile({
-    required this.name,
-    required this.log,
-    required this.onLog,
-    required this.onUndo,
-  });
-
-  final String name;
-  final CalisthenicsAccessoryLog? log;
-  final VoidCallback onLog;
-  final VoidCallback onUndo;
-
-  @override
-  Widget build(BuildContext context) {
-    final unit = TrainingState.measurementForAccessory(name);
-    final measuredInSeconds = unit == AccessoryMeasurement.seconds;
-
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      visualDensity: VisualDensity.compact,
-      onTap: onLog,
-      leading: Icon(
-        measuredInSeconds ? Icons.timer_outlined : Icons.repeat,
-        size: 20,
-      ),
-      title: Text(name, style: const TextStyle(fontSize: 14)),
-      subtitle: Text(
-        log == null
-            ? 'Tap to log ${measuredInSeconds ? 'seconds' : 'reps'}'
-            : 'Logged ${log!.formattedValue}',
-        style: TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
-      ),
-      trailing: log == null
-          ? const Icon(Icons.add_circle_outline, size: 20)
-          : IconButton(
-              tooltip: 'Undo last log',
-              icon: const Icon(Icons.undo, size: 18),
-              onPressed: onUndo,
-            ),
     );
   }
 }
