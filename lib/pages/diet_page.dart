@@ -28,6 +28,7 @@ class _DietPageState extends State<DietPage> {
   List<FoodSearchResult> _results = <FoodSearchResult>[];
   Timer? _searchDebounce;
   String _query = '';
+  String? _lastLoggedFood;
 
   @override
   void dispose() {
@@ -39,10 +40,25 @@ class _DietPageState extends State<DietPage> {
     super.dispose();
   }
 
+  void _clearSearch() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _query = '';
+      _results = <FoodSearchResult>[];
+      _lastLoggedFood = null;
+      _isSearching = false;
+    });
+  }
+
   void _onQueryChanged(String value) {
     final query = value.trim();
     _searchDebounce?.cancel();
-    setState(() => _query = query);
+    setState(() {
+      _query = query;
+      _lastLoggedFood = null;
+    });
     if (query.length < 3) {
       setState(() => _results = <FoodSearchResult>[]);
       return;
@@ -99,6 +115,72 @@ class _DietPageState extends State<DietPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Diet entry saved to history')),
     );
+  }
+
+  List<Widget> _loggedTodaySection(BuildContext context) {
+    final now = DateTime.now();
+    final todayEntries = trainingState.history
+        .where((e) =>
+            e.category == HistoryCategory.diet &&
+            e.timestamp.year == now.year &&
+            e.timestamp.month == now.month &&
+            e.timestamp.day == now.day)
+        .toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final visible = todayEntries.take(10).toList();
+
+    return [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Logged today',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Text(
+            '${todayEntries.length} ${todayEntries.length == 1 ? 'entry' : 'entries'}',
+            style: TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
+          ),
+        ],
+      ),
+      const SizedBox(height: 6),
+      if (visible.isEmpty)
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Text(
+              'Nothing logged yet today. Search above or add an entry.',
+              style:
+                  TextStyle(fontSize: 12, color: AppTheme.mutedText(context)),
+            ),
+          ),
+        )
+      else
+        ...visible.map((entry) {
+          final note = entry.details
+              .split('\n')
+              .where((line) => line.startsWith('Note: '))
+              .map((line) => line.substring(6).trim())
+              .firstWhere((line) => line.isNotEmpty, orElse: () => '');
+          final time = '${entry.timestamp.hour.toString().padLeft(2, '0')}:'
+              '${entry.timestamp.minute.toString().padLeft(2, '0')}';
+          return Card(
+            margin: const EdgeInsets.symmetric(vertical: 3),
+            child: ListTile(
+              dense: true,
+              leading: Icon(Icons.restaurant_outlined,
+                  size: 20, color: Theme.of(context).colorScheme.secondary),
+              title: Text(note.isEmpty ? 'Diet intake' : note,
+                  style: const TextStyle(fontSize: 13.5)),
+              subtitle: Text(
+                '${entry.proteinGrams ?? 0}g protein · '
+                '${entry.calories ?? 0} kcal · $time',
+                style: const TextStyle(fontSize: 11.5),
+              ),
+            ),
+          );
+        }),
+    ];
   }
 
   @override
@@ -211,9 +293,34 @@ class _DietPageState extends State<DietPage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )
-                    : null,
+                    : _searchController.text.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Clear search',
+                            icon: const Icon(Icons.close),
+                            onPressed: _clearSearch,
+                          ),
               ),
             ),
+            if (_lastLoggedFood != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(Icons.check_circle,
+                      size: 16, color: Theme.of(context).colorScheme.secondary),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Logged $_lastLoggedFood to today',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.mutedText(context),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 6),
             if (!_isSearching && _query.length >= 3 && _results.isEmpty)
               Text(
@@ -235,12 +342,21 @@ class _DietPageState extends State<DietPage> {
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.add),
+                        tooltip: 'Log ${item.name}',
                         onPressed: () {
                           trainingState.logDietIntake(
                             proteinGrams: item.proteinGrams,
                             calories: item.calories,
                             note: '${item.name} (${item.source})',
                           );
+                          _searchDebounce?.cancel();
+                          _searchController.clear();
+                          FocusScope.of(context).unfocus();
+                          setState(() {
+                            _query = '';
+                            _results = <FoodSearchResult>[];
+                            _lastLoggedFood = item.name;
+                          });
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Added ${item.name}')),
                           );
@@ -287,6 +403,8 @@ class _DietPageState extends State<DietPage> {
               icon: const Icon(Icons.refresh),
               label: const Text('Reset Today'),
             ),
+            const SizedBox(height: 20),
+            ..._loggedTodaySection(context),
           ],
         );
       },
