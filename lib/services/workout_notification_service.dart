@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 /// Live-workout notifications (issue #82).
 ///
@@ -15,15 +16,21 @@ class WorkoutNotificationService {
 
   static const int liveId = 666;
   static const int restId = 667;
+  static const int reminderId = 668;
 
   static const String liveChannelId = 'workout_live';
   static const String restChannelId = 'workout_rest';
+  static const String reminderChannelId = 'workout_reminder';
 
   /// Disable in tests or when the user turns notifications off.
   static bool enabled = true;
 
   /// Test hook: how many times a session cleared its notifications (#112).
   static int debugCancelAllCount = 0;
+
+  /// Test hooks for the opt-in set reminder (#113).
+  static int debugReminderSchedules = 0;
+  static int debugReminderCancels = 0;
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -113,6 +120,44 @@ class WorkoutNotificationService {
     if (!Platform.isAndroid && !Platform.isIOS) return;
     try {
       await _plugin.cancel(id: liveId);
+    } catch (_) {}
+  }
+
+  /// Schedules the opt-in "next calisthenics set" reminder (#113). Uses an
+  /// inexact alarm so no exact-alarm permission is required.
+  Future<void> scheduleCalisthenicsReminder({required int minutes}) async {
+    debugReminderSchedules += 1;
+    if (!enabled) return;
+    await _ensureInitialised();
+    try {
+      final when = tz.TZDateTime.now(tz.UTC).add(Duration(minutes: minutes));
+      await _plugin.zonedSchedule(
+        id: reminderId,
+        title: 'Next calisthenics set',
+        body: 'No set logged in $minutes minutes. Chip away at today\'s work.',
+        scheduledDate: when,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            reminderChannelId,
+            'Set reminders',
+            channelDescription:
+                'Opt-in reminders when the next calisthenics set is overdue.',
+            importance: Importance.defaultImportance,
+            priority: Priority.defaultPriority,
+            category: AndroidNotificationCategory.reminder,
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> cancelCalisthenicsReminder() async {
+    debugReminderCancels += 1;
+    if (!Platform.isAndroid && !Platform.isIOS) return;
+    try {
+      await _plugin.cancel(id: reminderId);
     } catch (_) {}
   }
 

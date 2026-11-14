@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/services/calisthenics_reminder_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/method_lift_row.dart';
@@ -54,6 +57,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
     }
 
     trainingState.addTotalWorkSet(_repsThisSet);
+    unawaited(CalisthenicsReminderService.noteSetLogged());
 
     if (trainingState.activeTotalWorkCompletedReps >=
         trainingState.activeTotalWorkTargetReps) {
@@ -103,6 +107,8 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
         .entries
         .map((e) => 'Set ${e.key + 1}: ${e.value} reps')
         .join('\n');
+
+    unawaited(CalisthenicsReminderService.cancel());
 
     final isPushUp = exercise == 'Push-ups';
     final pushUps = isPushUp ? totalReps : 0;

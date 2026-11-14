@@ -118,6 +118,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(WorkoutNotificationService.debugCancelAllCount, greaterThan(0));
+      // The live shell also stops republishing the ongoing card (#112).
+      expect(WorkoutNotificationService.debugCancelAllCount, greaterThan(1));
     });
 
     testWidgets('non-live page keeps the guidance copy', (tester) async {

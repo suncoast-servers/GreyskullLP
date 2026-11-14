@@ -12,12 +12,20 @@ import 'package:greyskull_lp/widgets/custom_program_editor_sheet.dart';
 import 'package:greyskull_lp/widgets/circular_rest_timer.dart';
 
 class WorkoutPageWeight extends StatefulWidget {
-  const WorkoutPageWeight({super.key, this.liveMode = false});
+  const WorkoutPageWeight({
+    super.key,
+    this.liveMode = false,
+    this.onSessionLogged,
+  });
 
   /// When true the page runs as the focused live session (issue #80):
   /// session clock starts immediately, setup chrome is hidden and leaving
   /// requires confirmation.
   final bool liveMode;
+
+  /// Lets the live shell stop its ongoing notification when the session is
+  /// logged (#112).
+  final VoidCallback? onSessionLogged;
 
   @override
   State<WorkoutPageWeight> createState() => _WorkoutPageWeightState();
@@ -339,6 +347,7 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
     // The session is finished: no ongoing or rest alerts should linger
     // (issue #112).
     WorkoutNotificationService.instance.cancelAll();
+    widget.onSessionLogged?.call();
 
     // Advance rotation to next workout in cycle
     trainingState.advanceBarbellRotation();
@@ -398,6 +407,16 @@ class _WorkoutPageWeightState extends State<WorkoutPageWeight> {
           content: Text(loggedMessage),
           duration: Duration(seconds: bumpedLifts.isEmpty ? 4 : 6),
         ),
+      );
+    }
+
+    // Post-log share sheet (#110): the workout is already saved, so the sheet
+    // is the last step. Accountability modes already offer their own sheet.
+    if (trainingState.accountabilityMode == AccountabilityPostMode.off &&
+        trainingState.history.isNotEmpty) {
+      SocialShareService.maybePromptAfterLog(
+        context,
+        trainingState.history.first,
       );
     }
   }
