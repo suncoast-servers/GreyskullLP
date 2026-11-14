@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
 import 'package:greyskull_lp/themes/theme.dart';
+import 'package:greyskull_lp/ui/gs_widgets.dart';
 import 'workout_setup_page.dart';
 import 'workout_page_frequency.dart';
 import 'workout_page_ladder.dart';
@@ -214,70 +216,69 @@ class _WorkoutPageState extends State<WorkoutPage> {
   Widget _buildWorkoutMainPage() {
     widget.titleNotifier.value = "Workout";
     final level = trainingState.programLevel;
+    final tokens = context.gs;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Program Level Banner
-        Card(
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        level.shortLabel,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color:
-                              Theme.of(context).colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: _showAdjustLevelSheet,
-                      icon: const Icon(Icons.tune, size: 16),
-                      label: const Text('Adjust Level',
-                          style: TextStyle(fontSize: 12)),
-                    ),
-                  ],
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
+      children: <Widget>[
+        GsCard(
+          gradient: LinearGradient(
+            colors: <Color>[
+              tokens.accent.withValues(alpha: 0.20),
+              tokens.surface,
+            ],
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+          ),
+          borderColor: tokens.accent.withValues(alpha: 0.32),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  GsTag(level.shortLabel, tone: GsTagTone.accent),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: _showAdjustLevelSheet,
+                    icon: const Icon(Icons.tune, size: 15),
+                    label: const Text('Adjust Level'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                level.subtitle,
+                style: TextStyle(
+                  fontFamily: GsFont.display,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  height: 1.15,
+                  color: tokens.bone,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  level.subtitle,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                level.description,
+                style: TextStyle(
+                  fontFamily: GsFont.body,
+                  fontSize: 11.5,
+                  height: 1.45,
+                  color: tokens.muted,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  level.description,
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      height: 1.3),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 20),
-
-        // Workout Buttons Grid
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
+        const GsSectionTitle('Training methods'),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1.25,
+          children: <Widget>[
             _buildWorkoutButton(
               const IconData(0xf6e6, fontFamily: 'MaterialSymbols'),
               'Weight Program',
@@ -294,12 +295,6 @@ class _WorkoutPageState extends State<WorkoutPage> {
                   trainingState.activeDailyMethod == DailyMethod.frequency,
               statusBadge: 'Level 1 Active',
             ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
             _buildWorkoutButton(
               Icons.trending_up,
               'Ladder Method',
@@ -356,79 +351,51 @@ class _WorkoutPageState extends State<WorkoutPage> {
     String? statusBadge,
     bool isLocked = false,
   }) {
-    return InkWell(
+    final tokens = context.gs;
+    final GsTagTone tone = isLocked
+        ? GsTagTone.neutral
+        : isActive
+            ? GsTagTone.ok
+            : GsTagTone.accent;
+
+    return GsCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 150,
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        child: Column(
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 46,
-                  color: isLocked
-                      ? AppTheme.mutedText(context)
-                      : Theme.of(context).primaryColor,
-                ),
-                if (isLocked)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Colors.amber,
-                        shape: BoxShape.circle,
-                      ),
-                      child:
-                          const Icon(Icons.lock, size: 14, color: Colors.white),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isLocked ? AppTheme.mutedText(context) : null,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              GsIconTile(
+                icon,
+                size: 38,
+                color: isLocked ? tokens.muted : tokens.accent,
               ),
-            ),
-            if (statusBadge != null) ...[
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? AppTheme.positiveAccent(context).withValues(alpha: 0.16)
-                      : isLocked
-                          ? AppTheme.mutedText(context).withValues(alpha: 0.16)
-                          : AppTheme.resistanceAccent(context)
-                              .withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  statusBadge,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: isActive
-                        ? AppTheme.positiveAccent(context)
-                        : isLocked
-                            ? AppTheme.mutedText(context)
-                            : AppTheme.resistanceAccent(context),
-                  ),
-                ),
-              ),
+              const Spacer(),
+              if (isLocked)
+                Icon(Icons.lock_outline, size: 16, color: tokens.muted)
+              else
+                Icon(Icons.chevron_right, size: 17, color: tokens.muted),
             ],
+          ),
+          const Spacer(),
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: GsFont.body,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              height: 1.25,
+              color: isLocked ? tokens.muted : tokens.bone,
+            ),
+          ),
+          if (statusBadge != null) ...<Widget>[
+            const SizedBox(height: 7),
+            GsTag(statusBadge, tone: tone),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -11,6 +11,8 @@ import 'package:greyskull_lp/pages/stats_page.dart';
 import 'package:greyskull_lp/pages/store_page.dart';
 import 'package:greyskull_lp/pages/workout_page.dart';
 import 'package:greyskull_lp/themes/app_icons.dart';
+import 'package:greyskull_lp/themes/gs_tokens.dart';
+import 'package:greyskull_lp/ui/gs_widgets.dart';
 import 'package:greyskull_lp/widgets/bento_menu_icon.dart';
 import 'themes/theme.dart';
 
@@ -137,30 +139,57 @@ class MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    const exerciseIcon = Icon(AppIcons.barbell);
+    final tokens = context.gs;
+    final isHome = _selectedIndex == -1;
+    final streak = trainingState.calculateCurrentStreakDays();
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: false,
+        titleSpacing: isHome ? 16 : 6,
+        backgroundColor: tokens.bg,
+        leading: isHome
+            ? null
+            : Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: GsSquareButton(
+                  tooltip: 'Main menu',
+                  onPressed: () {
+                    setState(() {
+                      _selectedIndex = -1;
+                      _appBarTitle.value = "Official Greyskull LP App";
+                    });
+                  },
+                  child: const BentoMenuIcon(size: 18),
+                ),
+              ),
+        leadingWidth: isHome ? null : 56,
         title: ValueListenableBuilder<String>(
           valueListenable: _appBarTitle,
-          builder: (context, title, _) => Text(title),
+          builder: (context, title, _) => _GsAppBarTitle(
+            isHome: isHome,
+            title: title,
+            subtitle: isHome
+                ? 'Official Greyskull LP App'
+                : _getPageSubtitle(_selectedIndex),
+          ),
         ),
-        leading: _selectedIndex == -1
-            ? null
-            : IconButton(
-                tooltip: 'Main menu',
-                icon: const BentoMenuIcon(),
-                onPressed: () {
-                  setState(() {
-                    _selectedIndex = -1;
-                    _appBarTitle.value = "Official Greyskull LP App";
-                  });
-                },
-              ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
+          if (streak > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () => _onItemTapped(3),
+                child: GsTag(
+                  '$streak DAY STREAK',
+                  tone: GsTagTone.accent,
+                  icon: Icons.local_fire_department,
+                ),
+              ),
+            ),
+          GsIconButton(
+            icon: Icons.settings,
+            tooltip: 'Settings',
             onPressed: () {
               Navigator.push(
                 context,
@@ -168,36 +197,46 @@ class MainPageState extends State<MainPage> {
               );
             },
           ),
+          const SizedBox(width: 12),
         ],
       ),
-      body: _selectedIndex == -1
+      body: isHome
           ? HomePage(onItemSelected: _onItemTapped)
           : _pages[_selectedIndex],
-      bottomNavigationBar: _selectedIndex == -1
+      bottomNavigationBar: isHome
           ? null
-          : BottomNavigationBar(
-              backgroundColor: theme.bottomNavigationBarTheme.backgroundColor,
-              selectedItemColor:
-                  theme.bottomNavigationBarTheme.selectedItemColor,
-              unselectedItemColor:
-                  theme.bottomNavigationBarTheme.unselectedItemColor,
-              items: [
-                BottomNavigationBarItem(icon: exerciseIcon, label: 'Workout'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.forum), label: 'Forum'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.restaurant), label: 'Diet'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.stacked_line_chart), label: 'Stats'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.history), label: 'History'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.shopping_cart), label: 'Store'),
+          : GsTabBar(
+              items: const <GsTabItem>[
+                GsTabItem(icon: AppIcons.barbell, label: 'Workout'),
+                GsTabItem(icon: Icons.forum, label: 'Forum'),
+                GsTabItem(icon: Icons.restaurant, label: 'Diet'),
+                GsTabItem(icon: Icons.stacked_line_chart, label: 'Stats'),
+                GsTabItem(icon: Icons.history, label: 'History'),
+                GsTabItem(icon: Icons.shopping_cart, label: 'Store'),
               ],
-              currentIndex: _selectedIndex >= 0 ? _selectedIndex : 0,
+              currentIndex: _selectedIndex,
               onTap: _onItemTapped,
             ),
     );
+  }
+
+  String _getPageSubtitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Weight & calisthenics';
+      case 1:
+        return 'Greyskull Nation';
+      case 2:
+        return 'Fuel & macros';
+      case 3:
+        return 'Progress';
+      case 4:
+        return 'Workout log';
+      case 5:
+        return 'Official gear';
+      default:
+        return 'Greyskull LP';
+    }
   }
 
   String _getPageTitle(int index) {
@@ -217,5 +256,89 @@ class MainPageState extends State<MainPage> {
       default:
         return 'Greyskull LP Workout';
     }
+  }
+}
+
+class _GsAppBarTitle extends StatelessWidget {
+  const _GsAppBarTitle({
+    required this.isHome,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final bool isHome;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.gs;
+    final displayStyle = TextStyle(
+      fontFamily: GsFont.display,
+      fontSize: 18,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 1.5,
+      height: 1,
+      color: tokens.bone,
+    );
+
+    if (isHome) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          RichText(
+            text: TextSpan(
+              children: <InlineSpan>[
+                TextSpan(text: 'GREYSKULL ', style: displayStyle),
+                TextSpan(
+                  text: 'LP',
+                  style: displayStyle.copyWith(color: tokens.accent),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: GsFont.body,
+              fontSize: 8.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.7,
+              color: tokens.muted,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: displayStyle.copyWith(fontSize: 17, letterSpacing: 0.6),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          subtitle.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontFamily: GsFont.body,
+            fontSize: 8,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.4,
+            color: tokens.muted,
+          ),
+        ),
+      ],
+    );
   }
 }
