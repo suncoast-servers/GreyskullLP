@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/models/training_state.dart';
-import 'package:greyskull_lp/pages/settings_page.dart';
+import 'package:greyskull_lp/pages/settings/accessory_settings_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -21,7 +21,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MaterialApp(home: SettingsPage()));
+    await tester.pumpWidget(const MaterialApp(home: AccessorySettingsPage()));
     await tester.pumpAndSettle();
 
     expect(find.text('Calisthenics Accessories'), findsOneWidget);

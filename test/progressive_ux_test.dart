@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/models/training_state.dart';
-import 'package:greyskull_lp/pages/settings_page.dart';
+import 'package:greyskull_lp/pages/settings/training_settings_page.dart';
 import 'package:greyskull_lp/pages/workout_page.dart';
 import 'package:greyskull_lp/pages/workout_page_ladder.dart';
 import 'package:greyskull_lp/pages/workout_page_weight.dart';
@@ -248,7 +248,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: SettingsPage(),
+          home: TrainingSettingsPage(),
         ),
       );
       await tester.pumpAndSettle();

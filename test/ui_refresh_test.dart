@@ -5,6 +5,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/home_page.dart';
+import 'package:greyskull_lp/pages/settings/appearance_settings_page.dart';
+import 'package:greyskull_lp/pages/settings_page.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/ui/gs_icon.dart';
 import 'package:greyskull_lp/ui/gs_widgets.dart';
@@ -217,6 +219,46 @@ void main() {
         find.text(TrainingState.methodLabel(trainingState.activeDailyMethod)),
         findsOneWidget,
       );
+    });
+  });
+
+  group('Settings hub', () {
+    testWidgets('groups settings into sub-pages and opens appearance',
+        (tester) async {
+      tester.view.physicalSize = const Size(390, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.themeFor(GreyskullSkin.ironAndBone),
+          home: const SettingsPage(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      for (final row in <String>[
+        'Appearance & themes',
+        'Program & level',
+        'Training preferences',
+        'Barbell program',
+        'Accessories',
+        'Sharing & accountability',
+        'Timing & alerts',
+        'Backup & data',
+        'Help & tutorials',
+      ]) {
+        expect(find.text(row), findsOneWidget, reason: row);
+      }
+
+      await tester.tap(find.text('Appearance & themes'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppearanceSettingsPage), findsOneWidget);
+      expect(find.text('Theme & Skins (Greyskull Motif)'), findsOneWidget);
     });
   });
 }

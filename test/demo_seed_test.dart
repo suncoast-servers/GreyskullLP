@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/models/training_state.dart';
-import 'package:greyskull_lp/pages/settings_page.dart';
+import 'package:greyskull_lp/pages/settings/data_settings_page.dart';
 import 'package:greyskull_lp/services/demo_seed_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -162,7 +162,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        const MaterialApp(home: SettingsPage()),
+        const MaterialApp(home: DataSettingsPage()),
       );
       await tester.pumpAndSettle();
 

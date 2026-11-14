@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/pages/history_page.dart';
-import 'package:greyskull_lp/pages/settings_page.dart';
+import 'package:greyskull_lp/pages/settings/sharing_settings_page.dart';
 import 'package:greyskull_lp/pages/workout_page_weight.dart';
 import 'package:greyskull_lp/services/social_share_service.dart';
 import 'package:image_picker/image_picker.dart';
@@ -222,7 +222,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: SettingsPage()),
+          home: const SharingSettingsPage(),
         ),
       );
       await tester.pumpAndSettle();

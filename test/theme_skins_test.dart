@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:greyskull_lp/main.dart';
 import 'package:greyskull_lp/models/training_state.dart';
-import 'package:greyskull_lp/pages/settings_page.dart';
+import 'package:greyskull_lp/pages/settings/appearance_settings_page.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -77,7 +77,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: SettingsPage(),
+          home: AppearanceSettingsPage(),
         ),
       );
       await tester.pumpAndSettle();
