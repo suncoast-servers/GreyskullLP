@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
 import 'package:greyskull_lp/services/demo_seed_service.dart';
+import 'package:greyskull_lp/services/workout_notification_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
 import 'package:greyskull_lp/widgets/calisthenics_accessories_section.dart';
@@ -835,6 +836,43 @@ class _SettingsPageState extends State<SettingsPage> {
                   value: trainingState.keepScreenAwake,
                   onChanged: (val) => trainingState.setKeepScreenAwake(val),
                 ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Calisthenics set reminders'),
+                  subtitle: const Text(
+                      'Notify me when no next set is logged within the window below.'),
+                  value: trainingState.calisthenicsReminders,
+                  onChanged: (val) {
+                    trainingState.setCalisthenicsReminders(val);
+                    if (val) {
+                      WorkoutNotificationService.instance.requestPermission();
+                    }
+                  },
+                ),
+                if (trainingState.calisthenicsReminders) ...[
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<int>(
+                    key: ValueKey(
+                        'reminder-${trainingState.calisthenicsReminderMinutes}'),
+                    initialValue: trainingState.calisthenicsReminderMinutes,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Remind me after',
+                    ),
+                    items: TrainingState.calisthenicsReminderPresets
+                        .map((minutes) => DropdownMenuItem<int>(
+                              value: minutes,
+                              child: Text('$minutes minutes'),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        trainingState.setCalisthenicsReminderMinutes(value);
+                      }
+                    },
+                  ),
+                ],
                 const SizedBox(height: 4),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
@@ -875,6 +913,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     labelText: 'Rest after finishing a lift',
                   ),
                   items: const [
+                    DropdownMenuItem(
+                        value: 0, child: Text('Same as the lift rest')),
                     DropdownMenuItem(value: 30, child: Text('30 seconds')),
                     DropdownMenuItem(value: 60, child: Text('60 seconds')),
                     DropdownMenuItem(value: 90, child: Text('90 seconds')),

@@ -142,7 +142,7 @@ Google Play enforces strict guidelines for apps in the Health & Fitness category
 2. In the left navigation, go to **Release > Testing > Internal testing**.
 3. Click **Create new release**.
 4. Upload `build/app/outputs/bundle/release/app-release.aab`.
-5. Enter **Release name**: `1.0.0 (1)`.
+5. Enter **Release name**: `0.2.0 (2)` (pre-release numbering until first store publish).
 6. Enter **Release notes**:
    ```text
    Initial internal test build for Greyskull LP v1:

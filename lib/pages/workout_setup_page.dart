@@ -145,6 +145,25 @@ class _WorkoutSetupPageState extends State<WorkoutSetupPage> {
                           ),
                         ],
                       ),
+                      Row(
+                        children: [
+                          const Expanded(child: Text('Rest after last set')),
+                          DropdownButton<int>(
+                            value: trainingState.restAfterExerciseSeconds,
+                            items: const [0, 60, 90, 120, 180]
+                                .map((s) => DropdownMenuItem<int>(
+                                    value: s,
+                                    child:
+                                        Text(s == 0 ? 'Same as sets' : '$s s')))
+                                .toList(),
+                            onChanged: (v) {
+                              if (v != null) {
+                                trainingState.setRestAfterExerciseSeconds(v);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Rest timer'),

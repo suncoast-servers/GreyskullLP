@@ -29,13 +29,25 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> tapSet(WidgetTester tester, Finder circle) async {
+    await tester.tap(circle);
+    await tester.pumpAndSettle();
+    // The AMRAP circle opens rep entry first (issue #106).
+    if (find.text('Save').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+    }
+  }
+
   group('Weight workout set taps (issue #50)', () {
-    testWidgets('each lift exposes 1 / 2 / 5+ circles with AMRAP distinct',
+    testWidgets('every lift exposes three circles; AMRAP reads as reps',
         (tester) async {
       await pumpPage(tester);
 
-      // 5+ only appears on AMRAP set circles.
-      expect(find.text('5+'), findsWidgets);
+      // The AMRAP circle shows the rep count (5) rather than 5+ (#106) and is
+      // still exposed distinctly to screen readers.
+      expect(find.text('5+'), findsNothing);
+      expect(find.textContaining('Tap 5, 5, then 5+'), findsWidgets);
       expect(_setCircles(), findsNWidgets(6));
       expect(find.text('NEXT'), findsOneWidget);
     });
@@ -47,8 +59,7 @@ void main() {
       expect(find.textContaining('0/'), findsOneWidget);
 
       for (var i = 0; i < 3; i++) {
-        await tester.tap(_setCircles().at(i));
-        await tester.pumpAndSettle();
+        await tapSet(tester, _setCircles().at(i));
       }
 
       expect(find.textContaining('1/'), findsOneWidget);
@@ -64,8 +75,7 @@ void main() {
       await pumpPage(tester);
 
       for (var i = 0; i < 3; i++) {
-        await tester.tap(_setCircles().at(i));
-        await tester.pumpAndSettle();
+        await tapSet(tester, _setCircles().at(i));
       }
 
       final historyBefore = trainingState.history.length;

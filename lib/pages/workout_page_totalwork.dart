@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:greyskull_lp/models/accountability_post.dart';
 import 'package:greyskull_lp/models/training_state.dart';
+import 'package:greyskull_lp/services/calisthenics_reminder_service.dart';
 import 'package:greyskull_lp/themes/theme.dart';
 import 'package:greyskull_lp/widgets/accountability_post_sheet.dart';
-import 'package:greyskull_lp/widgets/accessory_checklist.dart';
+import 'package:greyskull_lp/widgets/method_lift_row.dart';
 import 'package:greyskull_lp/widgets/tutorial_overlay.dart';
 
 class WorkoutPageTotalWork extends StatefulWidget {
@@ -25,7 +28,24 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
   }
 
   int _repsThisSet = 15;
-  final Set<String> _completedAccessories = {};
+  final Map<String, int> _accessoryValues = {};
+  final Set<String> _touchedAccessories = {};
+
+  String _unitFor(String name) => TrainingState.measurementForAccessory(name) ==
+          AccessoryMeasurement.seconds
+      ? 's'
+      : 'reps';
+
+  int _stepFor(String name) => TrainingState.measurementForAccessory(name) ==
+          AccessoryMeasurement.seconds
+      ? 5
+      : 1;
+
+  String _summaryFor(String name) {
+    final value =
+        _accessoryValues[name] ?? TrainingState.defaultAccessoryValue(name);
+    return '$name ($value${_unitFor(name) == 's' ? 's' : ' reps'})';
+  }
 
   void _addSet() {
     if (_repsThisSet <= 0) {
@@ -37,6 +57,7 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
     }
 
     trainingState.addTotalWorkSet(_repsThisSet);
+    unawaited(CalisthenicsReminderService.noteSetLogged());
 
     if (trainingState.activeTotalWorkCompletedReps >=
         trainingState.activeTotalWorkTargetReps) {
@@ -71,8 +92,11 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
         trainingState.getCalisthenicsAccessories(DailyMethod.totalWork);
     final accessorySummaries = <String>[];
     for (final acc in configuredAccessories) {
-      final done = _completedAccessories.contains(acc);
-      accessorySummaries.add('$acc [${done ? "Completed" : "Skipped"}]');
+      if (_touchedAccessories.contains(acc) &&
+          (_accessoryValues[acc] ?? TrainingState.defaultAccessoryValue(acc)) >
+              0) {
+        accessorySummaries.add(_summaryFor(acc));
+      }
     }
     final optional = accessorySummaries.isEmpty
         ? 'None configured'
@@ -83,6 +107,8 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
         .entries
         .map((e) => 'Set ${e.key + 1}: ${e.value} reps')
         .join('\n');
+
+    unawaited(CalisthenicsReminderService.cancel());
 
     final isPushUp = exercise == 'Push-ups';
     final pushUps = isPushUp ? totalReps : 0;
@@ -135,7 +161,8 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
             onPressed: () {
               trainingState.resetActiveTotalWorkSession();
               setState(() {
-                _completedAccessories.clear();
+                _accessoryValues.clear();
+                _touchedAccessories.clear();
               });
               Navigator.of(ctx).pop();
             },
@@ -474,23 +501,57 @@ class _WorkoutPageTotalWorkState extends State<WorkoutPageTotalWork> {
               const SizedBox(height: 16),
             ],
 
-            // Accessories (configured in Settings)
+            // Accessories (configured in Settings) - same rows as push/chins.
             const Text(
               'Accessories',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 6),
-            AccessoryChecklist(
-              method: DailyMethod.totalWork,
-              completed: _completedAccessories,
-              onChanged: (updated) {
-                setState(() {
-                  _completedAccessories
-                    ..clear()
-                    ..addAll(updated);
-                });
-              },
-            ),
+            Builder(builder: (context) {
+              final accessories = trainingState
+                  .getCalisthenicsAccessories(DailyMethod.totalWork);
+              if (accessories.isEmpty) {
+                return Text(
+                  'No accessories configured. Add them in Settings → Calisthenics Accessories.',
+                  style: TextStyle(
+                      fontSize: 12, color: AppTheme.mutedText(context)),
+                );
+              }
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Accessory Progress',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 10),
+                      ...accessories.map((name) => MethodLiftProgressRow(
+                            label: name,
+                            current: _accessoryValues[name] ??
+                                TrainingState.defaultAccessoryValue(name),
+                            target: TrainingState.defaultAccessoryValue(name),
+                            unit: _unitFor(name),
+                          )),
+                      ...accessories.map((name) => MethodLiftCounterRow(
+                            label: name,
+                            value: _accessoryValues[name] ??
+                                TrainingState.defaultAccessoryValue(name),
+                            unit: _unitFor(name),
+                            step: _stepFor(name),
+                            onChanged: (next) => setState(() {
+                              _accessoryValues[name] = next;
+                              _touchedAccessories.add(name);
+                            }),
+                          )),
+                    ],
+                  ),
+                ),
+              );
+            }),
             const SizedBox(height: 20),
 
             // Save Session to History

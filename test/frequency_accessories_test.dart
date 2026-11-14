@@ -239,22 +239,21 @@ void main() {
         ),
       );
 
-      final planksTile = find.text('Planks').first;
-      await tester.scrollUntilVisible(planksTile, 100);
-      await tester.tap(planksTile);
+      // Accessories use the same counter row as push-ups/chin-ups (#111).
+      final increase = find.byTooltip('Increase Planks');
+      await tester.scrollUntilVisible(increase, 100);
+      await tester.tap(increase);
       await tester.pumpAndSettle();
+      expect(find.text('Planks: 35 s'), findsOneWidget);
 
-      // Time-based accessory asks for seconds, not reps.
-      expect(find.text('Log Planks'), findsOneWidget);
-      expect(find.text('30 s'), findsOneWidget);
-
-      await tester.tap(find.text('Log'));
+      final record = find.text('Record This Set');
+      await tester.ensureVisible(record);
+      await tester.tap(record);
       await tester.pumpAndSettle();
 
       expect(trainingState.todayFrequencyAccessories.single.name, 'Planks');
       expect(
-          trainingState.todayFrequencyAccessories.single.formattedValue, '30s');
-      expect(find.text('Logged 30s'), findsOneWidget);
+          trainingState.todayFrequencyAccessories.single.formattedValue, '35s');
     });
   });
 }
